@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - dev
-
+ 
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Build image
         run: docker build -t registry:5000/frontend:dev .
 
