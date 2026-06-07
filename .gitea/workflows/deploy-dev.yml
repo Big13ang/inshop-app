@@ -1,0 +1,23 @@
+name: Deploy Frontend Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Build image
+        run: docker build -t registry:5000/frontend:dev .
+
+      - name: Push image
+        run: docker push registry:5000/frontend:dev
+
+      - name: Deploy service
+        run: docker service update --image registry:5000/frontend:dev inshop_frontend-dev
