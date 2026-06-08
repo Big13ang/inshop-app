@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - dev
- 
+
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: docker
+    container:
+      image: registry2/runner-images/ubuntu-latest:latest
 
     steps:
       - name: Checkout code
