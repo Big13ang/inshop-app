@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: docker
     container:
-      image: registry2/runner-images/ubuntu-latest:latest
+      image: mirror2.chabokan.net/gitea/runner-images:ubuntu-latest
 
     steps:
       - name: Checkout code
