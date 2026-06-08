@@ -12,8 +12,7 @@ jobs:
     steps:
       - name: Checkout code manually
         run: |
-          git clone http://109.122.249.153/mercurail/checkout.git .
-          git checkout dev
+          git clone --branch dev --single-branch http://109.122.249.153/mercurail/checkout.git .
 
       - name: Build image
         run: docker build -t registry:5000/frontend:dev .
