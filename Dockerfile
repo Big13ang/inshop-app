@@ -1,13 +1,15 @@
-# Stage 1: deps — install node_modules
+# Stage 1: deps — install node_modules from internal Verdaccio
 FROM mirror2.chabokan.net/library/node:22-alpine AS deps
 WORKDIR /app
 
-# Copy package files first (Docker cache)
+# Copy only package.json (do NOT copy package-lock.json)
 COPY package*.json ./
 
-# Use the internal registry (Verdaccio) available in Swarm overlay network
+# Point npm to your internal registry
 RUN npm config set registry http://inshop_verdaccio:4873/
-RUN npm ci --registry=http://inshop_verdaccio:4873/ --loglevel verbose
+
+# Install dependencies ignoring any lockfile
+RUN npm install --registry=http://inshop_verdaccio:4873/ verbose
 
 # Stage 2: builder — build the app
 FROM mirror2.chabokan.net/library/node:22-alpine AS builder
