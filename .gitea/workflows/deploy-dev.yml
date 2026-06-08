@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code manually
         run: |
-          git clone http://gitea:3000/mercurail/checkout.git .
+          git clone http://git.inshop.internal/mercurail/checkout.git .
           git checkout dev
 
       - name: Build image
