@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - dev
-
+ 
 jobs:
   deploy:
-    runs-on: docker
-    container:
-      image: mirror2.chabokan.net/gitea/runner-images:ubuntu-latest
- 
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
