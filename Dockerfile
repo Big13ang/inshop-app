@@ -3,11 +3,10 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm config set registry http://npm.inshop.internal/ \
- && npm config delete proxy || true \
- && npm config delete https-proxy || true \
- && sed -i 's#https://mirror-npm.runflare.com#http://npm.inshop.internal#g' package-lock.json \
- && npm ci --registry=http://npm.inshop.internal/
+RUN npm install -g npm@10
+RUN npm config set registry http://npm.inshop.internal/
+RUN sed -i 's#https://mirror-npm.runflare.com#http://npm.inshop.internal#g' package-lock.json
+RUN npm ci --registry=http://npm.inshop.internal/ --fetch-retries=5 --fetch-timeout=120000
 
 FROM node:22-alpine AS builder
 WORKDIR /app
