@@ -2,26 +2,29 @@
 FROM mirror2.chabokan.net/library/node:22-alpine AS deps
 WORKDIR /app
 
-# Use Chabokan npm registry
+# Set npm to use Chabokan registry
 RUN npm config set registry https://mirror2.chabokan.net/npm/
 
-# Copy only package files to leverage caching
+# Copy only package files to leverage Docker cache
 COPY package*.json ./
 
-# Install dependencies (uses cached node_modules if unchanged)
+# Ensure package-lock.json URLs point to Chabokan
+RUN sed -i 's#https://mirror-npm.runflare.com#https://mirror2.chabokan.net/npm#g' package-lock.json
+
+# Install dependencies
 RUN npm ci --registry=https://mirror2.chabokan.net/npm/ --fetch-retries=5 --fetch-timeout=120000
 
-# Stage 2: builder — build your app
+# Stage 2: builder — build the app
 FROM mirror2.chabokan.net/library/node:22-alpine AS builder
 WORKDIR /app
 
-# Copy dependencies from deps stage
+# Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
-# Copy app source code
+# Copy all app source code
 COPY . .
 
-# Build
+# Build app
 RUN npm run build
 
 # Stage 3: runner — minimal production image
@@ -29,8 +32,11 @@ FROM mirror2.chabokan.net/library/node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy built app from builder
+# Copy built app from builder stage
 COPY --from=builder /app ./
 
+# Expose port
 EXPOSE 3000
+
+# Start the app
 CMD ["npm", "start"]
