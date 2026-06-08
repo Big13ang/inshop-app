@@ -8,8 +8,13 @@ COPY package*.json ./
 # Point npm to your internal registry
 RUN npm config set registry https://mirror2.chabokan.net/npm/
 
-# Install dependencies ignoring any lockfile
-RUN npm install --registry=https://mirror2.chabokan.net/npm/ verbose
+# Install dependencies ignoring any lockfile with retries and timeout
+RUN npm install --registry=https://mirror2.chabokan.net/npm/ \
+    --fetch-retries=5 \
+    --fetch-retry-mintimeout=20000 \
+    --fetch-retry-maxtimeout=120000 \
+    --timeout=600000 \
+    verbose
 
 # Stage 2: builder — build the app
 FROM mirror2.chabokan.net/library/node:22-alpine AS builder
@@ -28,6 +33,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app ./
+
+# Remove dev dependencies and install only production packages with retries and timeout
+RUN npm config set registry https://mirror2.chabokan.net/npm/ && \
+    npm install --omit=dev \
+    --registry=https://mirror2.chabokan.net/npm/ \
+    --fetch-retries=5 \
+    --fetch-retry-mintimeout=20000 \
+    --fetch-retry-maxtimeout=120000 \
+    --timeout=600000 \
+    verbose
 
 EXPOSE 3000
 CMD ["npm", "start"]
