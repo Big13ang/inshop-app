@@ -6,10 +6,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Point npm to your internal registry
-RUN npm config set registry http://inshop_verdaccio:4873/
+RUN npm config set registry https://mirror2.chabokan.net/npm/
 
 # Install dependencies ignoring any lockfile
-RUN npm install --registry=http://inshop_verdaccio:4873/ verbose
+RUN npm install --registry=https://mirror2.chabokan.net/npm/ verbose
 
 # Stage 2: builder — build the app
 FROM mirror2.chabokan.net/library/node:22-alpine AS builder
@@ -18,7 +18,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm config set registry http://inshop_verdaccio:4873/
+RUN npm config set registry https://mirror2.chabokan.net/npm/
 RUN npm run build
 
 # Stage 3: runner — production
