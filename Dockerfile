@@ -2,7 +2,7 @@
 FROM mirror2.chabokan.net/library/node:22-alpine AS deps
 WORKDIR /app
 
-ARG NPM_REGISTRY=http://npm.inshop.internal:4873/
+ARG NPM_REGISTRY=http://127.0.0.1:4873/
 ARG NPM_INSTALL_MODE=prefer-offline
 
 COPY package*.json ./
@@ -34,7 +34,7 @@ RUN if [ "$NPM_INSTALL_MODE" = "offline" ]; then \
 FROM mirror2.chabokan.net/library/node:22-alpine AS builder
 WORKDIR /app
 
-ARG NPM_REGISTRY=http://npm.inshop.internal:4873/
+ARG NPM_REGISTRY=http://127.0.0.1:4873/
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -49,7 +49,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-ARG NPM_REGISTRY=http://npm.inshop.internal:4873/
+ARG NPM_REGISTRY=http://127.0.0.1:4873/
 
 RUN npm config set registry ${NPM_REGISTRY}
 
