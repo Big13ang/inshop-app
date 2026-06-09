@@ -1,0 +1,41 @@
+stages:
+  - build
+
+variables:
+  DOCKER_BUILDKIT: "1"
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  BUILDKIT_PROGRESS: plain
+  NPM_REGISTRY: https://mirror2.chabokan.net/npm/
+  BUILDX_CACHE_IMAGE: $CI_REGISTRY_IMAGE:buildcache
+
+docker-build:
+  stage: build
+  image: mirror2.chabokan.net/library/docker:27-cli
+  services:
+    - name: mirror2.chabokan.net/library/docker:27-dind
+      alias: docker
+  rules:
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    - docker buildx create --use --name inshop-builder
+    - docker buildx inspect --bootstrap
+  script:
+    - |
+      TAGS="--tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+      if [ -n "$CI_COMMIT_REF_SLUG" ]; then
+        TAGS="$TAGS --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+      fi
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        TAGS="$TAGS --tag $CI_REGISTRY_IMAGE:latest"
+      fi
+      docker buildx build \
+        --push \
+        --build-arg NPM_REGISTRY="$NPM_REGISTRY" \
+        --build-arg NPM_INSTALL_MODE=prefer-offline \
+        --cache-from "type=registry,ref=$BUILDX_CACHE_IMAGE" \
+        --cache-to "type=registry,ref=$BUILDX_CACHE_IMAGE,mode=max,compression=zstd" \
+        $TAGS \
+        .
