@@ -26,11 +26,17 @@
   --color-foreground: var(--foreground);
   --color-primary: #000000;
   --color-on-primary: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-container: #eeeeee;
-  --color-surface-container-low: #f3f3f4;
-  --color-surface-container-high: #e8e8e8;
-  --color-surface-container-highest: #e2e2e2;
+
+  /* Surface Hierarchy */
+  --color-surface-l1: #f4f4f5; /* Main app background */
+  --color-surface-l2: #fafafa; /* Auth / secondary regions */
+  --color-surface-l3: #ffffff; /* Cards, Modals, Headers */
+  
+  /* Containers & Elements */
+  --color-container-base: #f3f3f4;
+  --color-container-hover: #e8e8e8;
+  --color-container-active: #e2e2e2;
+  
   --color-secondary: #5e5e5e;
   --color-outline: #cfc4c5;
   --color-error: #ba1a1a;
