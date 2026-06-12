@@ -61,6 +61,34 @@
       transform: translateY(0);
     }
   }
+
+  @keyframes heartPop {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+
+    15% {
+      opacity: 0.9;
+      transform: scale(1.15);
+    }
+
+    30% {
+      opacity: 0.9;
+      transform: scale(0.95);
+    }
+
+    70% {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.4);
+      filter: blur(2px);
+    }
+  }
 }
 
 body {
