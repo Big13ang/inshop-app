@@ -12,9 +12,11 @@
 
 import { test as base } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
+import { OtpPage } from '../pages/OtpPage';
 
 type Fixtures = {
   loginPage: LoginPage;
+  otpPage: OtpPage;
 };
 
 export const test = base.extend<Fixtures>({
@@ -30,6 +32,17 @@ export const test = base.extend<Fixtures>({
     await loginPage.goto();
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(loginPage);
+  },
+
+  /**
+   * otpPage fixture:
+   * - Creates a new OtpPage instance
+   * - Leaves navigation to individual tests as the phone parameter varies
+   */
+  otpPage: async ({ page }, use) => {
+    const otpPage = new OtpPage(page);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(otpPage);
   },
 });
 

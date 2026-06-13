@@ -8,15 +8,20 @@ import TermsText from './components/TermsText';
 import PhoneInput from './components/PhoneInput';
 import SubmitButton from './components/SubmitButton';
 import { loginSchema, LoginFormValues, TEXTS } from './constants';
+import { convertPersianArabicToEnglish } from '@/lib/utils';
+
+import { useRouter } from 'next/navigation';
 
 export interface LoginProps {
     onSubmit?: (data: LoginFormValues) => void | Promise<void>;
 }
 
 export default function Login({ onSubmit }: LoginProps) {
+    const router = useRouter();
     const {
         register,
         handleSubmit,
+        setValue,
         formState: { errors, isValid, isSubmitting, dirtyFields },
     } = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -25,11 +30,16 @@ export default function Login({ onSubmit }: LoginProps) {
 
     const isPhoneError = !!(errors.phone && dirtyFields.phone);
 
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const cleaned = convertPersianArabicToEnglish(e.target.value);
+        setValue('phone', cleaned, { shouldValidate: true, shouldDirty: true });
+    };
+
     const handleFormSubmit = async (data: LoginFormValues) => {
         if (onSubmit) {
             await onSubmit(data);
         } else {
-            console.log(data);
+            router.push(`/auth/otp?phone=${encodeURIComponent(data.phone)}`);
         }
     };
 
@@ -51,7 +61,7 @@ export default function Login({ onSubmit }: LoginProps) {
                     label={TEXTS.label}
                     isError={isPhoneError}
                     error={errors.phone?.message}
-                    {...register('phone')}
+                    {...register('phone', { onChange: handlePhoneChange })}
                 />
 
                 <SubmitButton

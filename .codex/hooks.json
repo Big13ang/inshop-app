@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:\\Users\\Windows User\\AppData\\Local\\Programs\\Python\\Python314\\Scripts\\graphify.EXE hook-check"
+            "command": "if [ -f \"/Users/johndoe/.local/bin/graphify\" ]; then \"/Users/johndoe/.local/bin/graphify\" hook-check; else \"C:\\\\Users\\\\Windows User\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python314\\\\Scripts\\\\graphify.EXE\" hook-check; fi"
           }
         ]
       }

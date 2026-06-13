@@ -172,6 +172,22 @@ describe('Login — form submission', () => {
     });
   });
 
+  it('converts Persian/Arabic digits typed in phone input to English and submits successfully', async () => {
+    const onSubmit = jest.fn();
+    const { user } = setup({ onSubmit });
+
+    await user.type(getPhoneInput(), '۰۹۱۷۱۲۳۴۵۶۷');
+    await waitFor(() => expect(getSubmitButton()).not.toBeDisabled());
+    await user.click(getSubmitButton());
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ phone: VALID_PHONES.standard })
+      );
+    });
+  });
+
   it('does NOT call submit handler when phone is invalid', async () => {
     const onSubmit = jest.fn();
     const { user } = setup({ onSubmit });

@@ -60,3 +60,8 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
+## Developer Directives
+
+- **RTK Usage**: Always prepend `rtk` to any shell command you run on this machine (e.g., `rtk git status`, `rtk npm test`).
+- **Clean Architecture**: Use the `Result` pattern (`Result.ok`, `Result.err`) anywhere you can for cleaner, exception-free code.
+
