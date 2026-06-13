@@ -41,6 +41,7 @@ const config = {
     '/node_modules/',
     '/temp/',
     '/.next/',
+    '/e2e/',
   ],
   collectCoverageFrom: [
     'features/**/*.{ts,tsx}',

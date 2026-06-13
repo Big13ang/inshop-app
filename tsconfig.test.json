@@ -6,7 +6,7 @@
     "moduleResolution": "node16",
     "module": "node16",
     // Make Jest globals (describe, it, expect, beforeAll, etc.) available
-    "types": ["jest", "node"],
+    "types": ["jest", "node", "@testing-library/jest-dom"],
     // Test files don't need to emit — type-checking only
     "noEmit": true
   },

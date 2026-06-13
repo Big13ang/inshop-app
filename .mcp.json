@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp", "--browser", "chromium"],
+      "description": "Playwright MCP server — gives AI agents browser automation tools: navigate, click, fill, screenshot, evaluate. Works with Claude Code, Codex CLI, and Antigravity."
+    }
+  }
+}

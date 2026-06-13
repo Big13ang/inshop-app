@@ -9,7 +9,11 @@ import PhoneInput from './components/PhoneInput';
 import SubmitButton from './components/SubmitButton';
 import { loginSchema, LoginFormValues, TEXTS } from './constants';
 
-export default function Login() {
+export interface LoginProps {
+    onSubmit?: (data: LoginFormValues) => void | Promise<void>;
+}
+
+export default function Login({ onSubmit }: LoginProps) {
     const {
         register,
         handleSubmit,
@@ -21,16 +25,20 @@ export default function Login() {
 
     const isPhoneError = !!(errors.phone && dirtyFields.phone);
 
-    const onSubmit = (data: LoginFormValues) => {
-        console.log(data);
-    }
+    const handleFormSubmit = async (data: LoginFormValues) => {
+        if (onSubmit) {
+            await onSubmit(data);
+        } else {
+            console.log(data);
+        }
+    };
 
     return (
         <main className="flex-1 flex flex-col justify-between h-full px-6 py-8 bg-surface-l2">
             <AppLogo />
 
             <form
-                onSubmit={handleSubmit(onSubmit)}
+                onSubmit={handleSubmit(handleFormSubmit)}
                 className="w-full max-w-sm mx-auto flex flex-col gap-6"
             >
                 <PageHeader title={TEXTS.title} subtitle={TEXTS.subtitle} />
