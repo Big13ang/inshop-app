@@ -1,0 +1,33 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // node16 resolves Node.js subpath exports correctly (msw/node, stream/web, etc.)
+    // The main tsconfig uses "bundler" which is optimised for Next.js/webpack — not Jest.
+    "moduleResolution": "node16",
+    "module": "node16",
+    // Make Jest globals (describe, it, expect, beforeAll, etc.) available
+    "types": ["jest", "node"],
+    // Test files don't need to emit — type-checking only
+    "noEmit": true
+  },
+  "include": [
+    // Test infrastructure
+    "jest.setup.ts",
+    "jest.polyfills.js",
+    "jest.config.js",
+    // Mock server files
+    "mocks/**/*.ts",
+    // All test files
+    "**/__tests__/**/*.ts",
+    "**/__tests__/**/*.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "temp",
+    ".next"
+  ]
+}

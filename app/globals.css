@@ -6,20 +6,14 @@
   --background: #ffffff;
   --foreground: #171717;
   --font-vazirmatn: 'Vazirmatn', sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-playfair-display: 'Playfair Display', serif;
 }
 
 @theme {
   /* Fonts */
   --font-sans: var(--font-vazirmatn);
-  --font-logo: "Playfair Display", serif;
   --font-rounded: "Outfit", system-ui, sans-serif;
+  --font-logo: var(--font-playfair-display);
 
   /* Colors */
   --color-background: var(--background);
@@ -28,15 +22,18 @@
   --color-on-primary: #ffffff;
 
   /* Surface Hierarchy */
-  --color-surface-l1: #f4f4f5; /* Main app background */
-  --color-surface-l2: #fafafa; /* Auth / secondary regions */
-  --color-surface-l3: #ffffff; /* Cards, Modals, Headers */
-  
+  --color-surface-l1: #f4f4f5;
+  /* Main app background */
+  --color-surface-l2: #fafafa;
+  /* Auth / secondary regions */
+  --color-surface-l3: #ffffff;
+  /* Cards, Modals, Headers */
+
   /* Containers & Elements */
   --color-container-base: #f3f3f4;
   --color-container-hover: #e8e8e8;
   --color-container-active: #e2e2e2;
-  
+
   --color-secondary: #5e5e5e;
   --color-outline: #cfc4c5;
   --color-error: #ba1a1a;

@@ -1,5 +1,6 @@
 import { type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export interface FooterTabConfig {
     id: string;
@@ -137,23 +138,28 @@ export function FooterNav({ children, className, ...props }: FooterNavProps) {
 export interface FooterButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     children?: React.ReactNode;
     variant?: 'primary' | 'outline';
+    ref?: React.Ref<HTMLButtonElement>;
 }
 
-export function FooterButton({ children, className, variant = 'primary', ...props }: FooterButtonProps) {
+export function FooterButton({
+    children,
+    className,
+    variant = 'primary',
+    ref,
+    ...props
+}: FooterButtonProps) {
     return (
-        <button
+        <Button
+            ref={ref}
+            variant={variant === 'primary' ? 'primary' : 'outline-primary'}
             className={cn(
-                'h-12 font-bold text-sm rounded-xl active:scale-[0.98] transition-all cursor-pointer',
-                'disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2',
-                variant === 'primary'
-                    ? 'bg-primary text-on-primary'
-                    : 'border border-primary text-primary bg-transparent hover:bg-primary/5',
-                className,
+                'h-12 font-bold text-sm rounded-xl px-6',
+                className
             )}
             {...props}
         >
             {children}
-        </button>
+        </Button>
     );
 }
 

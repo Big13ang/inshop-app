@@ -24,6 +24,29 @@ Write plain React. If you feel the urge to wrap something in `useCallback` or `u
 
 ---
 
+## React 19 Rules — ref is a normal prop
+
+This project runs **React 19**. You MUST NOT use legacy patterns that are superseded or deprecated in React 19.
+
+### Forbidden patterns (use React 19 features instead)
+- ❌ `forwardRef<RefType, PropsType>((props, ref) => ...)` — `forwardRef` is deprecated.
+- ❌ `PhoneInput.displayName = '...'` — unnecessary when using standard component functions.
+
+### Preferred pattern
+Pass and destructure `ref` directly as a normal prop:
+```tsx
+interface ComponentProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label: string;
+    ref?: React.Ref<HTMLInputElement>;
+}
+
+export default function Component({ label, ref, ...props }: ComponentProps) {
+    return <input ref={ref} {...props} />;
+}
+```
+
+---
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
