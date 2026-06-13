@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import Otp from '@/features/auth/otp/Otp';
 import AppLogo from '@/features/auth/login/components/AppLogo';
 import { MessageSquare } from 'lucide-react';
@@ -17,10 +18,10 @@ export default function OtpPage({ searchParams }: PageProps) {
 
 async function OtpContent({ searchParams }: { searchParams: Promise<{ phone?: string }> }) {
     const { phone } = await searchParams;
-    const phoneStr = phone || '';
+    if (!phone) redirect('/auth/login');
 
     return (
-        <Otp phone={phoneStr} />
+        <Otp phone={phone} />
     );
 }
 
