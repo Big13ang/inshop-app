@@ -11,5 +11,5 @@ import { http, HttpResponse } from 'msw';
  *   }),
  */
 export const handlers = [
-  // handlers go here
+  http.post('/api/upload/chunk', () => HttpResponse.json({ ok: true })),
 ];

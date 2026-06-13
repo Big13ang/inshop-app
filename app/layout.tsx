@@ -14,8 +14,9 @@ export default function RootLayout({
     <html
       lang="FA-IR"
       dir="rtl"
+      className="h-dvh"
     >
-      <body className="min-h-full flex flex-col">
+      <body className="h-dvh flex flex-col overflow-hidden">
         {children}
       </body>
     </html>
