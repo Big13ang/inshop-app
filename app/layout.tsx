@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
   title: "inShop | اینشاپ ",
@@ -17,7 +19,10 @@ export default function RootLayout({
       className="h-dvh"
     >
       <body className="h-dvh flex flex-col overflow-hidden">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
+        <Toaster position="top-center" dir="rtl" />
       </body>
     </html>
   );

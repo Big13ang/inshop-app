@@ -10,7 +10,7 @@ function BulletDot({
   idx: number;
   currentSlide: number;
   onClick: (idx: number) => void;
-  onHover: (idx: number) => void;
+  onHover?: (idx: number) => void;
 }) {
   const dist = Math.abs(currentSlide - idx);
   const distVariant = dist === 0 ? 0 : dist === 1 ? 1 : dist === 2 ? 2 : ('far' as const);
@@ -21,8 +21,8 @@ function BulletDot({
         e.stopPropagation();
         onClick(idx);
       }}
-      onMouseEnter={() => onHover(idx)}
-      onTouchStart={() => onHover(idx)}
+      onMouseEnter={() => onHover?.(idx)}
+      onTouchStart={() => onHover?.(idx)}
       className={cn(bulletDot({ current: currentSlide === idx, distance: distVariant }))}
       aria-label={`Go to slide ${idx + 1}`}
       id={`slider-dot-${idx}`}
@@ -39,7 +39,7 @@ export function BulletDots({
   count: number;
   currentSlide: number;
   onDotClick: (idx: number) => void;
-  onDotHover: (idx: number) => void;
+  onDotHover?: (idx: number) => void;
 }) {
   if (count <= 1) return null;
 

@@ -1,25 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { MediaItem } from './types';
-import { slideContainer, slideMedia } from './utils';
-import Image from 'next/image';
+import { slideContainer } from './utils';
 
 export function SlideItem({
   item,
   idx,
-  isSlideLoaded,
-  isMediaLoaded,
   objectFit,
-  onMediaLoaded,
 }: {
   item: MediaItem;
   idx: number;
-  isSlideLoaded: boolean;
-  isMediaLoaded: boolean;
   objectFit: 'cover' | 'contain';
-  onMediaLoaded: (index: number) => void;
 }) {
-  const mediaClass = cn(slideMedia({ objectFit, loaded: isMediaLoaded }));
+  const [isLoaded, setIsLoaded] = useState(false);
 
   return (
     <div
@@ -30,38 +23,29 @@ export function SlideItem({
       } as React.CSSProperties}
       id={`slide-${idx}`}
     >
-      {isSlideLoaded && item.type === 'video' && (
-        <video
-          src={item.url}
-          autoPlay
-          controls
-          playsInline
-          loop
-          muted
-          className={mediaClass}
-          id={`slide-video-${idx}`}
-          onLoadedData={() => onMediaLoaded(idx)}
-        />
-      )}
-
-      {isSlideLoaded && item.type !== 'video' && (
-        <Image
-          src={item.url}
-          alt={`Product showcase ${idx + 1}`}
-          className={mediaClass}
-          id={`slide-img-${idx}`}
-          onLoad={() => onMediaLoaded(idx)}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
-      )}
-
-      {(!isSlideLoaded || !isMediaLoaded) && (
+      {/* 1. Skeleton rendered FIRST (underneath the image) */}
+      {!isLoaded && (
         <div
           className="absolute inset-0 bg-neutral-200 bg-linear-to-r from-neutral-200 via-neutral-100 to-neutral-200 bg-size-[200%_100%] animate-shimmer"
           id={`slide-skeleton-${idx}`}
         />
       )}
+
+      {/* 2. Image rendered SECOND (stacked on top with relative z-10) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={item.url}
+        alt={`Product showcase ${idx + 1}`}
+        className={cn(
+          objectFit === 'contain' ? 'object-contain' : 'object-cover',
+          'w-full h-full select-none relative z-10'
+        )}
+        id={`slide-img-${idx}`}
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setIsLoaded(true)}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
     </div>
   );
 }

@@ -10,7 +10,6 @@ import {
   emptySubscribe,
   normalizeMediaItems,
 } from './utils';
-import { usePreloadedSlides, useMediaLoaded } from './hooks';
 import { SlideItem } from './SlideItem';
 import { BulletDots } from './BulletDots';
 
@@ -29,10 +28,6 @@ export default function PostSlider({
   const items = normalizeMediaItems(media ?? images);
 
   const [currentSlide, setCurrentSlide] = useState(() => activeSlide ?? 0);
-  const { loadedIndexes: loadedSlideIndexes, preloadAround, preloadSingle } =
-    usePreloadedSlides(items.length);
-  const { loadedIndexes: loadedMediaIndexes, markLoaded: handleMediaLoaded } =
-    useMediaLoaded();
   const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   const onSlideChangeRef = useRef(onSlideChange);
@@ -40,16 +35,14 @@ export default function PostSlider({
     onSlideChangeRef.current = onSlideChange;
   }, [onSlideChange]);
 
+  const [initialSlide] = useState(() => activeSlide ?? 0);
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
-    initial: activeSlide ?? 0,
+    initial: initialSlide,
     mode: 'snap',
     rubberband: true,
     defaultAnimation: {
       duration: 350,
       easing: DEFAULT_EASING,
-    },
-    dragStarted(slider) {
-      preloadAround(slider.track.details.rel);
     },
     animationEnded(slider) {
       const active = slider.track.details.rel;
@@ -57,19 +50,21 @@ export default function PostSlider({
         setCurrentSlide(active);
         onSlideChangeRef.current?.(active);
       });
-      preloadAround(active);
-    },
-    created(slider) {
-      preloadAround(slider.track.details.rel);
-    },
-    updated(slider) {
-      preloadAround(slider.track.details.rel);
     },
   });
 
+  const prevUrlsRef = useRef<string[]>([]);
   useEffect(() => {
-    instanceRef.current?.update();
-  }, [media, images, instanceRef]);
+    const currentUrls = items.map((it) => it.url);
+    const urlsChanged =
+      currentUrls.length !== prevUrlsRef.current.length ||
+      currentUrls.some((url, i) => url !== prevUrlsRef.current[i]);
+
+    if (urlsChanged) {
+      prevUrlsRef.current = currentUrls;
+      instanceRef.current?.update(undefined, activeSlide ?? 0);
+    }
+  }, [items, activeSlide, instanceRef]);
 
   useEffect(() => {
     if (instanceRef.current && typeof activeSlide === 'number') {
@@ -117,10 +112,7 @@ export default function PostSlider({
             key={item.url}
             item={item}
             idx={idx}
-            isSlideLoaded={loadedSlideIndexes.has(idx)}
-            isMediaLoaded={loadedMediaIndexes.has(idx)}
             objectFit={objectFit}
-            onMediaLoaded={handleMediaLoaded}
           />
         ))}
       </div>
@@ -129,7 +121,6 @@ export default function PostSlider({
         count={items.length}
         currentSlide={currentSlide}
         onDotClick={(idx) => instanceRef.current?.moveToIdx(idx)}
-        onDotHover={preloadSingle}
       />
     </div>
   );

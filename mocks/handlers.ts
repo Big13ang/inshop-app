@@ -11,5 +11,10 @@ import { http, HttpResponse } from 'msw';
  *   }),
  */
 export const handlers = [
-  http.post('/api/upload/chunk', () => HttpResponse.json({ ok: true })),
+  http.post('/api/upload/chunk', () =>
+    HttpResponse.json({ url: 'https://cdn.test/uploaded.jpg' })
+  ),
+  http.post('/api/posts', () =>
+    HttpResponse.json({ id: 'post-123' }, { status: 201 })
+  ),
 ];

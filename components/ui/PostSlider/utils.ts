@@ -1,7 +1,7 @@
 import { cva } from 'class-variance-authority';
 import type { MediaItem } from './types';
 
-export const emptySubscribe = () => () => {};
+export const emptySubscribe = () => () => { };
 export const EMPTY_ARRAY: string[] = [];
 export const DEFAULT_EASING = (t: number) => 1 - Math.pow(1 - t, 4);
 export const CONTAINER_CLASSES =
@@ -20,7 +20,7 @@ export const slideContainer = cva(
 );
 
 export const slideMedia = cva(
-  'w-full h-full select-none transition-opacity duration-300',
+  'w-full h-full select-none',
   {
     variants: {
       objectFit: {
@@ -28,8 +28,8 @@ export const slideMedia = cva(
         cover: 'object-cover',
       },
       loaded: {
-        true: 'opacity-100',
-        false: 'opacity-0',
+        true: '',
+        false: '',
       },
     },
   }
