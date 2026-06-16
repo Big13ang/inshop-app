@@ -1,5 +1,13 @@
 import '@testing-library/jest-dom';
+import mockReact from 'react';
 import { server } from './mocks/server';
+
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: (props: mockReact.ComponentProps<'img'>) => {
+    return mockReact.createElement('img', props);
+  },
+}));
 
 jest.mock('next/navigation', () => ({
   useRouter() {

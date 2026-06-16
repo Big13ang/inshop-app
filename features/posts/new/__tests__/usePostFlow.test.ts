@@ -1,0 +1,151 @@
+import { renderHook, act } from '@testing-library/react';
+import { usePostFlow } from '../hooks/usePostFlow';
+import { useMediaStore } from '../services/mediaStore';
+import type { MediaStatus, MediaKind } from '../types';
+
+// ── Module mocks ──────────────────────────────────────────────────────────────
+
+const mockMutate = jest.fn();
+
+jest.mock('../hooks/useMediaUpload', () => ({
+  useMediaUpload: () => ({
+    addFiles: jest.fn(),
+    cancelUpload: jest.fn(),
+    removeItem: jest.fn(),
+  }),
+}));
+
+jest.mock('../hooks/useSubmitPost', () => ({
+  useSubmitPost: (_onSuccess: () => void) => ({
+    mutate: mockMutate,
+    isPending: false,
+  }),
+}));
+
+jest.mock('sonner', () => ({
+  toast: { warning: jest.fn(), error: jest.fn() },
+}));
+
+import { toast } from 'sonner';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function makeItem(id: string, uploadedUrl?: string) {
+  return {
+    id,
+    name: `${id}.jpg`,
+    file: uploadedUrl ? null : new File(['x'], `${id}.jpg`),
+    localUrl: 'blob:local',
+    status: (uploadedUrl ? 'uploaded' : 'uploading') as MediaStatus,
+    progress: uploadedUrl ? 100 : 50,
+    mediaKind: 'image' as MediaKind,
+    uploadedUrl,
+  };
+}
+
+function setupStore(ids: string[], items: ReturnType<typeof makeItem>[]) {
+  act(() => {
+    useMediaStore.setState({
+      itemMap: new Map(items.map((it) => [it.id, it])),
+      selectedIds: ids,
+    });
+  });
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  act(() => {
+    useMediaStore.setState({ itemMap: new Map(), selectedIds: [], activePreviewIdx: 0 });
+  });
+});
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('usePostFlow — handleNext', () => {
+
+  describe('select phase', () => {
+    it('warns and does not advance when no items are selected', () => {
+      const { result } = renderHook(() => usePostFlow(jest.fn()));
+      setupStore([], []);
+
+      act(() => { result.current.handleNext(); });
+
+      expect(toast.warning).toHaveBeenCalledTimes(1);
+      expect(result.current.phase).toBe('select');
+    });
+
+    it('advances to details when at least one item is selected', () => {
+      const { result } = renderHook(() => usePostFlow(jest.fn()));
+      setupStore(['a'], [makeItem('a', 'https://cdn/a.jpg')]);
+
+      act(() => { result.current.handleNext(); });
+
+      expect(result.current.phase).toBe('details');
+      expect(mockMutate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('details phase', () => {
+    function advanceToDetails(caption = 'test caption') {
+      const onNavigate = jest.fn();
+      const { result } = renderHook(() => usePostFlow(onNavigate));
+
+      setupStore(['a'], [makeItem('a', 'https://cdn/a.jpg')]);
+      act(() => { result.current.handleNext(); }); // select → details
+      act(() => { result.current.setCaption(caption); });
+
+      return { result, onNavigate };
+    }
+
+    it('warns and does not submit when caption is empty', () => {
+      const { result } = advanceToDetails('');
+      act(() => { result.current.setCaption(''); });
+      act(() => { result.current.handleNext(); });
+
+      expect(toast.warning).toHaveBeenCalledTimes(1);
+      expect(mockMutate).not.toHaveBeenCalled();
+    });
+
+    it('submits with all uploadedUrls when every selected item is uploaded', () => {
+      const { result } = advanceToDetails('my caption');
+
+      setupStore(
+        ['a', 'b'],
+        [makeItem('a', 'https://cdn/a.jpg'), makeItem('b', 'https://cdn/b.jpg')],
+      );
+
+      act(() => { result.current.handleNext(); });
+
+      expect(mockMutate).toHaveBeenCalledWith({
+        caption: 'my caption',
+        mediaUrls: ['https://cdn/a.jpg', 'https://cdn/b.jpg'],
+      });
+    });
+
+    it('warns and does NOT submit when some selected items are still uploading', () => {
+      const { result } = advanceToDetails('my caption');
+
+      // 'a' is uploaded, 'b' is still uploading (no uploadedUrl)
+      setupStore(
+        ['a', 'b'],
+        [makeItem('a', 'https://cdn/a.jpg'), makeItem('b')],
+      );
+
+      act(() => { result.current.handleNext(); });
+
+      expect(mockMutate).not.toHaveBeenCalled();
+      expect(toast.warning).toHaveBeenCalledTimes(1);
+    });
+
+    it('warns and does NOT submit when ALL selected items are still uploading', () => {
+      const { result } = advanceToDetails('my caption');
+
+      setupStore(['a', 'b'], [makeItem('a'), makeItem('b')]);
+
+      act(() => { result.current.handleNext(); });
+
+      expect(mockMutate).not.toHaveBeenCalled();
+      expect(toast.warning).toHaveBeenCalledTimes(1);
+    });
+  });
+});

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { cn } from '@/lib/utils';
 
@@ -64,7 +65,12 @@ function DialogRoot({ isOpen, onClose, children }: DialogRootProps) {
 
 function DialogPortal({ children }: { children: React.ReactNode }) {
   const { shouldRender } = useDialog();
-  return shouldRender ? <>{children}</> : null;
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => { setIsMounted(true); }, []);
+
+  if (!isMounted || !shouldRender) return null;
+  return createPortal(children, document.body);
 }
 
 interface DialogOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -93,7 +99,7 @@ function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps
         assignRef(ref, node);
       }}
       onClick={onClick || onClose}
-      className={cn('absolute inset-0 z-[100] cursor-pointer bg-black/60 opacity-0', className)}
+      className={cn('fixed inset-0 z-[100] cursor-pointer bg-black/60 opacity-0', className)}
       {...props}
     />
   );
@@ -201,7 +207,7 @@ function DialogContent({
         onMouseUp={handleDragEnd}
         onMouseLeave={handleDragEnd}
         className={cn(
-          'absolute bottom-0 left-0 right-0 z-[100] mx-auto w-full max-w-md cursor-grab rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] active:cursor-grabbing',
+          'fixed bottom-0 left-0 right-0 z-[100] mx-auto w-full max-w-md cursor-grab rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] active:cursor-grabbing',
           className
         )}
         onClick={(event) => event.stopPropagation()}
@@ -214,7 +220,7 @@ function DialogContent({
   }
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         ref={setContentRef}
         className={cn('pointer-events-auto w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 opacity-0 shadow-xl', className)}

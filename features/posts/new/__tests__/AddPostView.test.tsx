@@ -1,0 +1,198 @@
+/// <reference types="@testing-library/jest-dom" />
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import AddPostView from '../AddPostView';
+import { Toaster } from '../../../../components/ui/sonner';
+import { text } from '../constants';
+import { useMediaStore } from '../services/mediaStore';
+import { server } from '../../../../mocks/server';
+
+// ── Global browser API stubs ──────────────────────────────────────────────────
+
+beforeAll(() => {
+  global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
+  global.URL.revokeObjectURL = jest.fn();
+
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  });
+});
+
+// Reset the media store between tests so state doesn't bleed.
+afterEach(() => {
+  useMediaStore.setState({
+    itemMap: new Map(),
+    selectedIds: [],
+    activePreviewIdx: 0,
+  });
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const setup = () => {
+  const user = userEvent.setup();
+  const onNavigate = jest.fn();
+  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  const { container } = render(
+    <QueryClientProvider client={client}>
+      <Toaster />
+      <AddPostView onNavigate={onNavigate} />
+    </QueryClientProvider>
+  );
+  return { user, onNavigate, container };
+};
+
+const addImageFile = async (
+  user: ReturnType<typeof userEvent.setup>,
+  container: HTMLElement,
+) => {
+  const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+  const input = container.querySelector('input[multiple]') as HTMLInputElement;
+  await user.upload(input, file);
+};
+
+// ── Selection phase ───────────────────────────────────────────────────────────
+
+describe('AddPostView — selection phase', () => {
+  it('renders header and footer on load', () => {
+    setup();
+    expect(screen.getByText(text.headerTitle)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: text.nextButton })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: text.addButton })).toBeInTheDocument();
+  });
+
+  it('shows warning when Next is clicked with no uploaded images selected', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: text.nextButton }));
+    await waitFor(() => {
+      expect(screen.getByText(text.alertNoImages)).toBeInTheDocument();
+    });
+  });
+
+  it('shows a toast for unsupported file types', async () => {
+    const { user, container } = setup();
+    const badFile = new File(['x'], 'photo.heic', { type: 'image/heic' });
+    const input = container.querySelector('input[multiple]') as HTMLInputElement;
+    await user.upload(input, badFile);
+    await waitFor(() => {
+      expect(screen.getByText(/JPG|PNG|WebP/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows a size-specific toast for oversized images, not the format error', async () => {
+    const { container } = setup();
+    const bigBuf = new ArrayBuffer(11 * 1024 * 1024);
+    const bigFile = new File([bigBuf], 'big.jpg', { type: 'image/jpeg' });
+    const input = container.querySelector('input[multiple]') as HTMLInputElement;
+    await userEvent.setup().upload(input, bigFile);
+    await waitFor(() => {
+      expect(screen.getByText('حجم عکس نباید بیشتر از ۱۰ مگابایت باشد')).toBeInTheDocument();
+    });
+  });
+});
+
+// ── Details phase ─────────────────────────────────────────────────────────────
+
+describe('AddPostView — details phase', () => {
+  async function advanceToDetails(
+    user: ReturnType<typeof userEvent.setup>,
+    container: HTMLElement,
+  ) {
+    await addImageFile(user, container);
+
+    // Wait for the upload to complete — the counter "0 از 1 انتخاب شده" appears
+    // only once uploadedCount > 0, which means the MSW handler has responded.
+    await screen.findByText(/0 از 1 انتخاب شده/, undefined, { timeout: 5000 });
+
+    // Click the uploaded thumbnail through the real GalleryCell onClick path.
+    // jsdom does not enforce CSS pointer-events, so the click fires on the img
+    // and bubbles to the parent div whose handleClick calls onToggle().
+    const thumbnail = container.querySelector('#selected-gallery-container img') as HTMLElement;
+    await user.click(thumbnail);
+
+    await user.click(screen.getByRole('button', { name: text.nextButton }));
+    await screen.findByRole('textbox', { name: text.captionLabel });
+  }
+
+  it('transitions to details phase after selecting an uploaded image', async () => {
+    const { user, container } = setup();
+    await advanceToDetails(user, container);
+    expect(screen.getByRole('textbox', { name: text.captionLabel })).toBeInTheDocument();
+  });
+
+  it('does NOT show caption error on initial render before the user has typed', async () => {
+    const { user, container } = setup();
+    await advanceToDetails(user, container);
+    expect(screen.queryByText(text.captionError)).not.toBeInTheDocument();
+  });
+
+  it('shows validation error when caption is cleared', async () => {
+    const { user, container } = setup();
+    await advanceToDetails(user, container);
+
+    const textarea = screen.getByRole('textbox', { name: text.captionLabel });
+    await user.type(textarea, 'تست');
+    await user.clear(textarea);
+
+    await waitFor(() => {
+      expect(screen.getByText(text.captionError)).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to pending-posts once all uploads complete after share', async () => {
+    const { user, onNavigate, container } = setup();
+    await advanceToDetails(user, container);
+
+    await user.type(screen.getByRole('textbox', { name: text.captionLabel }), 'کپشن محصول نمونه');
+    await user.click(screen.getByRole('button', { name: text.shareButton }));
+
+    await waitFor(() => {
+      expect(onNavigate).toHaveBeenCalledWith('pending-posts');
+    }, { timeout: 4000 });
+  });
+
+  it('shows error toast when POST /api/posts fails', async () => {
+    server.use(
+      http.post('/api/posts', () => new HttpResponse(null, { status: 500 })),
+    );
+    const { user, container } = setup();
+    await advanceToDetails(user, container);
+
+    await user.type(screen.getByRole('textbox', { name: text.captionLabel }), 'کپشن تست');
+    await user.click(screen.getByRole('button', { name: text.shareButton }));
+
+    await waitFor(() => {
+      expect(screen.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید')).toBeInTheDocument();
+    }, { timeout: 5000 });
+  });
+
+  it('Share button is disabled and shows a spinner while the mutation is in flight', async () => {
+    server.use(
+      http.post('/api/posts', () => new Promise(() => { })), // never resolves
+    );
+    const { user, container } = setup();
+    await advanceToDetails(user, container);
+
+    await user.type(screen.getByRole('textbox', { name: text.captionLabel }), 'کپشن تست');
+    await user.click(screen.getByRole('button', { name: text.shareButton }));
+
+    // Once isPending=true, the button text is replaced by the Loader2 SVG — use the id.
+    await waitFor(() => {
+      const btn = container.querySelector('#btn-share-post') as HTMLButtonElement;
+      expect(btn).toBeDisabled();
+      expect(btn.querySelector('svg')).toBeInTheDocument();
+    });
+  });
+});

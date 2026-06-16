@@ -46,3 +46,5 @@ next-env.d.ts
 graphify-out/
 
 temp/
+/tmp/
+/public/uploads/
