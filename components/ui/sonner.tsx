@@ -17,17 +17,17 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          "--normal-bg":    "#171717",
-          "--normal-text":  "#ffffff",
-          "--normal-border":"rgba(255,255,255,0.08)",
-          "--success-bg":   "#171717",
+          "--normal-bg": "#171717",
+          "--normal-text": "#ffffff",
+          "--normal-border": "rgba(255,255,255,0.08)",
+          "--success-bg": "#171717",
           "--success-text": "#ffffff",
-          "--success-border":"rgba(255,255,255,0.08)",
-          "--warning-bg":   "#171717",
+          "--success-border": "rgba(255,255,255,0.08)",
+          "--warning-bg": "#171717",
           "--warning-text": "#ffffff",
-          "--warning-border":"rgba(255,255,255,0.08)",
-          "--error-bg":     "#171717",
-          "--error-text":   "#ffffff",
+          "--warning-border": "rgba(255,255,255,0.08)",
+          "--error-bg": "#171717",
+          "--error-text": "#ffffff",
           "--error-border": "rgba(255,255,255,0.08)",
           "--border-radius": "16px",
         } as React.CSSProperties

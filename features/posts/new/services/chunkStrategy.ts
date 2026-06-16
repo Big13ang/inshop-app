@@ -37,13 +37,13 @@ function loadResumeState(file: File): ResumeState | null {
 function saveResumeState(file: File, state: ResumeState): void {
   try {
     localStorage.setItem(resumeKey(file), JSON.stringify(state));
-  } catch {}
+  } catch { }
 }
 
 function clearResumeState(file: File): void {
   try {
     localStorage.removeItem(resumeKey(file));
-  } catch {}
+  } catch { }
 }
 
 // ── Checksum ──────────────────────────────────────────────────────────────────
