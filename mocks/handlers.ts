@@ -14,6 +14,12 @@ export const handlers = [
   http.post('/api/upload/chunk', () =>
     HttpResponse.json({ url: 'https://cdn.test/uploaded.jpg' })
   ),
+  http.post('/api/upload/:fileId/finalize', () =>
+    HttpResponse.json({ url: 'https://cdn.test/uploaded.jpg' })
+  ),
+  http.get('/api/upload/:fileId/chunks', () =>
+    HttpResponse.json({ received: [] })
+  ),
   http.post('/api/posts', () =>
     HttpResponse.json({ id: 'post-123' }, { status: 201 })
   ),

@@ -31,7 +31,7 @@ const config = {
   },
   // Transform ESM-only packages that ship no CJS build
   transformIgnorePatterns: [
-    'node_modules/(?!(msw|@mswjs|@open-draft|rettime|until-async|is-what|chalk|p-limit|yocto-queue)/)',
+    'node_modules/(?!(msw|@mswjs|@open-draft|rettime|until-async|is-what|chalk|p-limit|yocto-queue|p-retry|is-network-error)/)',
   ],
   testMatch: [
     '**/__tests__/**/*.(test|spec).(ts|tsx|js)',

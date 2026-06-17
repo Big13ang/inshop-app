@@ -67,18 +67,9 @@ export function useMediaUpload() {
     const currentCount = useMediaStore.getState().itemMap.size;
     const remaining = MAX_IMAGES - currentCount;
 
-    if (remaining <= 0) {
-      toast.warning(`حداکثر ${MAX_IMAGES} تصویر مجاز است`, { position: 'top-center' });
-      return;
-    }
+    if (remaining <= 0) return;
 
     const capped = files.slice(0, remaining);
-    if (capped.length < files.length) {
-      toast.warning(`فقط ${capped.length} تصویر اضافه شد`, {
-        description: `حداکثر ${MAX_IMAGES} تصویر در هر پست مجاز است`,
-        position: 'top-center',
-      });
-    }
 
     const { valid, rejected } = validateBatch(capped, kind);
 

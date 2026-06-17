@@ -129,7 +129,7 @@ describe('SelectedGallery — with items', () => {
     expect(screen.getByText('حذف تصویر')).toBeInTheDocument();
     expect(screen.getByText('آیا از حذف این تصویر اطمینان دارید؟')).toBeInTheDocument();
 
-    const confirmBtn = screen.getByRole('button', { name: 'بله، حذف شود' });
+    const confirmBtn = screen.getByRole('button', { name: 'حذف' });
     fireEvent.click(confirmBtn);
 
     expect(onRemove).toHaveBeenCalledWith('id-1');
@@ -158,8 +158,11 @@ describe('SelectedGallery — with items', () => {
 
     expect(screen.getByText('حذف تصویر')).toBeInTheDocument();
 
-    const rejectBtn = screen.getByRole('button', { name: 'خیر، نگه داشته شود' });
-    fireEvent.click(rejectBtn);
+    const rejectBtn = screen.getByRole('button', { name: 'انصراف' });
+    // First act: flush the click (setPendingDeleteId → null, isOpen → false, effect schedules 320ms timer).
+    act(() => { fireEvent.click(rejectBtn); });
+    // Second act: advance past the Dialog's exit animation timer so setShouldRender(false) is flushed.
+    act(() => { jest.advanceTimersByTime(350); });
 
     expect(screen.queryByText('حذف تصویر')).not.toBeInTheDocument();
 

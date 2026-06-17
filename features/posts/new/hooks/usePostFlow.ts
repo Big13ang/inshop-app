@@ -46,6 +46,12 @@ export function usePostFlow(onNavigate: (view: string) => void) {
       return;
     }
 
+    const anyPending = selectedIds.some((id) => itemMap.get(id)?.status !== 'uploaded');
+    if (anyPending) {
+      toast.warning(text.alertUploadsInProgress);
+      return;
+    }
+
     const mediaUrls = selectedIds
       .map((id) => itemMap.get(id)?.uploadedUrl)
       .filter((url): url is string => !!url);

@@ -112,13 +112,16 @@ describe('AddPostView — details phase', () => {
   ) {
     await addImageFile(user, container);
 
-    // Wait for the upload to complete — the counter "0 از 1 انتخاب شده" appears
-    // only once uploadedCount > 0, which means the MSW handler has responded.
-    await screen.findByText(/0 از 1 انتخاب شده/, undefined, { timeout: 5000 });
+    // Wait for the item to appear in the gallery then for the upload to finish.
+    // The finalize endpoint is mocked by MSW so the item reaches 'uploaded' status.
+    await screen.findByText(/1\/10 تصویر/, undefined, { timeout: 5000 });
+    await waitFor(() => {
+      const items = [...useMediaStore.getState().itemMap.values()];
+      expect(items.length).toBeGreaterThan(0);
+      expect(items.every((it) => it.status === 'uploaded')).toBe(true);
+    }, { timeout: 5000 });
 
     // Click the uploaded thumbnail through the real GalleryCell onClick path.
-    // jsdom does not enforce CSS pointer-events, so the click fires on the img
-    // and bubbles to the parent div whose handleClick calls onToggle().
     const thumbnail = container.querySelector('#selected-gallery-container img') as HTMLElement;
     await user.click(thumbnail);
 
@@ -194,5 +197,27 @@ describe('AddPostView — details phase', () => {
       expect(btn).toBeDisabled();
       expect(btn.querySelector('svg')).toBeInTheDocument();
     });
+  });
+
+  it('preserves caption text and selected images after a failed submission', async () => {
+    server.use(
+      http.post('/api/posts', () => new HttpResponse(null, { status: 500 })),
+    );
+    const { user, container } = setup();
+    await advanceToDetails(user, container);
+
+    await user.type(screen.getByRole('textbox', { name: text.captionLabel }), 'متن کپشن تست');
+    await user.click(screen.getByRole('button', { name: text.shareButton }));
+
+    await waitFor(() => {
+      expect(screen.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید')).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    // Caption preserved
+    expect(screen.getByRole('textbox', { name: text.captionLabel })).toHaveValue('متن کپشن تست');
+    // Still on details phase — share button is still present
+    expect(screen.getByRole('button', { name: text.shareButton })).toBeInTheDocument();
+    // Selected images preserved — selectedIds is non-empty
+    expect(useMediaStore.getState().selectedIds.length).toBeGreaterThan(0);
   });
 });

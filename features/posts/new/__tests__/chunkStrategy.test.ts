@@ -1,5 +1,29 @@
 import { createChunkStrategy } from '../services/chunkStrategy';
 
+// ── Environment setup ─────────────────────────────────────────────────────────
+
+// sha256Hex calls blob.arrayBuffer() then crypto.subtle.digest(). Both involve
+// real async I/O that conflicts with jest.useFakeTimers(). Stub both so that
+// the checksum step resolves in the next microtask tick regardless of timer mode.
+beforeAll(() => {
+  // Stub arrayBuffer on jsdom's Blob prototype (File.prototype's grandparent)
+  const jsdomBlobProto = Object.getPrototypeOf(Object.getPrototypeOf(new File([], 'probe.txt')));
+  Object.defineProperty(jsdomBlobProto, 'arrayBuffer', {
+    configurable: true,
+    writable: true,
+    value: () => Promise.resolve(new ArrayBuffer(0)),
+  });
+
+  Object.defineProperty(global, 'crypto', {
+    configurable: true,
+    writable: true,
+    value: {
+      ...(global.crypto ?? {}),
+      subtle: { digest: jest.fn().mockResolvedValue(new ArrayBuffer(32)) },
+    },
+  });
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const CHUNK = 4; // tiny chunk so tests stay fast
@@ -31,7 +55,7 @@ describe('createChunkStrategy', () => {
     );
   });
 
-  // Slice 2 — progress is reported after each chunk
+  // Slice 2 — progress is reported at start (0%) and after each chunk
   it('reports incremental progress after each chunk', async () => {
     const fetcher = jest.fn().mockResolvedValue(okResponse());
     const strategy = createChunkStrategy(fetcher, CHUNK);
@@ -39,9 +63,11 @@ describe('createChunkStrategy', () => {
 
     await strategy.upload('id', fileOfChunks(2), onProgress, new AbortController().signal);
 
+    // 0% reported immediately, then 50% and 100% after each chunk completes
+    expect(onProgress).toHaveBeenCalledWith(0);
     expect(onProgress).toHaveBeenCalledWith(50);
     expect(onProgress).toHaveBeenCalledWith(100);
-    expect(onProgress).toHaveBeenCalledTimes(2);
+    expect(onProgress).toHaveBeenCalledTimes(3);
   });
 
   // Slice 3 — returns the URL from the last chunk's JSON response
@@ -66,7 +92,8 @@ describe('createChunkStrategy', () => {
     await jest.advanceTimersByTimeAsync(5_000);
     await resultPromise;
 
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    // 1 failed chunk attempt + 1 successful retry + 1 finalize = 3 total
+    expect(fetcher).toHaveBeenCalledTimes(3);
 
     jest.useRealTimers();
   });
@@ -96,7 +123,8 @@ describe('createChunkStrategy', () => {
     await jest.advanceTimersByTimeAsync(5_000);
     await resultPromise;
 
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    // 1 failed chunk attempt + 1 successful retry + 1 finalize = 3 total
+    expect(fetcher).toHaveBeenCalledTimes(3);
 
     jest.useRealTimers();
   });
