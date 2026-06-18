@@ -53,12 +53,9 @@ test.describe('Add New Post — file upload', () => {
 
   test('failed upload shows the "خطا" overlay on the gallery cell', async ({
     addPostPage,
-    page,
   }) => {
     // Override the success mock — failure route takes LIFO priority
-    await page.route('**/api/upload/chunk**', (route) =>
-      route.fulfill({ status: 500, body: 'Server Error' }),
-    );
+    await addPostPage.mockUploadApiWithError();
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
     ]);
@@ -103,10 +100,8 @@ test.describe('Add New Post — upload progress indicator', () => {
     await expect(cell.getByText(/٪/)).not.toBeVisible({ timeout: 10_000 });
   });
 
-  test('failed upload shows the error state on the cell', async ({ addPostPage, page }) => {
-    await page.route('**/api/upload/chunk**', (route) =>
-      route.fulfill({ status: 500, body: 'Server Error' }),
-    );
+  test('failed upload shows the error state on the cell', async ({ addPostPage }) => {
+    await addPostPage.mockUploadApiWithError();
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
     ]);

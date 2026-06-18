@@ -21,9 +21,6 @@ export const TINY_PNG = Buffer.from(
   'base64',
 );
 
-/** CDN URL returned by the mocked chunk upload endpoint. */
-export const MOCK_CDN_URL = 'https://cdn.test/photo.png';
-
 /** 11 MB zero-filled buffer — exceeds the 10 MB image size limit. */
 export const OVERSIZED_PNG = Buffer.alloc(11 * 1024 * 1024);
 
@@ -76,31 +73,56 @@ export class AddPostPage {
   // ── Route mocking ─────────────────────────────────────────────────────────
 
   /**
-   * Intercept POST /api/upload/chunk and return an instant success response.
-   * Must be called BEFORE goto() so the mock is active before the page loads.
+   * Intercept the tus protocol upload requests and return instant success
+   * responses. Must be called BEFORE goto() so the mocks are active before
+   * the page loads.
    *
-   * Also mocks the finalize endpoint. The real finalize route
-   * (app/api/upload/[fileId]/finalize/route.ts) checks the filesystem for
-   * chunks that were written by the *real* chunk route — but since the chunk
-   * route above is intercepted client-side, those chunks are never actually
-   * written to disk. Without this, finalize 404s ("Upload session not
-   * found") and every upload silently ends up 'failed'.
+   * tus-js-client drives three request types against the upload endpoint:
+   *   POST   /api/upload      — creation; reply 201 + Location header
+   *   HEAD   /api/upload/:id  — resume probe; reply current Upload-Offset
+   *   PATCH  /api/upload/:id  — chunk write; reply the new Upload-Offset
+   *
+   * Offsets are tracked per id so HEAD/PATCH stay consistent across chunks
+   * within a single test, mirroring mocks/handlers.ts (the Jest/MSW mocks).
    */
+  uploadOffsets = new Map<string, number>();
+
   async mockUploadApi() {
-    await this.page.route('**/api/upload/chunk**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ url: MOCK_CDN_URL }),
-      }),
-    );
-    await this.page.route('**/api/upload/*/finalize**', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ url: MOCK_CDN_URL }),
-      }),
-    );
+    this.uploadOffsets.clear();
+    await this.page.route('**/api/upload', (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      const id = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      this.uploadOffsets.set(id, 0);
+      return route.fulfill({
+        status: 201,
+        headers: { Location: `/api/upload/${id}`, 'Tus-Resumable': '1.0.0' },
+      });
+    });
+    await this.page.route('**/api/upload/*', async (route) => {
+      const request = route.request();
+      const id = new URL(request.url()).pathname.split('/').pop()!;
+      if (request.method() === 'HEAD') {
+        const offset = this.uploadOffsets.get(id) ?? 0;
+        return route.fulfill({
+          status: 200,
+          headers: {
+            'Upload-Offset': String(offset),
+            'Tus-Resumable': '1.0.0',
+          },
+        });
+      }
+      if (request.method() === 'PATCH') {
+        const startOffset = this.uploadOffsets.get(id) ?? 0;
+        const body = request.postDataBuffer();
+        const offset = startOffset + (body?.byteLength ?? 0);
+        this.uploadOffsets.set(id, offset);
+        return route.fulfill({
+          status: 204,
+          headers: { 'Upload-Offset': String(offset), 'Tus-Resumable': '1.0.0' },
+        });
+      }
+      return route.continue();
+    });
   }
 
   /**
@@ -109,9 +131,10 @@ export class AddPostPage {
    * mockUploadApi() will take priority for subsequent upload requests.
    */
   async mockUploadApiWithError() {
-    await this.page.route('**/api/upload/chunk**', (route) =>
-      route.fulfill({ status: 500, body: 'Internal Server Error' }),
-    );
+    await this.page.route('**/api/upload', (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      return route.fulfill({ status: 500, body: 'Internal Server Error' });
+    });
   }
 
   /**
@@ -119,32 +142,41 @@ export class AddPostPage {
    * Useful for verifying the progress loader appears during an in-flight upload.
    */
   async mockSlowUploadApi(delayMs = 2_000) {
-    await this.page.route('**/api/upload/chunk**', async (route) => {
+    await this.page.route('**/api/upload', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
       await new Promise((r) => setTimeout(r, delayMs));
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ url: MOCK_CDN_URL }),
+      const id = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      this.uploadOffsets.set(id, 0);
+      return route.fulfill({
+        status: 201,
+        headers: { Location: `/api/upload/${id}`, 'Tus-Resumable': '1.0.0' },
       });
     });
   }
 
   /**
-   * Intercept POST /api/upload/chunk and fail only for the given filenames
-   * (matched via the `filename` query param), succeeding for everything else.
-   * Used to verify one failed upload doesn't block or cancel the others.
+   * Intercept upload creation and fail only for the given filenames
+   * (matched via the tus `Upload-Metadata` header, which tus-js-client
+   * encodes as base64 `key value,key value` pairs). Succeeds for everything
+   * else. Used to verify one failed upload doesn't block or cancel the others.
    */
   async mockUploadApiFailingFor(filenames: string[]) {
-    await this.page.route('**/api/upload/chunk**', (route) => {
-      const url = new URL(route.request().url());
-      const filename = url.searchParams.get('filename');
-      if (filename && filenames.includes(decodeURIComponent(filename))) {
+    await this.page.route('**/api/upload', (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
+      const metadataHeader = route.request().headers()['upload-metadata'] ?? '';
+      const filename = metadataHeader
+        .split(',')
+        .map((pair) => pair.trim().split(' '))
+        .find(([key]) => key === 'filename');
+      const decoded = filename ? Buffer.from(filename[1], 'base64').toString('utf-8') : undefined;
+      if (decoded && filenames.includes(decoded)) {
         return route.fulfill({ status: 500, body: 'Server Error' });
       }
+      const id = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      this.uploadOffsets.set(id, 0);
       return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ url: MOCK_CDN_URL }),
+        status: 201,
+        headers: { Location: `/api/upload/${id}`, 'Tus-Resumable': '1.0.0' },
       });
     });
   }

@@ -49,14 +49,14 @@ export const test = base.extend<Fixtures>({
 
   /**
    * addPostPage fixture:
-   * - Mocks the chunk upload API (POST /api/upload/chunk) before navigation
-   *   so upload requests never hit the real server
+   * - Mocks the tus upload protocol (POST/HEAD/PATCH /api/upload) before
+   *   navigation so upload requests never hit the real server
    * - Navigates to /app/posts/new
    * - Waits until the footer buttons are interactive (page is ready)
    *
    * Individual tests that need to simulate upload failure can call
-   * page.route('**\/api/upload/chunk**', ...) — LIFO routing means the
-   * later handler takes priority over this fixture's success mock.
+   * addPostPage.mockUploadApiWithError() — LIFO routing means the later
+   * handler takes priority over this fixture's success mock.
    */
   addPostPage: async ({ page }, use) => {
     const addPostPage = new AddPostPage(page);

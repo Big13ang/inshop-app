@@ -78,11 +78,8 @@ test.describe('Add New Post — gallery selection', () => {
 
   test('clicking a failed cell retries the upload instead of selecting it', async ({
     addPostPage,
-    page,
   }) => {
-    await page.route('**/api/upload/chunk**', (route) =>
-      route.fulfill({ status: 500, body: 'Server Error' }),
-    );
+    await addPostPage.mockUploadApiWithError();
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
     ]);
