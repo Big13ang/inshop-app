@@ -74,4 +74,20 @@ describe('validateBatch', () => {
     const { valid } = validateBatch(files);
     expect(valid).toEqual(files);
   });
+
+  describe('video kind', () => {
+    const mp4 = (name = 'a.mp4') => new File(['x'], name, { type: 'video/mp4' });
+
+    it('accepts a valid MP4 using the video rules', () => {
+      const { valid, rejected } = validateBatch([mp4()], 'video');
+      expect(valid).toHaveLength(1);
+      expect(rejected).toHaveLength(0);
+    });
+
+    it('rejects an image MIME type when validating as video', () => {
+      const { rejected } = validateBatch([jpeg()], 'video');
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0].reason).toContain('ویدیو');
+    });
+  });
 });

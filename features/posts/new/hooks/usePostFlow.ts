@@ -20,7 +20,13 @@ export function usePostFlow(onNavigate: (view: string) => void) {
     ),
   );
 
-  const submitPost = useSubmitPost(() => onNavigate('pending-posts'));
+  const submitPost = useSubmitPost(() => {
+    toast.success(text.uploadSuccessTitle, {
+      description: text.uploadSuccessDesc,
+      duration: 30000,
+    });
+    setTimeout(() => onNavigate('pending-posts'), 30000);
+  });
 
   function handleBack() {
     if (phase === 'details') { setPhase('select'); return; }

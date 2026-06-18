@@ -157,4 +157,17 @@ describe('mediaStore', () => {
 
     expect(storeB.getState().itemMap.has('shared-id')).toBe(false);
   });
+
+  // Slice 8 — safety guards return empty object on non-existent id
+  it('internal safety guards do not throw on non-existent ids', () => {
+    const store = createMediaStore();
+    
+    expect(() => {
+      store.getState()._setStatus('non-existent', 'uploaded');
+      store.getState()._setProgress('non-existent', 50);
+      store.getState()._setUploaded('non-existent', 'https://cdn/url.jpg');
+      store.getState().removeItem('non-existent');
+    }).not.toThrow();
+  });
 });
+

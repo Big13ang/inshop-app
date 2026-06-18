@@ -50,6 +50,13 @@ export class AddPostPage {
   // ── Details form ──────────────────────────────────────────────────────────
   readonly captionTextarea: Locator;
 
+  // ── Delete confirmation dialog ────────────────────────────────────────────
+  readonly confirmDeleteButton: Locator;
+  readonly rejectDeleteButton:  Locator;
+
+  // ── Preview slider (PostSlider) ───────────────────────────────────────────
+  readonly sliderContainer: Locator;
+
   constructor(page: Page) {
     this.page = page;
 
@@ -61,6 +68,9 @@ export class AddPostPage {
     this.fileInput       = page.locator('input[type="file"][multiple]');
     this.galleryContainer = page.locator('#selected-gallery-container');
     this.captionTextarea  = page.locator('#caption-textarea-input');
+    this.confirmDeleteButton = page.locator('#btn-confirm-delete');
+    this.rejectDeleteButton  = page.locator('#btn-reject-delete');
+    this.sliderContainer     = page.locator('#post-slider-container');
   }
 
   // ── Route mocking ─────────────────────────────────────────────────────────
@@ -68,9 +78,23 @@ export class AddPostPage {
   /**
    * Intercept POST /api/upload/chunk and return an instant success response.
    * Must be called BEFORE goto() so the mock is active before the page loads.
+   *
+   * Also mocks the finalize endpoint. The real finalize route
+   * (app/api/upload/[fileId]/finalize/route.ts) checks the filesystem for
+   * chunks that were written by the *real* chunk route — but since the chunk
+   * route above is intercepted client-side, those chunks are never actually
+   * written to disk. Without this, finalize 404s ("Upload session not
+   * found") and every upload silently ends up 'failed'.
    */
   async mockUploadApi() {
     await this.page.route('**/api/upload/chunk**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ url: MOCK_CDN_URL }),
+      }),
+    );
+    await this.page.route('**/api/upload/*/finalize**', (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -105,9 +129,62 @@ export class AddPostPage {
     });
   }
 
+  /**
+   * Intercept POST /api/upload/chunk and fail only for the given filenames
+   * (matched via the `filename` query param), succeeding for everything else.
+   * Used to verify one failed upload doesn't block or cancel the others.
+   */
+  async mockUploadApiFailingFor(filenames: string[]) {
+    await this.page.route('**/api/upload/chunk**', (route) => {
+      const url = new URL(route.request().url());
+      const filename = url.searchParams.get('filename');
+      if (filename && filenames.includes(decodeURIComponent(filename))) {
+        return route.fulfill({ status: 500, body: 'Server Error' });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ url: MOCK_CDN_URL }),
+      });
+    });
+  }
+
   /** Upload an oversized image (>10 MB) that the client validator rejects. */
   async uploadOversizedImage() {
     await this.uploadFiles([{ name: 'big.png', mimeType: 'image/png', buffer: OVERSIZED_PNG }]);
+  }
+
+  // ── Publish (POST /api/posts) mocking ─────────────────────────────────────
+
+  /** Number of POST /api/posts requests observed since the last mock* call. Used to assert no duplicate submissions fire. */
+  publishRequestCount = 0;
+
+  /** Intercept POST /api/posts and return an instant success response. */
+  async mockPublishApi() {
+    this.publishRequestCount = 0;
+    await this.page.route('**/api/posts', (route) => {
+      this.publishRequestCount += 1;
+      return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'post_1' }) });
+    });
+  }
+
+  /** Override the publish mock to simulate a server error. LIFO routing makes this win over mockPublishApi(). */
+  async mockPublishApiWithError() {
+    this.publishRequestCount = 0;
+    await this.page.route('**/api/posts', (route) => {
+      this.publishRequestCount += 1;
+      return route.fulfill({ status: 500, body: 'Internal Server Error' });
+    });
+  }
+
+  /** Override the publish mock to introduce a configurable delay before success — for asserting the loading state and duplicate-submission guard. */
+  async mockSlowPublishApi(delayMs = 2_000) {
+    this.publishRequestCount = 0;
+    await this.page.route('**/api/posts', async (route) => {
+      this.publishRequestCount += 1;
+      await new Promise((r) => setTimeout(r, delayMs));
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'post_1' }) });
+    });
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -146,38 +223,110 @@ export class AddPostPage {
   /**
    * Wait until at least one gallery item reaches "uploaded" status.
    *
-   * The gallery counter renders "{selectedIds.length} از {uploadedCount} انتخاب شده".
-   * The regex matches when uploadedCount ≥ 1 (e.g. "0 از 1 انتخاب شده").
+   * GalleryCell.tsx exposes `data-status` on its root element — this reads
+   * real component state directly instead of matching translated UI text
+   * (which doesn't carry a per-item "uploaded" indicator string at all).
    */
   async waitForGalleryHasUploadedItem(timeout = 15_000) {
     await expect(
-      this.page.getByText(/از [1-9]\d* انتخاب شده/),
+      this.galleryContainer.locator('[data-status="uploaded"]').first(),
     ).toBeVisible({ timeout });
   }
 
-  /**
-   * Wait until the gallery selection counter shows `n` selected items.
-   * E.g., waitForSelectionCount(1) waits for "1 از … انتخاب شده".
-   */
+  /** Wait until exactly `n` gallery cells are marked selected (`data-selected="true"`). */
   async waitForSelectionCount(n: number) {
     await expect(
-      this.page.getByText(new RegExp(`^${n} از \\d+ انتخاب شده$`)),
-    ).toBeVisible();
+      this.galleryContainer.locator('[data-selected="true"]'),
+    ).toHaveCount(n);
+  }
+
+  /** Wait until exactly `n` gallery cells have reached "uploaded" status. */
+  async waitForUploadedCount(n: number, timeout = 5_000) {
+    await expect(
+      this.galleryContainer.locator('[data-status="uploaded"]'),
+    ).toHaveCount(n, { timeout });
   }
 
   // ── Gallery interactions ──────────────────────────────────────────────────
 
   /**
-   * Click the Nth gallery cell image (0-indexed, left→right, top→bottom).
-   * Only real cells contain <img> elements; empty-state placeholders do not.
-   * The click bubbles from the img to the cell's onClick handler.
+   * Move the mouse to the centre of a locator, scrolling it into view and
+   * verifying it isn't obscured first. Raw `boundingBox()` + `page.mouse`
+   * reports DOM coordinates even when another element (e.g. the sticky
+   * footer) sits on top at that scroll position, which silently clicks the
+   * wrong thing — `hover()` runs Playwright's actionability checks first.
+   */
+  private async moveMouseTo(locator: Locator) {
+    await locator.hover();
+  }
+
+  /**
+   * Tap the Nth gallery cell (0-indexed, left→right, top→bottom) to toggle
+   * its selection (or retry it, if failed). GalleryCell.tsx selects on
+   * mouseup/touchend — not on a generic 'click' — so this drives a real
+   * mousedown→mouseup sequence well under the 600ms long-press threshold,
+   * rather than dispatching a synthetic event the component never listens for.
    */
   async clickGalleryCell(index: number) {
-    // React 18 delegates events via bubbling from the root. dispatchEvent('click') creates a
-    // non-bubbling generic Event that React never sees, so we dispatch a proper MouseEvent.
-    await this.galleryContainer.locator('div.cursor-pointer').nth(index).evaluate(
-      (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })),
-    );
+    const cell = this.galleryContainer.locator('div.cursor-pointer').nth(index);
+    await this.moveMouseTo(cell);
+    await this.page.mouse.down();
+    await this.page.mouse.up();
+  }
+
+  /**
+   * Long-press the Nth gallery cell (0-indexed) to open the DeleteImageDialog.
+   * GalleryCell.tsx fires onLongPress via a real 600ms setTimeout started on
+   * mousedown, so this must hold the mouse down for longer than that —
+   * dispatching a synthetic event can't fake the elapsed wall-clock time.
+   */
+  async longPressGalleryCell(index: number, holdMs = 700) {
+    const cell = this.galleryContainer.locator('div.cursor-pointer').nth(index);
+    await this.moveMouseTo(cell);
+    await this.page.mouse.down();
+    await this.page.waitForTimeout(holdMs);
+    await this.page.mouse.up();
+  }
+
+  /** Confirm removal in the DeleteImageDialog opened by longPressGalleryCell(). */
+  async confirmDelete() { await this.confirmDeleteButton.click(); }
+
+  /** Dismiss the DeleteImageDialog without removing the image. */
+  async dismissDelete() { await this.rejectDeleteButton.click(); }
+
+  // ── Preview slider interactions ───────────────────────────────────────────
+
+  /** Focus the slider region and press an arrow key to navigate (PostSlider's keyboard handler). */
+  async pressSliderArrow(key: 'ArrowLeft' | 'ArrowRight') {
+    await this.sliderContainer.focus();
+    await this.sliderContainer.press(key);
+  }
+
+  /**
+   * Drag across the slider to trigger keen-slider's pointer-based swipe.
+   * Each slide occupies the slider's full width (perView: 1), so the drag
+   * must cross more than half of the *container* width — not just a
+   * fraction of it — to pass keen-slider's snap threshold; a 50% drag lands
+   * exactly on the boundary and snaps back. keen-slider also needs
+   * incremental pointermove events (not a single jump) plus a brief pause
+   * before release to register the swipe.
+   */
+  async swipeSlider(direction: 'left' | 'right') {
+    const box = await this.sliderContainer.boundingBox();
+    if (!box) throw new Error('Slider container has no bounding box');
+    const startX = box.x + box.width * 0.9;
+    const endX = box.x + box.width * 0.1;
+    const y = box.y + box.height / 2;
+    const [from, to] = direction === 'left' ? [startX, endX] : [endX, startX];
+
+    await this.page.mouse.move(from, y);
+    await this.page.mouse.down();
+    for (let i = 1; i <= 10; i++) {
+      await this.page.mouse.move(from + ((to - from) * i) / 10, y);
+      await this.page.waitForTimeout(20);
+    }
+    await this.page.waitForTimeout(100);
+    await this.page.mouse.up();
   }
 
   // ── Footer interactions ───────────────────────────────────────────────────
@@ -208,6 +357,13 @@ export class AddPostPage {
     await this.waitForSelectionCount(1);
     await this.clickNext();
     await expect(this.captionTextarea).toBeVisible();
+  }
+
+  /** From a fresh page: upload + select one image, fill a caption, and click Share. */
+  async fillAndSubmitPost(caption = 'محصول جدید با کیفیت بالا') {
+    await this.advanceToDetailsPhase();
+    await this.fillCaption(caption);
+    await this.clickShare();
   }
 
   // ── Phase assertions ──────────────────────────────────────────────────────

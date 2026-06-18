@@ -57,6 +57,12 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
 
+    // Tablet — iPad viewport to verify responsive behaviour
+    {
+      name: 'tablet-chrome',
+      use: { ...devices['iPad (gen 7)'] },
+    },
+
     // Uncomment to enable cross-browser coverage in CI:
     // { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
     // { name: 'webkit',  use: { ...devices['Desktop Safari'] } },

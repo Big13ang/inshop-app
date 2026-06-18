@@ -68,6 +68,21 @@ describe('SelectedGallery — with items', () => {
     expect(screen.getByText('45٪')).toBeInTheDocument();
   });
 
+  it('shows the at-limit count in red when MAX_IMAGES is reached', () => {
+    const itemMap = new Map<string, MediaItem>(
+      Array.from({ length: 10 }, (_, i) => [
+        `id-${i}`,
+        createMockItem({ id: `id-${i}` }),
+      ]),
+    );
+    useMediaStore.setState({ itemMap });
+
+    render(<SelectedGallery onRetry={jest.fn()} onRemove={jest.fn()} />);
+
+    const counter = screen.getByText('10/10 تصویر');
+    expect(counter).toHaveClass('text-red-500');
+  });
+
   it('toggles selection when clicking an uploaded item', async () => {
     const itemMap = new Map<string, MediaItem>([
       ['id-1', createMockItem({ id: 'id-1', status: 'uploaded' })],

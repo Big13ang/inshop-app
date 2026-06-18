@@ -1,5 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -101,6 +101,27 @@ describe('AddPostView — selection phase', () => {
       expect(screen.getByText('حجم عکس نباید بیشتر از ۱۰ مگابایت باشد')).toBeInTheDocument();
     });
   });
+
+  it('does nothing when the file picker change fires with no files selected', () => {
+    const { container } = setup();
+    const input = container.querySelector('input[multiple]') as HTMLInputElement;
+
+    expect(() => {
+      fireEvent.change(input, { target: { files: [] } });
+    }).not.toThrow();
+
+    expect(useMediaStore.getState().itemMap.size).toBe(0);
+  });
+
+  it('clicking the add button opens the native file picker', async () => {
+    const { user, container } = setup();
+    const input = container.querySelector('input[multiple]') as HTMLInputElement;
+    const clickSpy = jest.spyOn(input, 'click');
+
+    await user.click(screen.getByRole('button', { name: text.addButton }));
+
+    expect(clickSpy).toHaveBeenCalled();
+  });
 });
 
 // ── Details phase ─────────────────────────────────────────────────────────────
@@ -154,15 +175,15 @@ describe('AddPostView — details phase', () => {
     });
   });
 
-  it('navigates to pending-posts once all uploads complete after share', async () => {
-    const { user, onNavigate, container } = setup();
+  it('shows the admin-approval toast once all uploads complete after share', async () => {
+    const { user, container } = setup();
     await advanceToDetails(user, container);
 
     await user.type(screen.getByRole('textbox', { name: text.captionLabel }), 'کپشن محصول نمونه');
     await user.click(screen.getByRole('button', { name: text.shareButton }));
 
     await waitFor(() => {
-      expect(onNavigate).toHaveBeenCalledWith('pending-posts');
+      expect(screen.getByText(text.uploadSuccessTitle)).toBeInTheDocument();
     }, { timeout: 4000 });
   });
 

@@ -67,10 +67,8 @@ export default function SelectedGallery({ onRetry, onRemove }: SelectedGalleryPr
         isOpen={pendingDeleteId !== null}
         onClose={() => setPendingDeleteId(null)}
         onConfirm={() => {
-          if (pendingDeleteId) {
-            onRemove(pendingDeleteId);
-            setPendingDeleteId(null);
-          }
+          onRemove(pendingDeleteId!);
+          setPendingDeleteId(null);
         }}
       />
     </div>

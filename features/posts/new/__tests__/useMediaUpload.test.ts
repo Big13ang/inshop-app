@@ -148,6 +148,26 @@ describe('useMediaUpload — concurrency', () => {
   });
 });
 
+// ── MAX_IMAGES limit ──────────────────────────────────────────────────────────
+
+describe('useMediaUpload — MAX_IMAGES limit', () => {
+  it('does not add any files once the MAX_IMAGES limit is reached', () => {
+    const itemMap = new Map(
+      Array.from({ length: 10 }, (_, i) => [
+        `existing-${i}`,
+        { id: `existing-${i}`, name: 'x.jpg', file: null, localUrl: 'blob:x', status: 'uploaded' as const, progress: 100, mediaKind: 'image' as const },
+      ]),
+    );
+    useMediaStore.setState({ itemMap });
+
+    const { result, unmount } = renderHook(() => useMediaUpload());
+    act(() => { result.current.addFiles([jpg()]); });
+
+    expect(useMediaStore.getState().itemMap.size).toBe(10);
+    unmount();
+  });
+});
+
 // ── cancelUpload ──────────────────────────────────────────────────────────────
 
 describe('useMediaUpload — cancelUpload', () => {
@@ -174,6 +194,37 @@ describe('useMediaUpload — cancelUpload', () => {
     expect(useMediaStore.getState().itemMap.get(uploadId)?.status).toBe('cancelled');
 
     resolveUpload('https://cdn/f.jpg');
+    unmount();
+  });
+
+  it('keeps status cancelled when the aborted upload promise eventually rejects', async () => {
+    let rejectUpload!: (err: Error) => void;
+    mockUpload.mockImplementation(
+      () => new Promise<string>((_resolve, reject) => { rejectUpload = reject; }),
+    );
+
+    const { result, unmount } = renderHook(() => useMediaUpload());
+
+    act(() => { result.current.addFiles([jpg()]); });
+
+    let uploadId!: string;
+    await waitFor(() => {
+      const items = [...useMediaStore.getState().itemMap.values()];
+      const uploading = items.find((i) => i.status === 'uploading');
+      expect(uploading).toBeDefined();
+      uploadId = uploading!.id;
+    });
+
+    act(() => { result.current.cancelUpload(uploadId); });
+    expect(useMediaStore.getState().itemMap.get(uploadId)?.status).toBe('cancelled');
+
+    // The underlying fetch rejects because the abort propagated to it.
+    act(() => { rejectUpload(new Error('aborted')); });
+
+    await waitFor(() => {
+      expect(useMediaStore.getState().itemMap.get(uploadId)?.status).toBe('cancelled');
+    });
+
     unmount();
   });
 
@@ -224,3 +275,117 @@ describe('useMediaUpload — retryUpload', () => {
     unmount();
   });
 });
+
+// ── removeItem ───────────────────────────────────────────────────────────────
+
+describe('useMediaUpload — removeItem', () => {
+  beforeEach(() => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true } as Response);
+  });
+
+  it('cancels the upload, removes the item from store, and calls delete API if uploadedUrl exists', async () => {
+    const { result, unmount } = renderHook(() => useMediaUpload());
+
+    // 1. Add item with uploadedUrl
+    act(() => {
+      useMediaStore.setState({
+        itemMap: new Map([
+          ['item-id', {
+            id: 'item-id',
+            name: 'photo.jpg',
+            file: null,
+            localUrl: 'blob:local',
+            status: 'uploaded',
+            progress: 100,
+            mediaKind: 'image',
+            uploadedUrl: 'https://cdn/uploaded.jpg'
+          }]
+        ])
+      });
+    });
+
+    // 2. Call removeItem
+    act(() => {
+      result.current.removeItem('item-id');
+    });
+
+    // 3. Verify item is removed from store
+    expect(useMediaStore.getState().itemMap.has('item-id')).toBe(false);
+
+    // 4. Verify fetch was called with DELETE
+    expect(global.fetch).toHaveBeenCalledWith('/api/upload/item-id', {
+      method: 'DELETE',
+    });
+
+    unmount();
+  });
+
+  it('does not call the delete API when the item has no uploadedUrl', () => {
+    const { result, unmount } = renderHook(() => useMediaUpload());
+
+    act(() => {
+      useMediaStore.setState({
+        itemMap: new Map([
+          ['item-id', {
+            id: 'item-id',
+            name: 'photo.jpg',
+            file: null,
+            localUrl: 'blob:local',
+            status: 'failed',
+            progress: 0,
+            mediaKind: 'image',
+          }]
+        ])
+      });
+    });
+
+    act(() => {
+      result.current.removeItem('item-id');
+    });
+
+    expect(useMediaStore.getState().itemMap.has('item-id')).toBe(false);
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    unmount();
+  });
+});
+
+// ── slot opened after cancelUpload already fired ──────────────────────────────
+
+describe('useMediaUpload — race with cancellation', () => {
+  it('skips the upload when its slot starts after cancelUpload already removed the controller', async () => {
+    const resolveFns: Array<(url: string) => void> = [];
+    mockUpload.mockImplementation(
+      () => new Promise<string>((resolve) => { resolveFns.push(resolve); }),
+    );
+
+    const { result, unmount } = renderHook(() => useMediaUpload());
+
+    const files = [jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg'), jpg('d.jpg')];
+    act(() => { result.current.addFiles(files); });
+
+    await waitFor(() => {
+      expect([...useMediaStore.getState().itemMap.values()].filter((i) => i.status === 'uploading')).toHaveLength(3);
+    });
+
+    const queuedItem = [...useMediaStore.getState().itemMap.values()].find((i) => i.status === 'queued')!;
+
+    // Cancel the still-queued item before its turn comes up in the p-limit queue.
+    act(() => { result.current.cancelUpload(queuedItem.id); });
+    expect(useMediaStore.getState().itemMap.get(queuedItem.id)?.status).toBe('cancelled');
+
+    // Free a slot — the queued task now runs, but its controller was already removed.
+    act(() => { resolveFns[0]('https://cdn/f.jpg'); });
+
+    await waitFor(() => {
+      // mockUpload should never have been called for the cancelled item.
+      expect(mockUpload).toHaveBeenCalledTimes(3);
+    });
+
+    expect(useMediaStore.getState().itemMap.get(queuedItem.id)?.status).toBe('cancelled');
+
+    resolveFns.slice(1).forEach((fn) => fn('https://cdn/f.jpg'));
+    unmount();
+  });
+});
+

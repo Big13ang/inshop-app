@@ -38,19 +38,15 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
       );
     }
 
-    if (phase === 'details') {
-      return (
-        <div className="flex-1 overflow-y-auto flex flex-col pb-20">
-          <PostDetailsForm
-            caption={caption}
-            onCaptionChange={(val) => { setCaptionTouched(true); setCaption(val); }}
-            hasInputError={captionTouched && caption.trim().length === 0}
-          />
-        </div>
-      );
-    }
-
-    return null;
+    return (
+      <div className="flex-1 overflow-y-auto flex flex-col pb-20">
+        <PostDetailsForm
+          caption={caption}
+          onCaptionChange={(val) => { setCaptionTouched(true); setCaption(val); }}
+          hasInputError={captionTouched && caption.trim().length === 0}
+        />
+      </div>
+    );
   }
 
   return (
@@ -63,7 +59,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
         multiple
         className="hidden"
         onChange={(e) => {
-          const files = Array.from(e.target.files ?? []);
+          const files = Array.from(e.target.files!);
           if (files.length > 0) media.addFiles(files);
           e.target.value = '';
         }}

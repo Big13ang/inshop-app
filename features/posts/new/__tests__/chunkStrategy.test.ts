@@ -168,4 +168,158 @@ describe('createChunkStrategy', () => {
     // The signal.aborted check at the top of the loop must run before any fetch
     expect(fetcher).not.toHaveBeenCalled();
   });
+
+  // Slice 9 — loadResumeState fails gracefully when localStorage throws
+  it('handles localStorage errors gracefully when loading resume state', async () => {
+    const spy = jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('Storage blocked');
+    });
+    const fetcher = jest.fn().mockResolvedValue(okResponse());
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+
+    const url = await strategy.upload('id-err', fileOfChunks(1), jest.fn(), new AbortController().signal);
+    expect(url).toBe('https://cdn/f.jpg');
+
+    spy.mockRestore();
+  });
+
+  // Slice 10 — synchronization of chunks from server when resume state exists
+  it('syncs chunks list from server when resume state is present', async () => {
+    const file = fileOfChunks(3); // 3 chunks total
+    const key = `upload:${file.name}:${file.size}:${file.lastModified}`;
+    localStorage.setItem(key, JSON.stringify({ fileId: 'existing-id', uploadedChunks: [0] }));
+
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce(({
+        ok: true,
+        status: 200,
+        json: async () => ({ received: [0, 1] }), // Server has chunk 0 and 1
+      } as unknown as Response))
+      .mockResolvedValueOnce(okResponse()) // chunk 2 upload
+      .mockResolvedValueOnce(okResponse('https://cdn/resumed.jpg')); // Finalize
+
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+    const onProgress = jest.fn();
+
+    const url = await strategy.upload('id', file, onProgress, new AbortController().signal);
+
+    expect(url).toBe('https://cdn/resumed.jpg');
+    expect(fetcher).toHaveBeenCalledWith(
+      expect.stringContaining('/api/upload/existing-id/chunks'),
+      expect.any(Object),
+    );
+    // Only chunk 2 needs to be uploaded since 0 and 1 are skipped
+    expect(fetcher).toHaveBeenCalledTimes(3); // 1 check + 1 upload chunk 2 + 1 finalize = 3
+    expect(fetcher).not.toHaveBeenCalledWith(
+      expect.stringContaining('index=0'),
+      expect.any(Object),
+    );
+    expect(fetcher).not.toHaveBeenCalledWith(
+      expect.stringContaining('index=1'),
+      expect.any(Object),
+    );
+  });
+
+  // Slice 11 — throws when finalize API call rejects
+  it('throws an error when the finalize call returns an error status', async () => {
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce(okResponse()) // chunk 0
+      .mockResolvedValueOnce(({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'assembly error' }),
+      } as unknown as Response)); // finalize
+
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+
+    await expect(
+      strategy.upload('id', fileOfChunks(1), jest.fn(), new AbortController().signal),
+    ).rejects.toThrow('assembly error');
+  });
+
+  // Slice 12 — falls back to a default message when the finalize error body has none
+  it('falls back to "Finalize failed" when the error response has no error field', async () => {
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce(okResponse()) // chunk 0
+      .mockResolvedValueOnce(({
+        ok: false,
+        status: 500,
+        json: async () => ({}),
+      } as unknown as Response)); // finalize
+
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+
+    await expect(
+      strategy.upload('id', fileOfChunks(1), jest.fn(), new AbortController().signal),
+    ).rejects.toThrow('Finalize failed');
+  });
+
+  // Slice 13 — totalChunks falls back to 1 for a zero-byte file
+  it('treats a zero-byte file as a single chunk', async () => {
+    const fetcher = jest.fn().mockResolvedValue(okResponse());
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+    const onProgress = jest.fn();
+
+    await strategy.upload('id', new File([], 'empty.jpg', { type: 'image/jpeg' }), onProgress, new AbortController().signal);
+
+    // 1 chunk upload + 1 finalize = 2 fetcher calls
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(onProgress).toHaveBeenCalledWith(100);
+  });
+
+  // Slice 14 — a transport-level failure on the chunk request is retried
+  it('retries a chunk upload when the fetcher itself rejects (network error)', async () => {
+    jest.useFakeTimers();
+
+    const fetcher = jest.fn()
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValue(okResponse());
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+
+    const resultPromise = strategy.upload('id', fileOfChunks(1), jest.fn(), new AbortController().signal);
+    await jest.advanceTimersByTimeAsync(5_000);
+    await resultPromise;
+
+    // 1 failed chunk attempt + 1 successful retry + 1 finalize = 3 total
+    expect(fetcher).toHaveBeenCalledTimes(3);
+
+    jest.useRealTimers();
+  });
+
+  // Slice 15 — a transport-level failure on the finalize request propagates
+  it('throws when the finalize fetch itself rejects (network error)', async () => {
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce(okResponse()) // chunk 0
+      .mockRejectedValueOnce(new Error('finalize network down'));
+
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+
+    await expect(
+      strategy.upload('id', fileOfChunks(1), jest.fn(), new AbortController().signal),
+    ).rejects.toThrow('finalize network down');
+  });
+
+  // Slice 16 — sync-with-server step tolerates a failing /chunks lookup
+  it('falls back to local resume state when the server chunks lookup fails', async () => {
+    const file = fileOfChunks(2);
+    const key = `upload:${file.name}:${file.size}:${file.lastModified}`;
+    localStorage.setItem(key, JSON.stringify({ fileId: 'existing-id', uploadedChunks: [0] }));
+
+    const fetcher = jest.fn()
+      .mockResolvedValueOnce(errResponse(500)) // /chunks lookup fails
+      .mockResolvedValueOnce(okResponse()) // chunk 1 upload
+      .mockResolvedValueOnce(okResponse('https://cdn/resumed.jpg')); // finalize
+
+    const strategy = createChunkStrategy(fetcher, CHUNK);
+
+    const url = await strategy.upload('id', file, jest.fn(), new AbortController().signal);
+
+    expect(url).toBe('https://cdn/resumed.jpg');
+    // Chunk 0 stays skipped from local state even though the server lookup failed.
+    expect(fetcher).not.toHaveBeenCalledWith(
+      expect.stringContaining('index=0'),
+      expect.any(Object),
+    );
+  });
 });
+

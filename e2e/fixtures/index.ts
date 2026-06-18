@@ -61,6 +61,7 @@ export const test = base.extend<Fixtures>({
   addPostPage: async ({ page }, use) => {
     const addPostPage = new AddPostPage(page);
     await addPostPage.mockUploadApi();
+    await addPostPage.mockPublishApi();
     await addPostPage.goto();
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(addPostPage);

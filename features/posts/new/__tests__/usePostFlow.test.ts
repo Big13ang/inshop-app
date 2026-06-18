@@ -6,6 +6,7 @@ import type { MediaStatus, MediaKind } from '../types';
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
 const mockMutate = jest.fn();
+let capturedOnSuccess: (() => void) | undefined;
 
 jest.mock('../hooks/useMediaUpload', () => ({
   useMediaUpload: () => ({
@@ -16,14 +17,17 @@ jest.mock('../hooks/useMediaUpload', () => ({
 }));
 
 jest.mock('../hooks/useSubmitPost', () => ({
-  useSubmitPost: (_onSuccess: () => void) => ({
-    mutate: mockMutate,
-    isPending: false,
-  }),
+  useSubmitPost: (onSuccess: () => void) => {
+    capturedOnSuccess = onSuccess;
+    return {
+      mutate: mockMutate,
+      isPending: false,
+    };
+  },
 }));
 
 jest.mock('sonner', () => ({
-  toast: { warning: jest.fn(), error: jest.fn() },
+  toast: { warning: jest.fn(), error: jest.fn(), success: jest.fn() },
 }));
 
 import { toast } from 'sonner';
@@ -148,4 +152,65 @@ describe('usePostFlow — handleNext', () => {
       expect(toast.warning).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('handleBack', () => {
+    it('sets phase to select when in details phase', () => {
+      const { result } = renderHook(() => usePostFlow(jest.fn()));
+      setupStore(['a'], [makeItem('a', 'https://cdn/a.jpg')]);
+
+      // Move to details phase first
+      act(() => { result.current.handleNext(); });
+      expect(result.current.phase).toBe('details');
+
+      // Go back
+      act(() => { result.current.handleBack(); });
+      expect(result.current.phase).toBe('select');
+    });
+
+    it('navigates to pending-posts when in select phase', () => {
+      const onNavigate = jest.fn();
+      const { result } = renderHook(() => usePostFlow(onNavigate));
+
+      act(() => { result.current.handleBack(); });
+      expect(onNavigate).toHaveBeenCalledWith('pending-posts');
+    });
+  });
+
+  describe('handleNext with pending uploads', () => {
+    it('warns and does not advance to details when uploads are pending', () => {
+      const { result } = renderHook(() => usePostFlow(jest.fn()));
+      setupStore([], [makeItem('a')]); // uploads pending
+
+      act(() => { result.current.handleNext(); });
+
+      expect(toast.warning).toHaveBeenCalledTimes(1);
+      expect(result.current.phase).toBe('select');
+    });
+  });
+
+  describe('submission success', () => {
+    beforeEach(() => { jest.useFakeTimers(); });
+    afterEach(() => { jest.useRealTimers(); });
+
+    it('shows a success toast and navigates only after 30s', () => {
+      const onNavigate = jest.fn();
+      renderHook(() => usePostFlow(onNavigate));
+
+      act(() => { capturedOnSuccess?.(); });
+
+      expect(toast.success).toHaveBeenCalledTimes(1);
+      expect(toast.success).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ duration: 30000 }),
+      );
+      expect(onNavigate).not.toHaveBeenCalled();
+
+      act(() => { jest.advanceTimersByTime(29999); });
+      expect(onNavigate).not.toHaveBeenCalled();
+
+      act(() => { jest.advanceTimersByTime(1); });
+      expect(onNavigate).toHaveBeenCalledWith('pending-posts');
+    });
+  });
 });
+

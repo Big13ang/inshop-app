@@ -71,6 +71,8 @@ export default function GalleryCell({ id, selectionIndex, onToggle, onLongPress,
       onTouchStart={startHold}
       onTouchEnd={endHold}
       onTouchMove={cancelHold}
+      data-status={item.status}
+      data-selected={isSelected}
       className={`aspect-square relative rounded-2xl overflow-hidden cursor-pointer select-none
         transition-transform duration-75 ease-in-out active:scale-[0.91]`}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '0 120px' } as React.CSSProperties}
