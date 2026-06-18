@@ -12,7 +12,6 @@ export function usePostFlow(onNavigate: (view: string) => void) {
   const [caption, setCaption] = useState('');
 
   const media = useMediaUpload();
-  const itemMap = useMediaStore((s) => s.itemMap);
   const selectedIds = useMediaStore((s) => s.selectedIds);
   const isUploadPending = useMediaStore((s) =>
     Array.from(s.itemMap.values()).some(
@@ -51,6 +50,8 @@ export function usePostFlow(onNavigate: (view: string) => void) {
       toast.warning(text.alertNoCaption);
       return;
     }
+
+    const itemMap = useMediaStore.getState().itemMap;
 
     const anyPending = selectedIds.some((id) => itemMap.get(id)?.status !== 'uploaded');
     if (anyPending) {

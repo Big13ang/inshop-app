@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import pLimit from 'p-limit';
 import { toast } from 'sonner';
-import { Result } from '@/lib/utils/result';
 import { type MediaKind } from '../types';
 import { useMediaStore } from '../services/mediaStore';
-import { createChunkStrategy } from '../services/chunkStrategy';
+import { createUploadService } from '../services/uploadService';
 import { validateBatch } from '../services/validateBatch';
 import { buildMediaItem } from '../services/buildMediaItem';
 import { MAX_IMAGES } from '../constants';
@@ -23,45 +21,12 @@ const ERROR_MAP = {
 } as const;
 
 export function useMediaUpload() {
-  const limit = useRef(pLimit(3));
-  const controllers = useRef(new Map<string, AbortController>());
-  const strategy = useRef(createChunkStrategy());
+  const service = useRef(createUploadService());
 
   useEffect(() => {
-    const activeControllers = controllers.current;
-    const activeLimit = limit.current;
-    return () => {
-      for (const ctrl of activeControllers.values()) ctrl.abort();
-
-      activeControllers.clear();
-      activeLimit.clearQueue();
-    };
+    const current = service.current;
+    return () => current.cancelAll();
   }, []);
-
-  async function uploadOne(id: string, file: File): Promise<void> {
-    const ctrl = controllers.current.get(id);
-
-    // Slot opened after cancelUpload() already fired — nothing to do.
-    if (!ctrl || ctrl.signal.aborted) return;
-
-    useMediaStore.getState()._setStatus(id, 'uploading');
-
-    const result = await Result.try(
-      strategy.current.upload(id, file,
-        (pct) => useMediaStore.getState()._setProgress(id, pct),
-        ctrl.signal,
-      ),
-    );
-
-    controllers.current.delete(id);
-
-    Result.match(result, {
-      ok: (url) => useMediaStore.getState()._setUploaded(id, url),
-      err: () => ctrl.signal.aborted
-        ? useMediaStore.getState()._setStatus(id, 'cancelled')
-        : useMediaStore.getState()._setStatus(id, 'failed'),
-    });
-  }
 
   function addFiles(files: File[], kind: MediaKind = 'image') {
     const currentCount = useMediaStore.getState().itemMap.size;
@@ -89,36 +54,20 @@ export function useMediaUpload() {
 
     const items = valid.map((f) => buildMediaItem(f, kind));
     useMediaStore.getState().addItems(items);
-
-    for (const item of items) {
-      const ctrl = new AbortController();
-      controllers.current.set(item.id, ctrl);
-      void limit.current(() => uploadOne(item.id, item.file!));
-    }
+    service.current.enqueue(items);
   }
 
   function cancelUpload(id: string) {
-    const ctrl = controllers.current.get(id);
-    if (!ctrl) return;
-    ctrl.abort();
-    useMediaStore.getState()._setStatus(id, 'cancelled');
-    controllers.current.delete(id);
+    service.current.cancel(id);
   }
 
   function retryUpload(id: string) {
-    const item = useMediaStore.getState().itemMap.get(id);
-    if (!item || !item.file) return;
-
-    useMediaStore.getState()._setStatus(id, 'queued');
-
-    const ctrl = new AbortController();
-    controllers.current.set(id, ctrl);
-    void limit.current(() => uploadOne(id, item.file!));
+    service.current.retry(id);
   }
 
   function removeItem(id: string) {
     const item = useMediaStore.getState().itemMap.get(id);
-    cancelUpload(id);
+    service.current.cancel(id);
     useMediaStore.getState().removeItem(id);
 
     if (item?.uploadedUrl) {
