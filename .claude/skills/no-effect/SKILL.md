@@ -16,6 +16,8 @@ Effects are an **escape hatch** for syncing with things *outside* React (browser
 
 > **This project uses React Compiler.** Expensive calculations are memoized automatically — never add `useMemo` manually. The patterns below reflect this.
 
+Full before/after code for every rule below lives in [references/examples.md](references/examples.md) — read it when you need the actual snippet, not just the rule.
+
 ---
 
 ## Quick Decision
@@ -35,215 +37,75 @@ Does it reset state when a prop changes? → Use the `key` prop
 
 ### 1. Derived state in an Effect
 
-```tsx
-// ❌ Two render passes, stale intermediate state
-const [fullName, setFullName] = useState('');
-useEffect(() => {
-  setFullName(firstName + ' ' + lastName);
-}, [firstName, lastName]);
-
-// ✅ Calculate at render time
-const fullName = firstName + ' ' + lastName;
-```
-
-**Rule:** If you can compute something from existing props or state, do it directly — no state, no Effect.
+**Rule:** If you can compute something from existing props or state, do it directly — no state, no Effect. See [examples.md #1](references/examples.md#1-derived-state-in-an-effect).
 
 ---
 
-### 2. User event logic in an Effect
+### 2. Caching an expensive calculation
 
-```tsx
-// ❌ Fires on mount/refresh if product.isInCart is true
-useEffect(() => {
-  if (product.isInCart) {
-    showNotification(`Added ${product.name} to cart!`);
-  }
-}, [product]);
-
-// ✅ Show notification where the action happens
-function handleBuyClick() {
-  addToCart(product);
-  showNotification(`Added ${product.name} to cart!`);
-}
-```
-
-**Rule:** Effects run because a component was *displayed*. User interactions belong in event handlers.
+**Rule:** Don't hold a derived value in state synced via an Effect. Calculate it inline at render time — React Compiler memoizes the expensive call for you, so there's no manual `useMemo` step either. See [examples.md #2](references/examples.md#2-caching-an-expensive-calculation).
 
 ---
 
 ### 3. State reset when a prop changes
 
-```tsx
-// ❌ Children render once with stale state, then again after the Effect
-useEffect(() => {
-  setComment('');
-}, [userId]);
-
-// ✅ Tell React this is a different component instance
-<Profile key={userId} userId={userId} />
-// Profile's state resets automatically when key changes
-```
-
-**Rule:** When you need to wipe *all* state for a new prop value, pass `key`. React destroys and recreates the subtree.
+**Rule:** When you need to wipe *all* state for a new prop value, pass `key`. React destroys and recreates the subtree instead of patching it via an Effect. See [examples.md #3](references/examples.md#3-state-reset-when-a-prop-changes).
 
 ---
 
 ### 4. Adjusting *some* state when a prop changes
 
-```tsx
-// ❌ Extra render with stale selection
-useEffect(() => {
-  setSelection(null);
-}, [items]);
-
-// ✅ Option A: store only the ID, derive selection during render
-const selection = items.find(item => item.id === selectedId) ?? null;
-
-// ✅ Option B: update state during render (unusual but valid)
-const [prevItems, setPrevItems] = useState(items);
-if (items !== prevItems) {
-  setPrevItems(items);
-  setSelectedId(null);
-}
-```
+**Rule:** Prefer storing only the ID and deriving the value at render time over patching state in an Effect. Only fall back to updating state during render (calling `setState` outside an event handler, guarded by a comparison) when the ID approach doesn't fit. See [examples.md #4](references/examples.md#4-adjusting-some-state-when-a-prop-changes).
 
 ---
 
-### 5. Chained Effects
+### 5. Sharing logic between event handlers
 
-```tsx
-// ❌ Each setX triggers another Effect → multiple re-renders
-useEffect(() => {
-  if (card?.gold) setGoldCardCount(c => c + 1);
-}, [card]);
-
-useEffect(() => {
-  if (goldCardCount > 3) setRound(r => r + 1);
-}, [goldCardCount]);
-
-// ✅ Compute everything in the event handler in one pass
-function handlePlaceCard(nextCard) {
-  setCard(nextCard);
-  const nextGoldCount = nextCard.gold ? goldCardCount + 1 : goldCardCount;
-  const nextRound = nextGoldCount > 3 ? round + 1 : round;
-  setGoldCardCount(nextGoldCount > 3 ? 0 : nextGoldCount);
-  setRound(nextRound);
-}
-```
-
-**Rule:** If Effects trigger other Effects, flatten them into a single event handler.
+**Rule:** Effects run because a component was *displayed*, not because of a click. If logic should only run as a result of a user action, extract it into a plain function and call that function from every event handler that needs it — don't reach for an Effect just because multiple handlers need the same behavior. See [examples.md #5](references/examples.md#5-sharing-logic-between-event-handlers).
 
 ---
 
-### 6. Notifying a parent component
+### 6. POST requests
 
-```tsx
-// ❌ Parent re-renders after child already re-rendered
-useEffect(() => {
-  onChange(isOn);
-}, [isOn, onChange]);
-
-// ✅ Update both in the same handler
-function handleClick() {
-  const next = !isOn;
-  setIsOn(next);
-  onChange(next);
-}
-
-// ✅✅ Or make it fully controlled — lift state up
-function Toggle({ isOn, onChange }) {
-  return <button onClick={() => onChange(!isOn)}>{isOn ? 'On' : 'Off'}</button>;
-}
-```
+**Rule:** A user-triggered POST belongs in the event handler that triggered it. An Effect is only correct for things that should fire because the component appeared (e.g. a page-view analytics ping) — don't launder a click into an Effect by routing it through state. See [examples.md #6](references/examples.md#6-post-requests).
 
 ---
 
-### 7. POST requests
+### 7. Chains of Effects
 
-```tsx
-// ❌ Analytics vs form submission look the same but are different
-useEffect(() => {
-  post('/api/register', { firstName, lastName }); // Wrong — user triggered this
-}, []);
-
-// ✅ Analytics (runs because component appeared) → Effect is correct
-useEffect(() => {
-  post('/analytics/event', { eventName: 'visit_form' });
-}, []);
-
-// ✅ Form submission (user triggered) → event handler
-function handleSubmit(e) {
-  e.preventDefault();
-  post('/api/register', { firstName, lastName });
-}
-```
+**Rule:** If one Effect's `setState` exists only to trigger another Effect, flatten the whole chain into a single event handler that computes every resulting value in one pass. See [examples.md #7](references/examples.md#7-chains-of-effects).
 
 ---
 
 ### 8. App initialization
 
-```tsx
-// ❌ Runs twice in Strict Mode dev
-useEffect(() => {
-  loadDataFromLocalStorage();
-  checkAuthToken();
-}, []);
+**Rule:** Logic that must run exactly once for the lifetime of the app (not the component) belongs at module scope, before React renders — not in a mount Effect, which Strict Mode runs twice in development. If the logic must live inside a component, guard it with a module-level flag instead. See [examples.md #8](references/examples.md#8-app-initialization).
 
-// ✅ Module-level (runs once before React renders)
-if (typeof window !== 'undefined') {
-  checkAuthToken();
-  loadDataFromLocalStorage();
-}
-```
+---
+
+### 9. Notifying a parent component
+
+**Rule:** Don't use an Effect to mirror local state changes up to a parent — update local state and call the parent's callback in the same handler. If the component doesn't need its own state at all, make it fully controlled by the parent instead. See [examples.md #9](references/examples.md#9-notifying-a-parent-component).
+
+---
+
+### 10. Passing data up to the parent
+
+**Rule:** If a child fetches data only to hand it to its parent via an Effect, that's an extra render round-trip for nothing — let the parent fetch and pass the data down as a prop instead. See [examples.md #10](references/examples.md#10-passing-data-up-to-the-parent).
 
 ---
 
 ## Patterns Where Effects ARE Correct
 
-### Data fetching — always add a cleanup to prevent race conditions
+### 11. External store subscriptions
 
-```tsx
-useEffect(() => {
-  let ignore = false;
-
-  fetch(`/api/search?q=${query}`)
-    .then(r => r.json())
-    .then(data => {
-      if (!ignore) setResults(data);
-    });
-
-  return () => { ignore = true; };
-}, [query]);
-```
-
-Extract to a custom hook (`useData(url)`) when you reuse the pattern.
+**Rule:** Don't hand-roll a browser/external-store subscription with `useEffect` + `addEventListener`. Use `useSyncExternalStore`, which guarantees a consistent snapshot during concurrent rendering. See [examples.md #11](references/examples.md#11-external-store-subscriptions).
 
 ---
 
-### External store subscriptions — use `useSyncExternalStore`
+### 12. Data fetching
 
-```tsx
-// ❌ Effect-based subscription (works but fragile)
-useEffect(() => {
-  const update = () => setIsOnline(navigator.onLine);
-  window.addEventListener('online', update);
-  window.addEventListener('offline', update);
-  return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
-}, []);
-
-// ✅ useSyncExternalStore
-function subscribe(cb) {
-  window.addEventListener('online', cb);
-  window.addEventListener('offline', cb);
-  return () => { window.removeEventListener('online', cb); window.removeEventListener('offline', cb); };
-}
-
-const isOnline = useSyncExternalStore(
-  subscribe,
-  () => navigator.onLine,
-  () => true  // server snapshot
-);
-```
+**Rule:** Fetching in response to a component being displayed (e.g. search results for the current query) is a correct use of Effects — but always add an `ignore` cleanup flag to avoid race conditions where a stale response overwrites a newer one. Extract to a custom hook (`useData(url)`) once the pattern repeats. See [examples.md #12](references/examples.md#12-data-fetching-an-effect-is-correct-here--add-cleanup).
 
 ---
 
@@ -252,11 +114,14 @@ const isOnline = useSyncExternalStore(
 | Situation | Fix |
 |---|---|
 | Value derived from props/state | Calculate at render time |
-| Side effect from user action | Move to event handler |
+| Expensive derived value | Calculate at render time — React Compiler memoizes it |
 | Reset all state on prop change | `key` prop |
 | Reset some state on prop change | Store the ID, derive value at render |
-| Multiple chained Effects | Flatten into one event handler |
-| Notifying parent of state change | Update both in same handler or lift state |
+| Logic shared by multiple event handlers | Extract a plain function, call it from each handler |
 | POST on user action | Event handler |
+| Multiple chained Effects | Flatten into one event handler |
+| One-time app initialization | Module scope (or a module-level guard) |
+| Notifying parent of state change | Update both in same handler, or lift state / make controlled |
+| Child handing fetched data to parent | Parent fetches, passes data down as a prop |
 | Subscription to browser/external store | `useSyncExternalStore` |
 | Data fetching | Effect + `ignore` cleanup flag |

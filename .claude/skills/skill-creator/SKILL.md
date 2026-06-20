@@ -138,6 +138,26 @@ Output: feat(auth): implement JWT-based authentication
 
 Try to explain to the model why things are important in lieu of heavy-handed musty MUSTs. Use theory of mind and try to make the skill general and not super-narrow to specific examples. Start by writing a draft and then look at it with fresh eyes and improve it.
 
+### Structural Validation
+
+Before moving on to test prompts, run the skill through [`skill-validator`](https://github.com/agent-ecosystem/skill-validator) — a CLI that checks the things a human reviewer would otherwise have to eyeball: valid frontmatter, broken internal links (e.g. a SKILL.md reference to `references/foo.md#anchor` where the anchor doesn't exist), unclosed code fences, token footprint per file, and content-quality/contamination signals. This catches mechanical mistakes (typo'd anchors, orphaned reference files, malformed YAML) before they ever reach a test run, where they'd otherwise just look like a confusing eval failure.
+
+```bash
+skill-validator check <path-to-skill>
+skill-validator validate links <path-to-skill>
+```
+
+If `skill-validator` isn't on PATH, build it once (it's a small Go CLI with no Windows/prebuilt release):
+
+```bash
+git clone --depth 1 https://github.com/agent-ecosystem/skill-validator.git <tmp-dir>/skill-validator
+cd <tmp-dir>/skill-validator && go build -o skill-validator(.exe) ./cmd/skill-validator
+```
+
+This needs the Go toolchain installed (e.g. `winget install --id GoLang.Go` on Windows, or your platform's package manager). Installing a toolchain is a system-wide change, so confirm with the user before doing it rather than installing silently. Once built, reuse that binary for future skills in the session/project rather than rebuilding each time.
+
+Re-run both commands any time you edit SKILL.md or its reference files — especially after restructuring (e.g. moving code examples into a `references/` subfile), since that's exactly when links silently break. Treat a non-"passed" result as something to fix before continuing, not a nice-to-have.
+
 ### Test Cases
 
 After writing the skill draft, come up with 2-3 realistic test prompts — the kind of thing a real user would actually say. Share them with the user: [you don't have to use this exact language] "Here are a few test cases I'd like to try. Do these look right, or do you want to add more?" Then run them.
