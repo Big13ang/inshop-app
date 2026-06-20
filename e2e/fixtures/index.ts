@@ -13,10 +13,12 @@
 import { test as base } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { OtpPage } from '../pages/OtpPage';
+import { AddPostPage } from '../pages/AddPostPage';
 
 type Fixtures = {
   loginPage: LoginPage;
   otpPage: OtpPage;
+  addPostPage: AddPostPage;
 };
 
 export const test = base.extend<Fixtures>({
@@ -43,6 +45,26 @@ export const test = base.extend<Fixtures>({
     const otpPage = new OtpPage(page);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(otpPage);
+  },
+
+  /**
+   * addPostPage fixture:
+   * - Mocks the tus upload protocol (POST/HEAD/PATCH /api/upload) before
+   *   navigation so upload requests never hit the real server
+   * - Navigates to /app/posts/new
+   * - Waits until the footer buttons are interactive (page is ready)
+   *
+   * Individual tests that need to simulate upload failure can call
+   * addPostPage.mockUploadApiWithError() — LIFO routing means the later
+   * handler takes priority over this fixture's success mock.
+   */
+  addPostPage: async ({ page }, use) => {
+    const addPostPage = new AddPostPage(page);
+    await addPostPage.mockUploadApi();
+    await addPostPage.mockPublishApi();
+    await addPostPage.goto();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(addPostPage);
   },
 });
 

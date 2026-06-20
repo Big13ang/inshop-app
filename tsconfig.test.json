@@ -1,10 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "baseUrl": "./",
     // node16 resolves Node.js subpath exports correctly (msw/node, stream/web, etc.)
     // The main tsconfig uses "bundler" which is optimised for Next.js/webpack — not Jest.
-    "moduleResolution": "node16",
-    "module": "node16",
+    "moduleResolution": "bundler",
+    "module": "esnext",
     // Make Jest globals (describe, it, expect, beforeAll, etc.) available
     "types": ["jest", "node", "@testing-library/jest-dom"],
     // Test files don't need to emit — type-checking only

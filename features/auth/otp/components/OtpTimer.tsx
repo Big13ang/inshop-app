@@ -13,6 +13,11 @@ interface OtpTimerProps {
 export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpTimerProps) {
   const [timeLeft, setTimeLeft] = useState(initialTime);
 
+  // Fix 9: sync state when the prop changes (e.g. parent updates resend window duration)
+  useEffect(() => {
+    setTimeLeft(initialTime);
+  }, [initialTime]);
+
   const isTimerActive = timeLeft > 0;
 
   useEffect(() => {

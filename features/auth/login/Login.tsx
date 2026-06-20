@@ -30,11 +30,6 @@ export default function Login({ onSubmit }: LoginProps) {
 
     const isPhoneError = !!(errors.phone && dirtyFields.phone);
 
-    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const cleaned = convertPersianArabicToEnglish(e.target.value);
-        setValue('phone', cleaned, { shouldValidate: true, shouldDirty: true });
-    };
-
     const handleFormSubmit = async (data: LoginFormValues) => {
         if (onSubmit) {
             await onSubmit(data);
@@ -61,7 +56,11 @@ export default function Login({ onSubmit }: LoginProps) {
                     label={TEXTS.label}
                     isError={isPhoneError}
                     error={errors.phone?.message}
-                    {...register('phone', { onChange: handlePhoneChange })}
+                    {...register('phone')}
+                    onChange={(e) => {
+                        const cleaned = convertPersianArabicToEnglish(e.target.value);
+                        setValue('phone', cleaned, { shouldValidate: true, shouldDirty: true });
+                    }}
                 />
 
                 <SubmitButton
