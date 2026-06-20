@@ -27,6 +27,10 @@ export interface MediaStoreState {
 
 // ── Store factory (enables test isolation) ────────────────────────────────────
 
+function clampPreviewIdx(idx: number, selectedCount: number): number {
+  return Math.min(idx, Math.max(0, selectedCount - 1));
+}
+
 function buildStore(
   set: (fn: (s: MediaStoreState) => Partial<MediaStoreState>) => void,
 ): MediaStoreState {
@@ -49,9 +53,11 @@ function buildStore(
         if (it?.localUrl) URL.revokeObjectURL(it.localUrl);
         const next = new Map(s.itemMap);
         next.delete(id);
+        const selectedIds = s.selectedIds.filter((sid) => sid !== id);
         return {
           itemMap: next,
-          selectedIds: s.selectedIds.filter((sid) => sid !== id),
+          selectedIds,
+          activePreviewIdx: clampPreviewIdx(s.activePreviewIdx, selectedIds.length),
         };
       });
     },
@@ -61,10 +67,12 @@ function buildStore(
         const it = s.itemMap.get(id);
         if (!it || it.status !== 'uploaded') return {};
         const already = s.selectedIds.includes(id);
+        const selectedIds = already
+          ? s.selectedIds.filter((sid) => sid !== id)
+          : [...s.selectedIds, id];
         return {
-          selectedIds: already
-            ? s.selectedIds.filter((sid) => sid !== id)
-            : [...s.selectedIds, id],
+          selectedIds,
+          activePreviewIdx: clampPreviewIdx(s.activePreviewIdx, selectedIds.length),
         };
       });
     },
@@ -75,12 +83,14 @@ function buildStore(
         if (!it) return {};
         const next = new Map(s.itemMap);
         next.set(id, { ...it, status });
+        // Auto-evict from selectedIds when a previously-uploaded item regresses
+        const selectedIds = status !== 'uploaded'
+          ? s.selectedIds.filter((sid) => sid !== id)
+          : s.selectedIds;
         return {
           itemMap: next,
-          // Auto-evict from selectedIds when a previously-uploaded item regresses
-          selectedIds: status !== 'uploaded'
-            ? s.selectedIds.filter((sid) => sid !== id)
-            : s.selectedIds,
+          selectedIds,
+          activePreviewIdx: clampPreviewIdx(s.activePreviewIdx, selectedIds.length),
         };
       });
     },

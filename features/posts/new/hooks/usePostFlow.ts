@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useMediaStore } from '../services/mediaStore';
 import { useMediaUpload } from './useMediaUpload';
@@ -19,12 +19,16 @@ export function usePostFlow(onNavigate: (view: string) => void) {
     ),
   );
 
+  const navigateTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(navigateTimer.current), []);
+
   const submitPost = useSubmitPost(() => {
     toast.success(text.uploadSuccessTitle, {
       description: text.uploadSuccessDesc,
       duration: 30000,
     });
-    setTimeout(() => onNavigate('pending-posts'), 30000);
+    navigateTimer.current = setTimeout(() => onNavigate('pending-posts'), 30000);
   });
 
   function handleBack() {

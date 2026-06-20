@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDragToDismiss } from './useDragToDismiss';
 
 const emptySubscribe = () => () => { };
 
@@ -116,64 +117,53 @@ const maxWidthClass: Record<NonNullable<PanelProps['maxWidth']>, string> = {
 
 function Panel({ children, maxWidth = 'md', dir = 'rtl', dragToDismiss = true, className }: PanelProps) {
   const { panelRef, backdropRef, onClose } = useBottomSheet();
-  const isDraggingRef = React.useRef(false);
-  const startYRef = React.useRef(0);
-  const currentYRef = React.useRef(0);
-  const startTimeRef = React.useRef(0);
 
-  const onDragStart = (clientY: number) => {
-    if (!dragToDismiss) return;
-    isDraggingRef.current = true;
-    startYRef.current = clientY;
-    currentYRef.current = 0;
-    startTimeRef.current = Date.now();
-    if (panelRef.current) {
-      gsap.killTweensOf(panelRef.current);
-      panelRef.current.style.transition = 'none';
-      panelRef.current.style.cursor = 'grabbing';
-    }
-  };
-
-  const onDragMove = (clientY: number) => {
-    if (!isDraggingRef.current || !panelRef.current) return;
-    const offset = clientY - startYRef.current;
-    if (offset > 0) {
-      currentYRef.current = offset;
+  const dragHandlers = useDragToDismiss({
+    enabled: dragToDismiss,
+    threshold: 100,
+    velocityThreshold: 0.4,
+    velocityDistance: 20,
+    onDragMove: (offset) => {
+      if (!panelRef.current) return;
       panelRef.current.style.transform = `translateY(${offset}px)`;
       if (backdropRef.current) {
         backdropRef.current.style.opacity = String(Math.max(0, 1 - offset / 450));
       }
-    }
-  };
-
-  const onDragEnd = () => {
-    if (!isDraggingRef.current || !panelRef.current) return;
-    isDraggingRef.current = false;
-    panelRef.current.style.cursor = '';
-
-    const deltaY = currentYRef.current;
-    const velocity = deltaY / (Date.now() - startTimeRef.current || 1);
-
-    if (deltaY > 100 || (deltaY > 20 && velocity > 0.4)) {
-      gsap.to(panelRef.current, { y: '120%', duration: 0.25, ease: 'power2.in', onComplete: onClose });
+    },
+    onDismiss: () => {
+      if (panelRef.current) {
+        panelRef.current.style.cursor = '';
+        gsap.to(panelRef.current, { y: '120%', duration: 0.25, ease: 'power2.in', onComplete: onClose });
+      }
       if (backdropRef.current) gsap.to(backdropRef.current, { opacity: 0, duration: 0.2 });
-    } else {
-      gsap.to(panelRef.current, { y: 0, duration: 0.3, ease: 'power3.out', clearProps: 'transform' });
+    },
+    onCancel: () => {
+      if (panelRef.current) {
+        panelRef.current.style.cursor = '';
+        gsap.to(panelRef.current, { y: 0, duration: 0.3, ease: 'power3.out', clearProps: 'transform' });
+      }
       if (backdropRef.current) gsap.to(backdropRef.current, { opacity: 1, duration: 0.25 });
-    }
+    },
+  });
+
+  const onDragStartVisual = () => {
+    if (!dragToDismiss || !panelRef.current) return;
+    gsap.killTweensOf(panelRef.current);
+    panelRef.current.style.transition = 'none';
+    panelRef.current.style.cursor = 'grabbing';
   };
 
   return (
     <div
       ref={panelRef}
       dir={dir}
-      onTouchStart={(e) => onDragStart(e.touches[0].clientY)}
-      onTouchMove={(e) => onDragMove(e.touches[0].clientY)}
-      onTouchEnd={onDragEnd}
-      onMouseDown={(e) => onDragStart(e.clientY)}
-      onMouseMove={(e) => { if (e.buttons === 1) onDragMove(e.clientY); }}
-      onMouseUp={onDragEnd}
-      onMouseLeave={onDragEnd}
+      onTouchStart={(e) => { onDragStartVisual(); dragHandlers.onTouchStart(e); }}
+      onTouchMove={dragHandlers.onTouchMove}
+      onTouchEnd={dragHandlers.onTouchEnd}
+      onMouseDown={(e) => { onDragStartVisual(); dragHandlers.onMouseDown(e); }}
+      onMouseMove={dragHandlers.onMouseMove}
+      onMouseUp={dragHandlers.onMouseUp}
+      onMouseLeave={dragHandlers.onMouseLeave}
       onClick={(e) => e.stopPropagation()}
       className={cn(
         'relative w-full mx-auto bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col max-h-[92vh] select-none will-change-transform',

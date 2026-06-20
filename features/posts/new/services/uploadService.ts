@@ -39,11 +39,16 @@ export function createUploadService(
 
     controllers.delete(id);
 
+    // cancel() may have fired while the request was already settling —
+    // its outcome no longer matters once the user has cancelled.
+    if (ctrl.signal.aborted) {
+      useMediaStore.getState()._setStatus(id, 'cancelled');
+      return;
+    }
+
     Result.match(result, {
       ok: (url) => useMediaStore.getState()._setUploaded(id, url),
-      err: () => ctrl.signal.aborted
-        ? useMediaStore.getState()._setStatus(id, 'cancelled')
-        : useMediaStore.getState()._setStatus(id, 'failed'),
+      err: () => useMediaStore.getState()._setStatus(id, 'failed'),
     });
   }
 

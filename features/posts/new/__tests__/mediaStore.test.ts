@@ -63,6 +63,36 @@ describe('mediaStore', () => {
     expect(store.getState().selectedIds).not.toContain('u');
   });
 
+  it('removeItem clamps activePreviewIdx when it would point past the shrunk selection', () => {
+    const store = createMediaStore();
+    store.getState().addItems([
+      item({ id: 'a', status: 'uploaded' }),
+      item({ id: 'b', status: 'uploaded' }),
+      item({ id: 'c', status: 'uploaded' }),
+    ]);
+    store.getState().toggleSelected('a');
+    store.getState().toggleSelected('b');
+    store.getState().toggleSelected('c');
+    store.setState({ activePreviewIdx: 2 });
+
+    store.getState().removeItem('c');
+
+    expect(store.getState().selectedIds).toEqual(['a', 'b']);
+    expect(store.getState().activePreviewIdx).toBe(1);
+  });
+
+  it('removeItem resets activePreviewIdx to 0 when the selection becomes empty', () => {
+    const store = createMediaStore();
+    store.getState().addItems([item({ id: 'a', status: 'uploaded' })]);
+    store.getState().toggleSelected('a');
+    store.setState({ activePreviewIdx: 0 });
+
+    store.getState().removeItem('a');
+
+    expect(store.getState().selectedIds).toEqual([]);
+    expect(store.getState().activePreviewIdx).toBe(0);
+  });
+
   // Slice 3 — toggleSelected only works for uploaded items
   it('toggleSelected ignores items that are not uploaded', () => {
     const store = createMediaStore();

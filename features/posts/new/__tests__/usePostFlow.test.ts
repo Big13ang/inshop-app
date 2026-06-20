@@ -211,6 +211,17 @@ describe('usePostFlow — handleNext', () => {
       act(() => { jest.advanceTimersByTime(1); });
       expect(onNavigate).toHaveBeenCalledWith('pending-posts');
     });
+
+    it('does not navigate after the hook has unmounted', () => {
+      const onNavigate = jest.fn();
+      const { unmount } = renderHook(() => usePostFlow(onNavigate));
+
+      act(() => { capturedOnSuccess?.(); });
+      unmount();
+
+      act(() => { jest.advanceTimersByTime(30000); });
+      expect(onNavigate).not.toHaveBeenCalled();
+    });
   });
 });
 

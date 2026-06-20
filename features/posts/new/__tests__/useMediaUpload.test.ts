@@ -2,12 +2,18 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useMediaUpload } from '../hooks/useMediaUpload';
 import { useMediaStore } from '../services/mediaStore';
 import { createChunkStrategy } from '../services/chunkStrategy';
+import { createUploadService } from '../services/uploadService';
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
 
 jest.mock('../services/chunkStrategy', () => ({
   createChunkStrategy: jest.fn(),
 }));
+
+jest.mock('../services/uploadService', () => {
+  const actual = jest.requireActual('../services/uploadService');
+  return { ...actual, createUploadService: jest.fn(actual.createUploadService) };
+});
 
 jest.mock('sonner', () => ({
   toast: { warning: jest.fn(), error: jest.fn() },
@@ -83,6 +89,20 @@ describe('useMediaUpload — addFiles', () => {
       expect(items[0]?.status).toBe('failed');
     });
 
+    unmount();
+  });
+});
+
+// ── Service initialization ────────────────────────────────────────────────────
+
+describe('useMediaUpload — service initialization', () => {
+  it('creates the upload service only once across re-renders', () => {
+    const { rerender, unmount } = renderHook(() => useMediaUpload());
+
+    rerender();
+    rerender();
+
+    expect(createUploadService).toHaveBeenCalledTimes(1);
     unmount();
   });
 });
@@ -313,6 +333,37 @@ describe('useMediaUpload — removeItem', () => {
     expect(useMediaStore.getState().itemMap.has('item-id')).toBe(false);
 
     // 4. Verify fetch was called with DELETE
+    expect(global.fetch).toHaveBeenCalledWith('/api/upload/item-id', {
+      method: 'DELETE',
+    });
+
+    unmount();
+  });
+
+  it('calls the delete API for an in-progress upload, even without uploadedUrl yet', () => {
+    const { result, unmount } = renderHook(() => useMediaUpload());
+
+    act(() => {
+      useMediaStore.setState({
+        itemMap: new Map([
+          ['item-id', {
+            id: 'item-id',
+            name: 'photo.jpg',
+            file: new File(['x'], 'photo.jpg'),
+            localUrl: 'blob:local',
+            status: 'uploading',
+            progress: 40,
+            mediaKind: 'image',
+          }]
+        ])
+      });
+    });
+
+    act(() => {
+      result.current.removeItem('item-id');
+    });
+
+    expect(useMediaStore.getState().itemMap.has('item-id')).toBe(false);
     expect(global.fetch).toHaveBeenCalledWith('/api/upload/item-id', {
       method: 'DELETE',
     });

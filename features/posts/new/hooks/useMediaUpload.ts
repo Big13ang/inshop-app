@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { type MediaKind } from '../types';
 import { useMediaStore } from '../services/mediaStore';
-import { createUploadService } from '../services/uploadService';
+import { type UploadService, createUploadService } from '../services/uploadService';
 import { validateBatch } from '../services/validateBatch';
 import { buildMediaItem } from '../services/buildMediaItem';
 import { MAX_IMAGES } from '../constants';
@@ -21,10 +21,11 @@ const ERROR_MAP = {
 } as const;
 
 export function useMediaUpload() {
-  const service = useRef(createUploadService());
+  const service = useRef<UploadService | null>(null);
+  if (!service.current) service.current = createUploadService();
 
   useEffect(() => {
-    const current = service.current;
+    const current = service.current!;
     return () => current.cancelAll();
   }, []);
 
@@ -54,23 +55,25 @@ export function useMediaUpload() {
 
     const items = valid.map((f) => buildMediaItem(f, kind));
     useMediaStore.getState().addItems(items);
-    service.current.enqueue(items);
+    service.current!.enqueue(items);
   }
 
   function cancelUpload(id: string) {
-    service.current.cancel(id);
+    service.current!.cancel(id);
   }
 
   function retryUpload(id: string) {
-    service.current.retry(id);
+    service.current!.retry(id);
   }
 
   function removeItem(id: string) {
     const item = useMediaStore.getState().itemMap.get(id);
-    service.current.cancel(id);
+    service.current!.cancel(id);
     useMediaStore.getState().removeItem(id);
 
-    if (item?.uploadedUrl) {
+    // 'uploaded' has a server file via uploadedUrl; 'uploading' has one
+    // because the upload already started — both need server-side cleanup.
+    if (item?.uploadedUrl || item?.status === 'uploading') {
       void fetch(`/api/upload/${id}`, { method: 'DELETE' });
     }
   }

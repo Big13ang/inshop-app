@@ -2,6 +2,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { cn } from '@/lib/utils';
+import { useDragToDismiss } from './useDragToDismiss';
 
 interface DialogContextType {
   isOpen: boolean;
@@ -12,7 +13,7 @@ interface DialogContextType {
 const DialogContext = React.createContext<DialogContextType | undefined>(undefined);
 
 export function useDialog() {
-  const context = React.useContext(DialogContext);
+  const context = React.use(DialogContext);
   if (!context) {
     throw new Error('Dialog components must be used within a Dialog.Root');
   }
@@ -57,9 +58,9 @@ function DialogRoot({ isOpen, onClose, children }: DialogRootProps) {
   const value = { isOpen, onClose, shouldRender };
 
   return (
-    <DialogContext.Provider value={value}>
+    <DialogContext value={value}>
       {children}
-    </DialogContext.Provider>
+    </DialogContext>
   );
 }
 
@@ -121,9 +122,6 @@ function DialogContent({
 }: DialogContentProps) {
   const { onClose, isOpen } = useDialog();
   const contentRef = React.useRef<HTMLDivElement | null>(null);
-  const startYRef = React.useRef(0);
-  const currentYRef = React.useRef(0);
-  const isDraggingRef = React.useRef(false);
 
   React.useEffect(() => {
     if (!contentRef.current) return;
@@ -149,27 +147,15 @@ function DialogContent({
     });
   }, [isOpen, variant]);
 
-  const handleDragStart = (clientY: number) => {
-    if (!dragToDismiss || variant !== 'drawer') return;
-    startYRef.current = clientY;
-    currentYRef.current = 0;
-    isDraggingRef.current = true;
-    gsap.killTweensOf(contentRef.current);
-  };
-
-  const handleDragMove = (clientY: number) => {
-    if (!isDraggingRef.current || !contentRef.current) return;
-
-    const offset = Math.max(0, clientY - startYRef.current);
-    currentYRef.current = offset;
-    gsap.set(contentRef.current, { y: offset, force3D: true });
-  };
-
-  const handleDragEnd = () => {
-    if (!isDraggingRef.current || !contentRef.current) return;
-    isDraggingRef.current = false;
-
-    if (currentYRef.current > 75) {
+  const dragHandlers = useDragToDismiss({
+    enabled: dragToDismiss && variant === 'drawer',
+    threshold: 75,
+    onDragMove: (offset) => {
+      if (!contentRef.current) return;
+      gsap.set(contentRef.current, { y: offset, force3D: true });
+    },
+    onDismiss: () => {
+      if (!contentRef.current) return;
       gsap.to(contentRef.current, {
         y: '100%',
         duration: 0.24,
@@ -177,15 +163,22 @@ function DialogContent({
         overwrite: 'auto',
         onComplete: onClose,
       });
-      return;
-    }
+    },
+    onCancel: () => {
+      if (!contentRef.current) return;
+      gsap.to(contentRef.current, {
+        y: 0,
+        duration: 0.24,
+        ease: 'power3.out',
+        overwrite: 'auto',
+      });
+    },
+  });
 
-    gsap.to(contentRef.current, {
-      y: 0,
-      duration: 0.24,
-      ease: 'power3.out',
-      overwrite: 'auto',
-    });
+  const handleDragStart = () => {
+    if (dragToDismiss && variant === 'drawer') {
+      gsap.killTweensOf(contentRef.current);
+    }
   };
 
   const setContentRef = (node: HTMLDivElement | null) => {
@@ -197,17 +190,16 @@ function DialogContent({
     return (
       <div
         ref={setContentRef}
-        onTouchStart={(event) => handleDragStart(event.touches[0].clientY)}
-        onTouchMove={(event) => handleDragMove(event.touches[0].clientY)}
-        onTouchEnd={handleDragEnd}
-        onMouseDown={(event) => handleDragStart(event.clientY)}
-        onMouseMove={(event) => {
-          if (event.buttons === 1) handleDragMove(event.clientY);
-        }}
-        onMouseUp={handleDragEnd}
-        onMouseLeave={handleDragEnd}
+        onTouchStart={(event) => { handleDragStart(); dragHandlers.onTouchStart(event); }}
+        onTouchMove={dragHandlers.onTouchMove}
+        onTouchEnd={dragHandlers.onTouchEnd}
+        onMouseDown={(event) => { handleDragStart(); dragHandlers.onMouseDown(event); }}
+        onMouseMove={dragHandlers.onMouseMove}
+        onMouseUp={dragHandlers.onMouseUp}
+        onMouseLeave={dragHandlers.onMouseLeave}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[100] mx-auto w-full max-w-md cursor-grab rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] active:cursor-grabbing',
+          'fixed bottom-0 left-0 right-0 z-[100] mx-auto w-full max-w-md rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)]',
+          dragToDismiss && 'cursor-grab active:cursor-grabbing',
           className
         )}
         onClick={(event) => event.stopPropagation()}

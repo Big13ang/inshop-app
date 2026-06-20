@@ -98,6 +98,29 @@ describe('createUploadService', () => {
     expect(useMediaStore.getState().itemMap.get('a')?.status).toBe('cancelled');
   });
 
+  it('does not resurrect a cancelled item when the upload resolves right after cancel', async () => {
+    let resolveUpload!: (url: string) => void;
+    const upload = jest.fn().mockImplementation(
+      () => new Promise<string>((resolve) => { resolveUpload = resolve; }),
+    );
+    const service = createUploadService(fakeStrategy(upload));
+
+    const a = item({ id: 'a' });
+    useMediaStore.getState().addItems([a]);
+    service.enqueue([a]);
+
+    await new Promise(process.nextTick);
+
+    // Race: the request already succeeded server-side and is about to resolve,
+    // but cancel() runs first.
+    service.cancel('a');
+    resolveUpload('https://cdn/f.jpg');
+    await new Promise(process.nextTick);
+
+    expect(useMediaStore.getState().itemMap.get('a')?.status).toBe('cancelled');
+    expect(useMediaStore.getState().itemMap.get('a')?.uploadedUrl).toBeUndefined();
+  });
+
   it('retry requeues a failed item and marks it uploaded on the next attempt', async () => {
     const upload = jest.fn()
       .mockRejectedValueOnce(new Error('network error'))
