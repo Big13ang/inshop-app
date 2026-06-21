@@ -8,6 +8,7 @@ interface DialogContextType {
   isOpen: boolean;
   onClose: () => void;
   shouldRender: boolean;
+  setShouldRender: (value: boolean) => void;
 }
 
 const DialogContext = React.createContext<DialogContextType | undefined>(undefined);
@@ -37,25 +38,12 @@ interface DialogRootProps {
 
 function DialogRoot({ isOpen, onClose, children }: DialogRootProps) {
   const [shouldRender, setShouldRender] = React.useState(isOpen);
-  const [prevIsOpen, setPrevIsOpen] = React.useState(isOpen);
 
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
-    if (isOpen) {
-      setShouldRender(true);
-    }
+  if (isOpen && !shouldRender) {
+    setShouldRender(true);
   }
 
-  React.useEffect(() => {
-    if (isOpen) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => setShouldRender(false), 320);
-    return () => window.clearTimeout(timer);
-  }, [isOpen]);
-
-  const value = { isOpen, onClose, shouldRender };
+  const value = { isOpen, onClose, shouldRender, setShouldRender };
 
   return (
     <DialogContext value={value}>
@@ -68,7 +56,9 @@ function DialogPortal({ children }: { children: React.ReactNode }) {
   const { shouldRender } = useDialog();
   const [isMounted, setIsMounted] = React.useState(false);
 
-  React.useEffect(() => { setIsMounted(true); }, []);
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (!isMounted || !shouldRender) return null;
   return createPortal(children, document.body);
@@ -85,12 +75,17 @@ function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps
   React.useEffect(() => {
     if (!backdropRef.current) return;
 
-    gsap.to(backdropRef.current, {
+    const node = backdropRef.current;
+    gsap.to(node, {
       opacity: isOpen ? 1 : 0,
       duration: isOpen ? 0.24 : 0.2,
       ease: 'power2.out',
       overwrite: 'auto',
     });
+
+    return () => {
+      gsap.killTweensOf(node);
+    };
   }, [isOpen]);
 
   return (
@@ -120,32 +115,48 @@ function DialogContent({
   ref,
   ...props
 }: DialogContentProps) {
-  const { onClose, isOpen } = useDialog();
+  const { onClose, isOpen, setShouldRender } = useDialog();
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
-    if (!contentRef.current) return;
+    const node = contentRef.current;
+    if (!node) return;
 
     if (variant === 'drawer') {
-      gsap.to(contentRef.current, {
+      gsap.to(node, {
         y: isOpen ? 0 : '100%',
         duration: isOpen ? 0.38 : 0.26,
         ease: isOpen ? 'power3.out' : 'power2.in',
         force3D: true,
         overwrite: 'auto',
+        onComplete: () => {
+          if (!isOpen) {
+            setShouldRender(false);
+          }
+        },
       });
-      return;
+      return () => {
+        gsap.killTweensOf(node);
+      };
     }
 
-    gsap.to(contentRef.current, {
+    gsap.to(node, {
       opacity: isOpen ? 1 : 0,
       scale: isOpen ? 1 : 0.96,
       duration: 0.22,
       ease: isOpen ? 'power2.out' : 'power2.in',
       force3D: true,
       overwrite: 'auto',
+      onComplete: () => {
+        if (!isOpen) {
+          setShouldRender(false);
+        }
+      },
     });
-  }, [isOpen, variant]);
+    return () => {
+      gsap.killTweensOf(node);
+    };
+  }, [isOpen, variant, setShouldRender]);
 
   const dragHandlers = useDragToDismiss({
     enabled: dragToDismiss && variant === 'drawer',
@@ -161,7 +172,10 @@ function DialogContent({
         duration: 0.24,
         ease: 'power2.in',
         overwrite: 'auto',
-        onComplete: onClose,
+        onComplete: () => {
+          setShouldRender(false);
+          onClose();
+        },
       });
     },
     onCancel: () => {

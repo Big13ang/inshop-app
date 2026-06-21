@@ -2,6 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "baseUrl": "./",
+    "paths": {
+      "@/*": ["./*"]
+    },
     // node16 resolves Node.js subpath exports correctly (msw/node, stream/web, etc.)
     // The main tsconfig uses "bundler" which is optimised for Next.js/webpack — not Jest.
     "moduleResolution": "bundler",
@@ -24,7 +27,16 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "**/*.spec.tsx",
+    // Source files for type resolution
+    "features/**/*.ts",
+    "features/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx"
   ],
   "exclude": [
     "node_modules",

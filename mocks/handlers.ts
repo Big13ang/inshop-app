@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { createPendingPostsFixture } from './fixtures';
 
 /**
  * API request handlers for MSW.
@@ -14,7 +15,26 @@ import { http, HttpResponse } from 'msw';
 // for the lifetime of an upload id within a test.
 const uploads = new Map<string, { offset: number; length: number }>();
 
+// Mutable so DELETE can remove an entry and a subsequent GET reflects it,
+// matching the real dev route's behavior against its own in-module store.
+let posts = createPendingPostsFixture();
+
+// Tests within the same file share this module instance; call between tests
+// so a DELETE in one test doesn't leak into the next.
+export function resetPendingPostsFixture() {
+  posts = createPendingPostsFixture();
+}
+
 export const handlers = [
+  http.get('/api/posts', () => HttpResponse.json(posts)),
+  http.delete('/api/posts/:id', ({ params }) => {
+    const index = posts.findIndex((post) => post.id === params.id);
+    if (index === -1) {
+      return HttpResponse.json({ error: 'not-found' }, { status: 404 });
+    }
+    posts = posts.filter((post) => post.id !== params.id);
+    return HttpResponse.json({ id: params.id });
+  }),
   // tus protocol — creation (POST) returns the upload URL via Location.
   http.post('/api/upload', ({ request }) => {
     const id = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -51,7 +71,23 @@ export const handlers = [
       headers: { 'Upload-Offset': String(offset), 'Tus-Resumable': '1.0.0' },
     });
   }),
-  http.post('/api/posts', () =>
-    HttpResponse.json({ id: 'post-123' }, { status: 201 })
-  ),
+  http.post('/api/posts', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const id = `post-${crypto.randomUUID()}`;
+    posts = [
+      {
+        id,
+        title: (body.title as string) ?? 'پست جدید',
+        sellerName: 'گالری طلای مدرن',
+        sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
+        isVerified: true,
+        caption: (body.caption as string) ?? '',
+        mediaUrls: Array.isArray(body.mediaUrls) ? (body.mediaUrls as string[]) : [],
+        submittedAt: new Date().toISOString(),
+        status: 'pending',
+      },
+      ...posts,
+    ];
+    return HttpResponse.json({ id }, { status: 201 });
+  }),
 ];

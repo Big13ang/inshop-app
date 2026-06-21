@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import mockReact from 'react';
 import { server } from './mocks/server';
+import { resetPendingPostsFixture } from './mocks/handlers';
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -62,7 +63,10 @@ if (!globalThis.crypto?.subtle) {
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 
 // Reset any request handlers that were added during tests
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+  resetPendingPostsFixture();
+});
 
 // Stop the server after all tests
 afterAll(() => server.close());

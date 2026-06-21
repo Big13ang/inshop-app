@@ -167,12 +167,12 @@ describe('usePostFlow — handleNext', () => {
       expect(result.current.phase).toBe('select');
     });
 
-    it('navigates to pending-posts when in select phase', () => {
+    it('navigates back when in select phase', () => {
       const onNavigate = jest.fn();
       const { result } = renderHook(() => usePostFlow(onNavigate));
 
       act(() => { result.current.handleBack(); });
-      expect(onNavigate).toHaveBeenCalledWith('pending-posts');
+      expect(onNavigate).toHaveBeenCalledWith('back');
     });
   });
 
