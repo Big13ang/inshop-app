@@ -19,6 +19,17 @@ jest.mock('gsap', () => ({
   }),
 }));
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+  usePathname: () => '/app/posts/pending',
+}));
+
+
 jest.mock('@/components/ui/PostSlider', () => ({
   __esModule: true,
   default: ({ images }: { images: string[] }) => (

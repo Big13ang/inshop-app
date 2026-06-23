@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Hourglass, Trash2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
+import MainFooter from '@/components/layout/MainFooter';
 import { Menu } from '@/components/ui/Menu';
 import { Button } from '@/components/ui/button';
 import { usePendingPosts } from './hooks/usePendingPosts';
@@ -29,7 +30,7 @@ export default function PendingPostsView({ onBack, onAddPost }: PendingPostsView
         <Header.Right />
       </Header.Root>
 
-      <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-10">
+      <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="border-b border-primary/5 bg-surface-container-low px-4 py-3 text-right">
           <p className="text-[11px] leading-5 text-zinc-500">{text.noticeText}</p>
         </div>
@@ -49,6 +50,8 @@ export default function PendingPostsView({ onBack, onAddPost }: PendingPostsView
           </div>
         )}
       </main>
+
+      <MainFooter />
 
       <Menu.Root isOpen={activeMenuId !== null} onClose={() => setActiveMenuId(null)}>
         <Menu.Title right={activePost?.status === 'rejected' ? text.statusRejectedShort : text.statusPending}>
