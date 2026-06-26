@@ -17,7 +17,7 @@
     "static:build": "mv app/api tmp_api && next build && mv tmp_api app/api",
     "android:sync": "npx cap sync android",
     "android:open": "npx cap open android",
-    "android:build": "npm run static:build && npx cap sync android && ./android/gradlew -p android assembleDebug"
+    "android:build": "npm run static:build && npx cap sync android && export JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" && ./android/gradlew -p android assembleDebug"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
