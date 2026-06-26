@@ -48,3 +48,10 @@ graphify-out/
 temp/
 /tmp/
 /public/uploads/
+
+# capacitor & android build ignores
+/tmp_api/
+/android/.gradle/
+/android/.kotlin/
+/android/build/
+/android/app/build/

@@ -8,6 +8,13 @@ import { Toaster } from '../../../../components/ui/sonner';
 import { text } from '../constants';
 import { useMediaStore } from '../services/mediaStore';
 import { server } from '../../../../mocks/server';
+import { isCapacitorNative, pickNativeImages } from '../services/capacitorPicker';
+import { Result } from '../../../../lib/utils/result';
+
+jest.mock('../services/capacitorPicker', () => ({
+  isCapacitorNative: jest.fn(),
+  pickNativeImages: jest.fn(),
+}));
 
 // ── Global browser API stubs ──────────────────────────────────────────────────
 
@@ -37,6 +44,11 @@ afterEach(() => {
     selectedIds: [],
     activePreviewIdx: 0,
   });
+});
+
+beforeEach(() => {
+  (isCapacitorNative as jest.Mock).mockResolvedValue(false);
+  (pickNativeImages as jest.Mock).mockReset();
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -120,6 +132,40 @@ describe('AddPostView — selection phase', () => {
 
     await user.click(screen.getByRole('button', { name: text.addButton }));
 
+    expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it('clicking the add button triggers Capacitor camera picker when on native platform', async () => {
+    (isCapacitorNative as jest.Mock).mockResolvedValue(true);
+    const mockFile = new File(['img'], 'native-photo.jpg', { type: 'image/jpeg' });
+    (pickNativeImages as jest.Mock).mockResolvedValue(Result.ok([mockFile]));
+
+    const { user, container } = setup();
+    const input = container.querySelector('input[multiple]') as HTMLInputElement;
+    const clickSpy = jest.spyOn(input, 'click');
+
+    await user.click(screen.getByRole('button', { name: text.addButton }));
+
+    await waitFor(() => {
+      expect(pickNativeImages).toHaveBeenCalled();
+    });
+    expect(clickSpy).not.toHaveBeenCalled();
+    expect(useMediaStore.getState().itemMap.size).toBe(1);
+  });
+
+  it('clicking the add button falls back to standard file picker on native platform if picker returns error', async () => {
+    (isCapacitorNative as jest.Mock).mockResolvedValue(true);
+    (pickNativeImages as jest.Mock).mockResolvedValue(Result.err(new Error('User cancelled')));
+
+    const { user, container } = setup();
+    const input = container.querySelector('input[multiple]') as HTMLInputElement;
+    const clickSpy = jest.spyOn(input, 'click');
+
+    await user.click(screen.getByRole('button', { name: text.addButton }));
+
+    await waitFor(() => {
+      expect(pickNativeImages).toHaveBeenCalled();
+    });
     expect(clickSpy).toHaveBeenCalled();
   });
 });

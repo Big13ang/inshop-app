@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
+  output: "export",
+  images: {
+    unoptimized: true,
+  },
   reactCompiler: true,
 };
 
