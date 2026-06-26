@@ -10,6 +10,7 @@ import PostDetailsForm from './components/PostDetailsForm';
 import { usePostFlow } from './hooks/usePostFlow';
 import { MAX_IMAGES } from './constants';
 import { useMediaStore } from './services/mediaStore';
+import { isCapacitorNative, pickNativeImages } from './services/capacitorPicker';
 
 interface AddPostViewProps {
   onNavigate: (view: string) => void;
@@ -49,6 +50,37 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
     );
   }
 
+  const triggerBrowserPicker = () => {
+    imagesInputRef.current?.click();
+  };
+
+  const handleNativePicker = async (remainingSlots: number) => {
+    const result = await pickNativeImages(remainingSlots);
+    if (!result.ok) {
+      triggerBrowserPicker();
+      return;
+    }
+
+    const hasSelectedImages = result.value.length > 0;
+    if (hasSelectedImages) {
+      media.addFiles(result.value);
+    }
+  };
+
+  const handleTriggerPicker = async () => {
+    const native = await isCapacitorNative();
+    if (!native) {
+      triggerBrowserPicker();
+      return;
+    }
+
+    const remainingSlots = MAX_IMAGES - useMediaStore.getState().itemMap.size;
+    const canAddMoreImages = remainingSlots > 0;
+    if (canAddMoreImages) {
+      await handleNativePicker(remainingSlots);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full bg-surface-l3 relative overflow-hidden select-none">
       {/* accept="image/*" opens native gallery on iOS/Android */}
@@ -76,7 +108,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
         isUploadPending={isUploadPending}
         isAtLimit={isAtLimit}
         onNext={handleNext}
-        onTriggerPicker={() => imagesInputRef.current?.click()}
+        onTriggerPicker={handleTriggerPicker}
       />
     </div>
   );

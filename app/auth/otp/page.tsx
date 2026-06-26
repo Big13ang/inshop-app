@@ -1,24 +1,28 @@
+'use client';
+
 import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Otp from '@/features/auth/otp/Otp';
 import AppLogo from '@/features/auth/login/components/AppLogo';
 import { MessageSquare } from 'lucide-react';
 
-interface PageProps {
-    searchParams: Promise<{ phone?: string }>;
-}
-
-export default function OtpPage({ searchParams }: PageProps) {
+export default function OtpPage() {
     return (
         <Suspense fallback={<OtpSkeletonFallback />}>
-            <OtpContent searchParams={searchParams} />
+            <OtpContent />
         </Suspense>
     );
 }
 
-async function OtpContent({ searchParams }: { searchParams: Promise<{ phone?: string }> }) {
-    const { phone } = await searchParams;
-    if (!phone) redirect('/auth/login');
+function OtpContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const phone = searchParams.get('phone');
+
+    if (!phone) {
+        router.replace('/auth/login');
+        return null;
+    }
 
     return (
         <Otp phone={phone} />
