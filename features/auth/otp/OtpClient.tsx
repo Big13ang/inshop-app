@@ -46,7 +46,7 @@ export default function OtpClient({ phone }: OtpClientProps) {
             phone={phone}
             onResend={handleResend}
             onEditPhone={handleEditPhone}
-            onComplete={handleCompeteLogin}
+            onComplete={handleCompleteLogin}
         />
     );
 }
