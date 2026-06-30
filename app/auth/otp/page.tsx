@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import Otp from '@/features/auth/otp/Otp';
+import OtpClient from '@/features/auth/otp/OtpClient';
 import AppLogo from '@/features/auth/login/components/AppLogo';
 import { MessageSquare } from 'lucide-react';
 
@@ -8,21 +8,14 @@ interface PageProps {
     searchParams: Promise<{ phone?: string }>;
 }
 
-export default function OtpPage({ searchParams }: PageProps) {
-    return (
-        <Suspense fallback={<OtpSkeletonFallback />}>
-            <OtpContent searchParams={searchParams} />
-        </Suspense>
-    );
-}
-
-async function OtpContent({ searchParams }: { searchParams: Promise<{ phone?: string }> }) {
+async function OtpContent({ searchParams }: PageProps) {
     const { phone } = await searchParams;
-    if (!phone) redirect('/auth/login');
 
-    return (
-        <Otp phone={phone} />
-    );
+    if (!phone) {
+        redirect('/auth/login');
+    }
+
+    return <OtpClient phone={phone} />;
 }
 
 function OtpSkeletonFallback() {
@@ -61,3 +54,10 @@ function OtpSkeletonFallback() {
     );
 }
 
+export default function OtpPage({ searchParams }: PageProps) {
+    return (
+        <Suspense fallback={<OtpSkeletonFallback />}>
+            <OtpContent searchParams={searchParams} />
+        </Suspense>
+    );
+}

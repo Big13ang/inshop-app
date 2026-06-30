@@ -10,14 +10,11 @@ import SubmitButton from './components/SubmitButton';
 import { loginSchema, LoginFormValues, TEXTS } from './constants';
 import { convertPersianArabicToEnglish } from '@/lib/utils';
 
-import { useRouter } from 'next/navigation';
-
 export interface LoginProps {
-    onSubmit?: (data: LoginFormValues) => void | Promise<void>;
+    onSubmit: (data: LoginFormValues) => void | Promise<void>;
 }
 
 export default function Login({ onSubmit }: LoginProps) {
-    const router = useRouter();
     const {
         register,
         handleSubmit,
@@ -31,11 +28,7 @@ export default function Login({ onSubmit }: LoginProps) {
     const isPhoneError = !!(errors.phone && dirtyFields.phone);
 
     const handleFormSubmit = async (data: LoginFormValues) => {
-        if (onSubmit) {
-            await onSubmit(data);
-        } else {
-            router.push(`/auth/otp?phone=${encodeURIComponent(data.phone)}`);
-        }
+        await onSubmit(data);
     };
 
     return (
