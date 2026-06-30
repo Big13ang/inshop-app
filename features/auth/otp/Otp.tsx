@@ -4,14 +4,13 @@
 import { TEXTS } from './constants';
 import { MessageSquare } from 'lucide-react';
 import AppLogo from '../login/components/AppLogo';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 interface OtpProps {
   phone: string;
-  onComplete?: (code: string) => void;
-  onEditPhone?: () => void;
-  onResend?: () => void;
+  onComplete: (code: string) => void;
+  onEditPhone: () => void;
+  onResend: () => void;
 }
 
 import { useOtp } from './hooks/useOtp';
@@ -19,22 +18,12 @@ import OtpInputGroup from './components/OtpInputGroup';
 import OtpTimer from './components/OtpTimer';
 
 export default function Otp({ phone, onComplete, onEditPhone, onResend }: OtpProps) {
-  const router = useRouter();
-
   const handleCompleteAction = (code: string) => {
-    if (onComplete) {
-      onComplete(code);
-    } else {
-      console.log('OTP completed:', code);
-    }
+    onComplete(code);
   };
 
   const handleEditPhoneAction = () => {
-    if (onEditPhone) {
-      onEditPhone();
-    } else {
-      router.push('/auth/login');
-    }
+    onEditPhone();
   };
 
   const {

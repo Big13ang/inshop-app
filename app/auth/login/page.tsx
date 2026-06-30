@@ -10,7 +10,7 @@ export default function LoginPage() {
     const router = useRouter();
 
     const handleLoginSubmit = async (data: LoginFormValues): Promise<void> => {
-        const { error } = await authClient.phoneNumber.sendOtp({
+        const { data: result, error } = await authClient.phoneNumber.sendOtp({
             phoneNumber: data.phone,
         });
 
@@ -18,6 +18,8 @@ export default function LoginPage() {
             toast.error(error.message || "خطا در ارسال کد تایید");
             return;
         }
+
+        toast.success(result.message);
 
         router.push(`/auth/otp?phone=${encodeURIComponent(data.phone)}`);
     }
