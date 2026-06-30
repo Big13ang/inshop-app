@@ -28,7 +28,7 @@ export default function OtpClient({ phone }: OtpClientProps) {
         router.push('/auth/login');
     };
 
-    const handleCompeteLogin = async (code: string) => {
+    const handleCompleteLogin = async (code: string) => {
         const { error } = await authClient.phoneNumber.verify({
             code: code,
             phoneNumber: phone,
