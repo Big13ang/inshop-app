@@ -7,7 +7,15 @@
 
 import { type Page, type Locator, expect } from '@playwright/test';
 import { TEXTS } from '../../features/auth/otp/constants';
-import { VALID_PHONES } from '../../features/auth/login/__tests__/fixtures/phones';
+import { VALID_PHONES } from '../fixtures/phones';
+import {
+  mockSendOtpSuccess,
+  mockSendOtpError,
+  mockVerifySuccess,
+  mockVerifyError,
+  mockResendSuccess,
+  mockResendError,
+} from '../fixtures/authMocks';
 
 export class OtpPage {
   readonly page: Page;
@@ -62,45 +70,21 @@ export class OtpPage {
 
   /** Mock successful OTP verification response */
   async mockVerifySuccess() {
-    await this.page.route('**/api/auth/phone-number/verify', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true }),
-      });
-    });
+    await mockVerifySuccess(this.page);
   }
 
   /** Mock failed OTP verification response */
   async mockVerifyError(message = 'کد وارد شده صحیح نیست') {
-    await this.page.route('**/api/auth/phone-number/verify', async (route) => {
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ message }),
-      });
-    });
+    await mockVerifyError(this.page, message);
   }
 
   /** Mock successful OTP resend response */
   async mockResendSuccess() {
-    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'کد مجدداً ارسال شد' }),
-      });
-    });
+    await mockResendSuccess(this.page);
   }
 
   /** Mock failed OTP resend response */
   async mockResendError(message = 'محدودیت ارسال مجدد') {
-    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ message }),
-      });
-    });
+    await mockResendError(this.page, message);
   }
 }

@@ -22,10 +22,7 @@
  */
 
 import { test, expect } from '../fixtures';
-import {
-  VALID_PHONES,
-  INVALID_PHONES,
-} from '../../features/auth/login/__tests__/fixtures/phones';
+import { VALID_PHONES, INVALID_PHONES } from '../fixtures/phones';
 import { TEXTS } from '../../features/auth/login/constants';
 
 // ─── Suite 1: Page load ───────────────────────────────────────────────────────

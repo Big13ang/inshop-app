@@ -8,7 +8,7 @@
 
 import { test, expect } from '../fixtures';
 import { TEXTS } from '../../features/auth/otp/constants';
-import { VALID_PHONES } from '../../features/auth/login/__tests__/fixtures/phones';
+import { VALID_PHONES } from '../fixtures/phones';
 
 // ─── Suite 1: Page load & initial state ────────────────────────────────────────
 

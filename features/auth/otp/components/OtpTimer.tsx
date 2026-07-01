@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { TEXTS } from '../constants';
 import { Button } from '@/components/ui/button';
+import { useCountdown } from '../hooks/useCountdown';
 
 interface OtpTimerProps {
   onResend?: () => void | Promise<void | boolean> | boolean;
@@ -11,27 +12,14 @@ interface OtpTimerProps {
 }
 
 export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(initialTime);
+  const handleResendComplete = useCallback(() => {
+    // Timer expired - resend button will appear
+  }, []);
 
-  // Fix 9: sync state when the prop changes (e.g. parent updates resend window duration)
-  useEffect(() => {
-    setTimeLeft(initialTime);
-  }, [initialTime]);
-
-  const isTimerActive = timeLeft > 0;
-
-  useEffect(() => {
-    if (!isTimerActive) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isTimerActive]);
+  const { timeLeft, isExpired, reset } = useCountdown({
+    initialSeconds: initialTime,
+    onComplete: handleResendComplete,
+  });
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -45,12 +33,12 @@ export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpT
       if (result === false) return;
     }
     resetOtp();
-    setTimeLeft(initialTime);
+    reset();
   };
 
   return (
     <div className="text-center mt-4">
-      {timeLeft > 0 ? (
+      {!isExpired ? (
         <span className="text-xs text-zinc-500 cursor-pointer">
           {TEXTS.resendPrefix}
           {formatTime(timeLeft)}

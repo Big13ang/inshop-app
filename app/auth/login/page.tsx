@@ -2,29 +2,17 @@
 
 import { LoginFormValues } from "@/features/auth/login/constants";
 import Login from "@/features/auth/login/Login";
-import { authClient } from "@/lib/auth-client";
-import { useRouter } from 'next/navigation';
-import { toast } from "sonner";
+import { useAuthFlow } from "@/features/auth/hooks/useAuthFlow";
 
 export default function LoginPage() {
-    const router = useRouter();
+    const { sendOtp, redirectToOtp } = useAuthFlow();
 
     const handleLoginSubmit = async (data: LoginFormValues): Promise<void> => {
-        const { data: result, error } = await authClient.phoneNumber.sendOtp({
-            phoneNumber: data.phone,
-        });
-
-        if (error) {
-            toast.error(error.message || "خطا در ارسال کد تایید");
-            return;
+        const success = await sendOtp(data.phone);
+        if (success) {
+            redirectToOtp(data.phone);
         }
+    };
 
-        toast.success(result.message);
-
-        router.push(`/auth/otp?phone=${encodeURIComponent(data.phone)}`);
-    }
-
-    return (
-        <Login onSubmit={handleLoginSubmit} />
-    );
+    return <Login onSubmit={handleLoginSubmit} />;
 }

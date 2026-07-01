@@ -12,6 +12,10 @@
 
 import { type Page, type Locator, expect } from '@playwright/test';
 import { TEXTS } from '../../features/auth/login/constants';
+import {
+  mockSendOtpSuccess,
+  mockSendOtpError,
+} from '../fixtures/authMocks';
 
 export class LoginPage {
   readonly page: Page;
@@ -85,23 +89,11 @@ export class LoginPage {
 
   /** Mock successful OTP generation response */
   async mockSendOtpSuccess() {
-    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: 'کد تایید ارسال شد' }),
-      });
-    });
+    await mockSendOtpSuccess(this.page);
   }
 
   /** Mock failed OTP generation response */
   async mockSendOtpError(message = 'خطا در ارسال کد تایید') {
-    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({ message }),
-      });
-    });
+    await mockSendOtpError(this.page, message);
   }
 }
