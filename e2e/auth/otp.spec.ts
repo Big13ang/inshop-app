@@ -37,10 +37,10 @@ test.describe('OTP page — initial state', () => {
     await expect(otpPage.getOtpInput(0)).toBeFocused();
   });
 
-  test('edit phone button is visible and redirects to /auth/login', async ({ otpPage, page }) => {
+  test('edit phone link is visible and redirects to /auth/login', async ({ otpPage, page }) => {
     await otpPage.goto();
-    await expect(otpPage.editPhoneButton).toBeVisible();
-    await otpPage.editPhoneButton.click();
+    await expect(otpPage.editPhoneLink).toBeVisible();
+    await otpPage.editPhoneLink.click();
     await expect(page).toHaveURL(/\/auth\/login/);
   });
 
@@ -54,6 +54,11 @@ test.describe('OTP page — initial state', () => {
   test('page URL has correct path and parameters', async ({ otpPage }) => {
     await otpPage.goto();
     await otpPage.assertOnOtpPage();
+  });
+
+  test('redirects to login page when accessed directly without phone parameter', async ({ page }) => {
+    await page.goto('/auth/otp');
+    await expect(page).toHaveURL(/\/auth\/login/);
   });
 });
 
@@ -119,6 +124,7 @@ test.describe('OTP page — timer & resend flow', () => {
   test('resend button appears after countdown completes and resets on click', async ({ page, otpPage }) => {
     // Install the clock before navigating so we can freeze/control time, starting at the current time to avoid hydration mismatch
     await page.clock.install({ time: new Date() });
+    await otpPage.mockResendSuccess();
     await otpPage.goto();
 
     // Initially active countdown timer
@@ -243,4 +249,111 @@ test.describe('OTP page — API integration (real flow)', () => {
     await expect(page.getByText(errorMsg)).toBeVisible({ timeout: 5_000 });
   });
 });
+
+// ─── Suite 7: Paste behavior (critical mobile UX) ────────────────────────────
+
+test.describe('OTP page — paste behavior', () => {
+  test('pasting a full OTP code fills all slots and triggers verification', async ({
+    otpPage,
+    page,
+  }) => {
+    await otpPage.mockVerifySuccess();
+    await otpPage.goto();
+
+    // Focus the first input and paste
+    await otpPage.getOtpInput(0).focus();
+    await page.evaluate(() => {
+      const input = document.querySelector('#otp-input-0') as HTMLInputElement;
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: new DataTransfer(),
+      });
+      pasteEvent.clipboardData!.setData('text', '1234');
+      input.dispatchEvent(pasteEvent);
+    });
+
+    // All slots should be filled
+    await expect(otpPage.getOtpInput(0)).toHaveValue('1');
+    await expect(otpPage.getOtpInput(1)).toHaveValue('2');
+    await expect(otpPage.getOtpInput(2)).toHaveValue('3');
+    await expect(otpPage.getOtpInput(3)).toHaveValue('4');
+
+    // Verify it triggered the verification flow → redirect
+    await expect(page).toHaveURL(/\/app\/posts\/new/);
+  });
+
+  test('pasting a short code fills available slots without triggering verification', async ({
+    otpPage,
+  }) => {
+    await otpPage.goto();
+
+    await otpPage.getOtpInput(0).focus();
+    await otpPage.page.evaluate(() => {
+      const input = document.querySelector('#otp-input-0') as HTMLInputElement;
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: new DataTransfer(),
+      });
+      pasteEvent.clipboardData!.setData('text', '12');
+      input.dispatchEvent(pasteEvent);
+    });
+
+    // Only first two slots should be filled
+    await expect(otpPage.getOtpInput(0)).toHaveValue('1');
+    await expect(otpPage.getOtpInput(1)).toHaveValue('2');
+    await expect(otpPage.getOtpInput(2)).toHaveValue('');
+  });
+});
+
+// ─── Suite 8: Post-failure retry ─────────────────────────────────────────────
+
+test.describe('OTP page — retry after failure', () => {
+  test('inputs remain usable after failed verification — user can retry with correct code', async ({
+    otpPage,
+    page,
+  }) => {
+    // First verify fails, then succeed on retry
+    let callCount = 0;
+    await page.route('**/api/auth/phone-number/verify', async (route) => {
+      callCount++;
+      if (callCount === 1) {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'کد وارد شده صحیح نیست' }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true }),
+        });
+      }
+    });
+
+    await otpPage.goto();
+
+    // First attempt — wrong code
+    await otpPage.fillOtp('0000');
+
+    // Error toast should appear
+    await expect(page.getByText('کد وارد شده صحیح نیست')).toBeVisible({ timeout: 5_000 });
+
+    // Inputs should still be present and interactive
+    const inputs = page.getByRole('textbox');
+    await expect(inputs).toHaveCount(4);
+
+    // Clear all inputs
+    for (let i = 0; i < 4; i++) {
+      await otpPage.getOtpInput(i).clear();
+    }
+
+    // Second attempt — correct code
+    await otpPage.fillOtp('1234');
+
+    // Should redirect to success page
+    await expect(page).toHaveURL(/\/app\/posts\/new/);
+  });
+});
+
 

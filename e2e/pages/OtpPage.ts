@@ -15,7 +15,7 @@ export class OtpPage {
   // ── Locators ──────────────────────────────────────────────────────────────
   readonly logo: Locator;
   readonly pageTitle: Locator;
-  readonly editPhoneButton: Locator;
+  readonly editPhoneLink: Locator;
   readonly timerText: Locator;
   readonly resendButton: Locator;
 
@@ -24,7 +24,7 @@ export class OtpPage {
 
     this.logo = page.getByText('inShop', { exact: true });
     this.pageTitle = page.getByRole('heading', { name: TEXTS.title });
-    this.editPhoneButton = page.getByRole('button', { name: TEXTS.editPhone });
+    this.editPhoneLink = page.getByRole('link', { name: TEXTS.editPhone });
     this.timerText = page.locator('span', { hasText: TEXTS.resendPrefix });
     this.resendButton = page.getByRole('button', { name: TEXTS.resendActive });
   }

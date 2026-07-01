@@ -80,4 +80,65 @@ describe('LoginPage Integration', () => {
       expect(mockPush).not.toHaveBeenCalled();
     });
   });
+
+  it('displays the fallback error message when error.message is undefined', async () => {
+    mockSendOtp.mockResolvedValue({
+      data: null,
+      error: {},
+    });
+
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    const phoneInput = screen.getByRole('textbox');
+    const submitBtn = screen.getByRole('button');
+
+    await user.type(phoneInput, '09171234567');
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('خطا در ارسال کد تایید');
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  it('recovers form state after API failure — button re-enables and allows resubmission', async () => {
+    // First call fails, second call succeeds
+    mockSendOtp
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'خطای موقت' },
+      })
+      .mockResolvedValueOnce({
+        data: { message: 'کد تایید ارسال شد' },
+        error: null,
+      });
+
+    const user = userEvent.setup();
+    render(<LoginPage />);
+
+    const phoneInput = screen.getByRole('textbox');
+    const submitBtn = screen.getByRole('button');
+
+    // Submit → API fails
+    await user.type(phoneInput, '09171234567');
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('خطای موقت');
+    });
+
+    // Form should recover — button re-enabled, can resubmit
+    await waitFor(() => expect(submitBtn).toBeEnabled());
+
+    await user.click(submitBtn);
+
+    await waitFor(() => {
+      expect(mockSendOtp).toHaveBeenCalledTimes(2);
+      expect(toast.success).toHaveBeenCalledWith('کد تایید ارسال شد');
+      expect(mockPush).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
+    });
+  });
 });

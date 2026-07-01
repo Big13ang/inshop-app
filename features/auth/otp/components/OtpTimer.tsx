@@ -5,7 +5,7 @@ import { TEXTS } from '../constants';
 import { Button } from '@/components/ui/button';
 
 interface OtpTimerProps {
-  onResend?: () => void;
+  onResend?: () => void | Promise<void | boolean> | boolean;
   resetOtp: () => void;
   initialTime?: number;
 }
@@ -39,8 +39,11 @@ export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpT
     return `${m}:${s}`;
   };
 
-  const handleResend = () => {
-    if (onResend) onResend();
+  const handleResend = async () => {
+    if (onResend) {
+      const result = await onResend();
+      if (result === false) return;
+    }
     resetOtp();
     setTimeLeft(initialTime);
   };

@@ -135,13 +135,61 @@ describe('OtpClient Integration', () => {
     });
   });
 
-  it('redirects to login page when edit phone button is clicked', async () => {
+  it('renders a link to the login page', () => {
+    render(<OtpClient phone={TEST_PHONE} />);
+
+    const editLink = screen.getByRole('link', { name: TEXTS.editPhone });
+    expect(editLink).toBeInTheDocument();
+    expect(editLink).toHaveAttribute('href', '/auth/login');
+  });
+
+  it('allows retry after failed verification — inputs remain usable and second attempt succeeds', async () => {
+    // First verify fails, second succeeds
+    mockVerify
+      .mockResolvedValueOnce({
+        error: { message: 'کد تایید نامعتبر است' },
+      })
+      .mockResolvedValueOnce({
+        error: null,
+      });
+
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(<OtpClient phone={TEST_PHONE} />);
 
-    const editBtn = screen.getByRole('button', { name: TEXTS.editPhone });
-    await user.click(editBtn);
+    const inputs = screen.getAllByRole('textbox');
 
-    expect(mockPush).toHaveBeenCalledWith('/auth/login');
+    // First attempt — wrong code
+    await user.type(inputs[0], '0');
+    await user.type(inputs[1], '0');
+    await user.type(inputs[2], '0');
+    await user.type(inputs[3], '0');
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('کد تایید نامعتبر است');
+    });
+
+    // Inputs should still be in the DOM and interactive
+    const inputsAfterError = screen.getAllByRole('textbox');
+    expect(inputsAfterError).toHaveLength(4);
+
+    // Clear and retry with correct code
+    await user.clear(inputsAfterError[0]);
+    await user.clear(inputsAfterError[1]);
+    await user.clear(inputsAfterError[2]);
+    await user.clear(inputsAfterError[3]);
+
+    await user.type(inputsAfterError[0], '1');
+    await user.type(inputsAfterError[1], '2');
+    await user.type(inputsAfterError[2], '3');
+    await user.type(inputsAfterError[3], '4');
+
+    await waitFor(() => {
+      expect(mockVerify).toHaveBeenCalledTimes(2);
+      expect(mockVerify).toHaveBeenLastCalledWith({
+        code: '1234',
+        phoneNumber: TEST_PHONE,
+      });
+      expect(mockPush).toHaveBeenCalledWith('/app/posts/new');
+    });
   });
 });

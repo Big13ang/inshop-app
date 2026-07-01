@@ -18,14 +18,12 @@ const TWO_MINUTES_MS = 120000;
 const setup = (phone = TEST_PHONE) => {
   const user = userEvent.setup();
   const onComplete = jest.fn();
-  const onEditPhone = jest.fn();
   const onResend = jest.fn();
 
   render(
     <Otp
       phone={phone}
       onComplete={onComplete}
-      onEditPhone={onEditPhone}
       onResend={onResend}
     />
   );
@@ -33,7 +31,6 @@ const setup = (phone = TEST_PHONE) => {
   return {
     user,
     onComplete,
-    onEditPhone,
     onResend,
     getInputs: () => screen.getAllByRole('textbox'),
   };
@@ -45,7 +42,7 @@ describe('Otp Page — Initial Render & Timer Initialization', () => {
 
     expect(screen.getByRole('heading', { name: TEXTS.title })).toBeInTheDocument();
     expect(screen.getByText(new RegExp(TEST_PHONE))).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: TEXTS.editPhone })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: TEXTS.editPhone })).toBeInTheDocument();
 
     const inputs = screen.getAllByRole('textbox');
     expect(inputs).toHaveLength(OTP_LENGTH);
@@ -80,6 +77,29 @@ describe('Otp Page — Focus Management', () => {
 
     await user.keyboard('{Backspace}');
     expect(inputs[0]).toHaveFocus();
+  });
+
+  it('does not move focus or change slot value when a non-digit character is typed', async () => {
+    const { user, getInputs } = setup();
+    const inputs = getInputs();
+
+    await user.type(inputs[0], 'a');
+    expect(inputs[0]).toHaveValue('');
+    expect(inputs[0]).toHaveFocus();
+  });
+
+  it('replaces the existing value when typing into an already-filled slot', async () => {
+    const { user, getInputs } = setup();
+    const inputs = getInputs();
+
+    await user.type(inputs[0], '1');
+    expect(inputs[0]).toHaveValue('1');
+
+    // Click back on the first slot and type a new digit
+    await user.click(inputs[0]);
+    await user.clear(inputs[0]);
+    await user.type(inputs[0], '5');
+    expect(inputs[0]).toHaveValue('5');
   });
 });
 
@@ -139,6 +159,40 @@ describe('Otp Page — OTP Code Completion', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(onComplete).toHaveBeenCalledWith('1234');
   });
+
+  it('handles pasting a too-short code by filling available slots and focusing next empty slot', async () => {
+    const { getInputs, onComplete } = setup();
+    const inputs = getInputs();
+
+    fireEvent.paste(inputs[0], {
+      clipboardData: {
+        getData: (format: string) => (format === 'text' ? '12' : ''),
+      },
+    });
+
+    expect(inputs[0]).toHaveValue('1');
+    expect(inputs[1]).toHaveValue('2');
+    expect(inputs[2]).toHaveValue('');
+    expect(inputs[2]).toHaveFocus();
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it('handles pasting a too-long mixed code by extracting only first 4 digits and completing', async () => {
+    const { getInputs, onComplete } = setup();
+    const inputs = getInputs();
+
+    fireEvent.paste(inputs[0], {
+      clipboardData: {
+        getData: (format: string) => (format === 'text' ? '12abc345' : ''),
+      },
+    });
+
+    expect(inputs[0]).toHaveValue('1');
+    expect(inputs[1]).toHaveValue('2');
+    expect(inputs[2]).toHaveValue('3');
+    expect(inputs[3]).toHaveValue('4');
+    expect(onComplete).toHaveBeenCalledWith('1234');
+  });
 });
 
 describe('Otp Page — Countdown Timer', () => {
@@ -173,7 +227,7 @@ describe('Otp Page — Countdown Timer', () => {
     expect(screen.queryByRole('button', { name: TEXTS.resendActive })).not.toBeInTheDocument();
   });
 
-  it('renders resend button when countdown completes, calls onResend, and resets timer on click', () => {
+  it('renders resend button when countdown completes, calls onResend, and resets timer on click', async () => {
     const { onResend } = setup();
 
     // Advance time by 120 seconds to finish countdown
@@ -186,7 +240,7 @@ describe('Otp Page — Countdown Timer', () => {
     expect(resendBtn).toBeInTheDocument();
 
     // Click resend button
-    act(() => {
+    await act(async () => {
       fireEvent.click(resendBtn);
     });
 
@@ -197,7 +251,7 @@ describe('Otp Page — Countdown Timer', () => {
     expect(screen.getByText(new RegExp(INITIAL_TIMER_TEXT))).toBeInTheDocument();
   });
 
-  it('clears all OTP input values and resets focus when resend button is clicked', () => {
+  it('clears all OTP input values and resets focus when resend button is clicked', async () => {
     const { getInputs } = setup();
     const inputs = getInputs();
 
@@ -212,7 +266,7 @@ describe('Otp Page — Countdown Timer', () => {
 
     const resendBtn = screen.getByRole('button', { name: TEXTS.resendActive });
 
-    act(() => {
+    await act(async () => {
       fireEvent.click(resendBtn);
     });
 
@@ -223,14 +277,49 @@ describe('Otp Page — Countdown Timer', () => {
 
   it('applies cursor-pointer class to edit phone and resend buttons', () => {
     setup();
-    const editBtn = screen.getByRole('button', { name: TEXTS.editPhone });
-    expect(editBtn).toHaveClass('cursor-pointer');
+    const editLink = screen.getByRole('link', { name: TEXTS.editPhone });
+    expect(editLink).toHaveClass('cursor-pointer');
 
     act(() => {
       jest.advanceTimersByTime(TWO_MINUTES_MS);
     });
     const resendBtn = screen.getByRole('button', { name: TEXTS.resendActive });
     expect(resendBtn).toHaveClass('cursor-pointer');
+  });
+
+  it('does not reset timer or clear inputs when onResend fails', async () => {
+    const onResend = jest.fn().mockResolvedValue(false);
+    const onComplete = jest.fn();
+
+    render(
+      <Otp
+        phone={TEST_PHONE}
+        onComplete={onComplete}
+        onResend={onResend}
+      />
+    );
+
+    const inputs = screen.getAllByRole('textbox');
+    fireEvent.change(inputs[0], { target: { value: '1' } });
+    expect(inputs[0]).toHaveValue('1');
+
+    act(() => {
+      jest.advanceTimersByTime(TWO_MINUTES_MS);
+    });
+
+    const resendBtn = screen.getByRole('button', { name: TEXTS.resendActive });
+    expect(resendBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(resendBtn);
+    });
+
+    expect(onResend).toHaveBeenCalledTimes(1);
+
+    expect(screen.queryByText(new RegExp(INITIAL_TIMER_TEXT))).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: TEXTS.resendActive })).toBeInTheDocument();
+
+    expect(inputs[0]).toHaveValue('1');
   });
 });
 

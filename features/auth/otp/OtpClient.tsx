@@ -18,14 +18,12 @@ export default function OtpClient({ phone }: OtpClientProps) {
         });
 
         if (error) {
-            return toast.error(error.message);
+            toast.error(error.message);
+            return false;
         }
 
         toast.success(data.message);
-    };
-
-    const handleEditPhone = () => {
-        router.push('/auth/login');
+        return true;
     };
 
     const handleCompleteLogin = async (code: string) => {
@@ -45,7 +43,6 @@ export default function OtpClient({ phone }: OtpClientProps) {
         <Otp
             phone={phone}
             onResend={handleResend}
-            onEditPhone={handleEditPhone}
             onComplete={handleCompleteLogin}
         />
     );

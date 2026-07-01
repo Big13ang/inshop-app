@@ -151,6 +151,28 @@ describe('Login — validation feedback (button state + error visibility)', () =
       ).not.toBeInTheDocument()
     );
   });
+
+  it('shows required error message when input is typed and then cleared', async () => {
+    const { user } = setup();
+    const input = getPhoneInput();
+
+    await user.type(input, '1');
+    await user.clear(input);
+    await waitFor(() => {
+      expect(screen.getByText(TEXTS.errorRequiredPhone)).toBeInTheDocument();
+    });
+  });
+
+  it('shows invalid error message when an invalid format is pasted', async () => {
+    const { user } = setup();
+    const input = getPhoneInput();
+
+    input.focus();
+    await user.paste('abc123');
+    await waitFor(() => {
+      expect(screen.getByText(TEXTS.errorInvalidPhone)).toBeInTheDocument();
+    });
+  });
 });
 
 // ─── Suite 4: Form submission ─────────────────────────────────────────────────
@@ -228,10 +250,10 @@ describe('Login — submitting state (loading UX)', () => {
     await waitFor(() => expect(getSubmitButton()).not.toBeDisabled());
     await user.click(getSubmitButton());
 
-    // Button text changes during loading
-    expect(
-      screen.getByRole('button', { name: new RegExp(TEXTS.isSubmitting, 'i') })
-    ).toBeInTheDocument();
+    // Button text changes during loading and button is disabled
+    const submittingButton = screen.getByRole('button', { name: new RegExp(TEXTS.isSubmitting, 'i') });
+    expect(submittingButton).toBeInTheDocument();
+    expect(submittingButton).toBeDisabled();
 
     // Resolve the submission
     resolveSubmit();
