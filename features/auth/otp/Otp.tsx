@@ -1,15 +1,13 @@
 'use client';
 
-
 import { TEXTS } from './constants';
 import { MessageSquare } from 'lucide-react';
 import AppLogo from '../login/components/AppLogo';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface OtpProps {
   phone: string;
   onComplete: (code: string) => void;
-  onEditPhone: () => void;
   onResend: () => void;
 }
 
@@ -17,13 +15,9 @@ import { useOtp } from './hooks/useOtp';
 import OtpInputGroup from './components/OtpInputGroup';
 import OtpTimer from './components/OtpTimer';
 
-export default function Otp({ phone, onComplete, onEditPhone, onResend }: OtpProps) {
+export default function Otp({ phone, onComplete, onResend }: OtpProps) {
   const handleCompleteAction = (code: string) => {
     onComplete(code);
-  };
-
-  const handleEditPhoneAction = () => {
-    onEditPhone();
   };
 
   const {
@@ -53,15 +47,13 @@ export default function Otp({ phone, onComplete, onEditPhone, onResend }: OtpPro
             {TEXTS.subtitle(phone)}
           </p>
 
-          <Button
+          <Link
             id="btn-edit-phone"
-            type="button"
-            variant="link"
-            onClick={handleEditPhoneAction}
-            className="h-auto p-0 text-xs text-zinc-400 hover:text-zinc-800 transition-colors font-medium underline underline-offset-4 mt-2 cursor-pointer"
+            href="/auth/login"
+            className="inline-block text-xs text-zinc-400 hover:text-zinc-800 transition-colors font-medium underline underline-offset-4 mt-2 cursor-pointer"
           >
             {TEXTS.editPhone}
-          </Button>
+          </Link>
         </div>
 
         <OtpInputGroup

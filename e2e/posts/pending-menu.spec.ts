@@ -23,8 +23,8 @@ test.describe('Pending Posts Menu E2E', () => {
     await expect(page.getByText('حذف پیش‌نویس')).toBeVisible({ timeout: 15000 });
 
     // Click on the backdrop or close it
-    // BottomSheet backdrop is clickable and has cursor-pointer bg-zinc-950/40 classes
-    const backdrop = page.locator('div.absolute.bg-zinc-950\\/40');
+    // Dialog backdrop is clickable and has cursor-pointer bg-black/60 classes
+    const backdrop = page.locator('div.fixed.bg-black\\/60');
     await backdrop.click();
 
     // Verify it closes
