@@ -7,12 +7,12 @@ import AddPostFooter from './components/AddPostFooter';
 import SelectedMediaSlider from './components/SelectedMediaSlider';
 import SelectedGallery from './components/SelectedGallery';
 import PostDetailsForm from './components/PostDetailsForm';
-import { usePostFlow } from './hooks/usePostFlow';
+import { usePostFlow, type PostFlowNavigationIntent } from './hooks/usePostFlow';
 import { MAX_IMAGES } from './constants';
 import { useMediaStore } from './services/mediaStore';
 
 interface AddPostViewProps {
-  onNavigate: (view: string) => void;
+  onNavigate: (intent: PostFlowNavigationIntent) => void;
 }
 
 export default function AddPostView({ onNavigate }: AddPostViewProps) {

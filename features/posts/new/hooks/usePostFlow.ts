@@ -7,7 +7,9 @@ import { useMediaUpload } from './useMediaUpload';
 import { useSubmitPost } from './useSubmitPost';
 import { text } from '../constants';
 
-export function usePostFlow(onNavigate: (view: string) => void) {
+export type PostFlowNavigationIntent = 'back' | 'pending-posts';
+
+export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => void) {
   const [phase, setPhase] = useState<'select' | 'details'>('select');
   const [caption, setCaption] = useState('');
 
@@ -33,7 +35,7 @@ export function usePostFlow(onNavigate: (view: string) => void) {
 
   function handleBack() {
     if (phase === 'details') { setPhase('select'); return; }
-    onNavigate('pending-posts');
+    onNavigate('back');
   }
 
   function handleNext() {

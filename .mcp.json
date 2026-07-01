@@ -2,7 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp", "--browser", "chromium"],
+      "args": ["@playwright/mcp", "--browser", "msedge", "--executable-path", "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"],
       "description": "Playwright MCP server — gives AI agents browser automation tools: navigate, click, fill, screenshot, evaluate. Works with Claude Code, Codex CLI, and Antigravity."
     }
   }

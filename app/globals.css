@@ -38,6 +38,10 @@
   --color-outline: #cfc4c5;
   --color-error: #ba1a1a;
 
+  /* Desktop App Shell */
+  --container-app: 440px;
+  --color-desktop-bg: var(--color-surface-l1);
+
   /* ── Motion ──────────────────────────────────────────── */
   /* Durations */
   --duration-instant: 80ms;   /* press down */
@@ -64,6 +68,7 @@
   --shadow-float: 0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   --shadow-sheet: 0 8px 30px rgba(0,0,0,0.12);
   --shadow-modal: 0 20px 50px rgba(0,0,0,0.20);
+  --shadow-app-shell: 0 0 40px rgba(0,0,0,0.08); /* desktop container, lit on all sides */
 
   /* ── Keyframes ────────────────────────────────────── */
   --animate-shimmer: shimmer 1.6s infinite linear;
@@ -142,6 +147,12 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+}
+
+@media (min-width: 768px) {
+  body {
+    background: var(--color-desktop-bg);
+  }
 }
 
 #root {

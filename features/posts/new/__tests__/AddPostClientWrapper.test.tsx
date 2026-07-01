@@ -6,13 +6,15 @@ import AddPostClientWrapper from '../AddPostClientWrapper';
 import { text } from '../constants';
 
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ back: mockBack, push: jest.fn(), replace: jest.fn(), prefetch: jest.fn() }),
+  useRouter: () => ({ back: mockBack, push: mockPush, replace: jest.fn(), prefetch: jest.fn() }),
 }));
 
 afterEach(() => {
   mockBack.mockClear();
+  mockPush.mockClear();
 });
 
 const renderWithProviders = () => {
@@ -30,7 +32,7 @@ describe('AddPostClientWrapper', () => {
     expect(screen.getByText(text.headerTitle)).toBeInTheDocument();
   });
 
-  it('navigates back via router.back() when leaving the select phase', async () => {
+  it('navigates back via router.back when leaving the select phase', async () => {
     const user = userEvent.setup();
     const { container } = renderWithProviders();
 
@@ -38,5 +40,6 @@ describe('AddPostClientWrapper', () => {
     await user.click(backBtn);
 
     expect(mockBack).toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
