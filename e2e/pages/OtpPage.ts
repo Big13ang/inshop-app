@@ -59,4 +59,48 @@ export class OtpPage {
   async assertOnOtpPage() {
     await expect(this.page).toHaveURL(/\/auth\/otp/);
   }
+
+  /** Mock successful OTP verification response */
+  async mockVerifySuccess() {
+    await this.page.route('**/api/auth/phone-number/verify', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+  }
+
+  /** Mock failed OTP verification response */
+  async mockVerifyError(message = 'کد وارد شده صحیح نیست') {
+    await this.page.route('**/api/auth/phone-number/verify', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message }),
+      });
+    });
+  }
+
+  /** Mock successful OTP resend response */
+  async mockResendSuccess() {
+    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'کد مجدداً ارسال شد' }),
+      });
+    });
+  }
+
+  /** Mock failed OTP resend response */
+  async mockResendError(message = 'محدودیت ارسال مجدد') {
+    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message }),
+      });
+    });
+  }
 }

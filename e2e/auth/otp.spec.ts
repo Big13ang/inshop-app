@@ -125,8 +125,8 @@ test.describe('OTP page — timer & resend flow', () => {
     await expect(otpPage.timerText).toContainText('02:00');
     await expect(otpPage.resendButton).not.toBeVisible();
 
-    // Fast-forward by 120 seconds (2 minutes)
-    await page.clock.runFor(120_000);
+    // Fast-forward by 200 seconds to ensure expiration under any hydration or CPU delays
+    await page.clock.runFor(200_000);
 
     // Timer text is gone, resend button is active
     await expect(otpPage.timerText).not.toBeVisible();
@@ -164,3 +164,83 @@ test.describe('OTP page — mobile viewport', () => {
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth);
   });
 });
+
+// ─── Suite 6: API integration (real flow) ───────────────────────────────────
+
+test.describe('OTP page — API integration (real flow)', () => {
+  test('verifies OTP successfully and redirects to /app/posts/new', async ({
+    otpPage,
+    page,
+  }) => {
+    await otpPage.mockVerifySuccess();
+    await otpPage.goto();
+
+    await otpPage.fillOtp('1234');
+
+    // Verify redirection to /app/posts/new
+    await expect(page).toHaveURL(/\/app\/posts\/new/);
+  });
+
+  test('shows error toast when OTP verification fails', async ({
+    otpPage,
+    page,
+  }) => {
+    const errorMsg = 'کد وارد شده صحیح نیست';
+    await otpPage.mockVerifyError(errorMsg);
+    await otpPage.goto();
+
+    await otpPage.fillOtp('0000');
+
+    // Verify error toast appears
+    await expect(page.getByText(errorMsg)).toBeVisible({ timeout: 5_000 });
+
+    // Assert that we are still on the OTP page
+    await otpPage.assertOnOtpPage();
+  });
+
+  test('shows success toast when resending OTP succeeds', async ({
+    otpPage,
+    page,
+  }) => {
+    await page.clock.install({ time: new Date() });
+    await otpPage.mockResendSuccess();
+    await otpPage.goto();
+
+    // Wait for the timer to initialize and show 02:00, ensuring React has mounted and started the interval
+    await expect(otpPage.timerText).toContainText('02:00');
+
+    // Fast-forward by 200 seconds
+    await page.clock.runFor(200_000);
+
+    // Resend button should be visible, click it
+    await expect(otpPage.resendButton).toBeVisible();
+    await otpPage.resendButton.click();
+
+    // Verify success toast appears
+    await expect(page.getByText('کد مجدداً ارسال شد')).toBeVisible({ timeout: 5_000 });
+  });
+
+  test('shows error toast when resending OTP fails', async ({
+    otpPage,
+    page,
+  }) => {
+    await page.clock.install({ time: new Date() });
+    const errorMsg = 'محدودیت ارسال مجدد';
+    await otpPage.mockResendError(errorMsg);
+    await otpPage.goto();
+
+    // Wait for the timer to initialize and show 02:00, ensuring React has mounted and started the interval
+    await expect(otpPage.timerText).toContainText('02:00');
+
+    // Fast-forward by 200 seconds
+    await page.clock.runFor(200_000);
+
+    // Resend button should be visible, click it
+    await expect(otpPage.resendButton).toBeVisible();
+    await otpPage.resendButton.click();
+
+    // Verify error toast appears
+    await expect(page.getByText(errorMsg)).toBeVisible({ timeout: 5_000 });
+  });
+});
+

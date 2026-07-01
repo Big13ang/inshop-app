@@ -38,7 +38,7 @@ export default function OtpClient({ phone }: OtpClientProps) {
             return toast.error(error.message);
         }
 
-        return router.push('/app/new');
+        return router.push('/app/posts/new');
     };
 
     return (

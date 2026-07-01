@@ -25,7 +25,7 @@ export default defineConfig({
 
   use: {
     // All tests navigate relative to this base URL
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:4000',
 
     // Capture full trace on first retry — gives you step-by-step timeline on failure
     trace: 'on-first-retry',
@@ -60,7 +60,10 @@ export default defineConfig({
     // Tablet — iPad viewport to verify responsive behaviour
     {
       name: 'tablet-chrome',
-      use: { ...devices['iPad (gen 7)'] },
+      use: {
+        ...devices['iPad (gen 7)'],
+        browserName: 'chromium',
+      },
     },
 
     // Uncomment to enable cross-browser coverage in CI:
@@ -72,7 +75,7 @@ export default defineConfig({
   // In CI, the server must already be running (reuseExistingServer: false).
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:4000',
     reuseExistingServer: !CI,
     timeout: 120_000,
     stdout: 'ignore',

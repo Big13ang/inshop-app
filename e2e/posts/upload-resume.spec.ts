@@ -46,6 +46,7 @@ test.describe('Add New Post — resumable uploads', () => {
         });
       });
 
+      let patchAttempts = 0;
       // First chunk (offset 0) succeeds; second chunk (offset 5MB) hangs
       // forever — simulates the connection dying partway through it.
       await page.route(`**/api/upload/${UPLOAD_ID}`, async (route) => {
@@ -53,14 +54,21 @@ test.describe('Add New Post — resumable uploads', () => {
         if (request.method() === 'HEAD') {
           return route.fulfill({
             status: 200,
-            headers: { 'Upload-Offset': String(offset), 'Tus-Resumable': '1.0.0' },
+            headers: {
+              'Upload-Offset': String(offset),
+              'Upload-Length': String(RESUME_FILE_SIZE),
+              'Tus-Resumable': '1.0.0',
+            },
           });
         }
         if (request.method() === 'PATCH') {
           const startOffset = Number(request.headers()['upload-offset'] ?? '0');
           if (startOffset > 0) {
-            await new Promise(() => {}); // never resolves; reload aborts it
-            return;
+            patchAttempts++;
+            if (patchAttempts === 1) {
+              await new Promise(() => {}); // never resolves; reload aborts it
+              return;
+            }
           }
           const body = request.postDataBuffer();
           sentChunkSizes.push(body?.byteLength ?? 0);

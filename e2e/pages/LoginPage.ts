@@ -82,4 +82,26 @@ export class LoginPage {
   async assertOnLoginPage() {
     await expect(this.page).toHaveURL(/\/auth\/login/);
   }
+
+  /** Mock successful OTP generation response */
+  async mockSendOtpSuccess() {
+    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'کد تایید ارسال شد' }),
+      });
+    });
+  }
+
+  /** Mock failed OTP generation response */
+  async mockSendOtpError(message = 'خطا در ارسال کد تایید') {
+    await this.page.route('**/api/auth/phone-number/send-otp', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ message }),
+      });
+    });
+  }
 }

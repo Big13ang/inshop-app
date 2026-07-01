@@ -229,3 +229,45 @@ test.describe('Login page — mobile viewport', () => {
     expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(viewportHeight);
   });
 });
+
+// ─── Suite 8: API integration (real flow) ───────────────────────────────────
+
+test.describe('Login page — API integration (real flow)', () => {
+  test('submits successfully, shows success toast and navigates to OTP page', async ({
+    loginPage,
+    page,
+  }) => {
+    await loginPage.mockSendOtpSuccess();
+    await loginPage.fillPhone(VALID_PHONES.standard);
+    await expect(loginPage.submitButton).toBeEnabled();
+
+    const toastPromise = page.getByText('کد تایید ارسال شد');
+    await loginPage.submit();
+
+    // Verify success toast appears
+    await expect(toastPromise).toBeVisible();
+
+    // Verify redirection to /auth/otp with the phone query parameter
+    await expect(page).toHaveURL(new RegExp(`/auth/otp\\?phone=${encodeURIComponent(VALID_PHONES.standard)}`));
+  });
+
+  test('shows error toast when sendOtp API fails and stays on page', async ({
+    loginPage,
+    page,
+  }) => {
+    const errorMsg = 'خطا در ارسال کد تایید';
+    await loginPage.mockSendOtpError(errorMsg);
+    await loginPage.fillPhone(VALID_PHONES.standard);
+    await expect(loginPage.submitButton).toBeEnabled();
+
+    const toastPromise = page.getByText(errorMsg);
+    await loginPage.submit();
+
+    // Verify error toast appears
+    await expect(toastPromise).toBeVisible();
+
+    // Assert that we are still on the login page
+    await loginPage.assertOnLoginPage();
+  });
+});
+

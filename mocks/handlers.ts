@@ -54,4 +54,34 @@ export const handlers = [
   http.post('/api/posts', () =>
     HttpResponse.json({ id: 'post-123' }, { status: 201 })
   ),
+  http.post('http://localhost:3000/api/auth/phone-number/send-otp', async ({ request }) => {
+    const { phoneNumber } = (await request.json()) as { phoneNumber: string };
+    if (phoneNumber === '09000000000') {
+      return HttpResponse.json(
+        { message: 'شماره تلفن نامعتبر است' },
+        { status: 400 }
+      );
+    }
+    return HttpResponse.json({
+      message: 'کد تایید ارسال شد',
+    });
+  }),
+  http.post('http://localhost:3000/api/auth/phone-number/verify', async ({ request }) => {
+    const { code, phoneNumber } = (await request.json()) as { code: string; phoneNumber: string };
+    if (code === '0000') {
+      return HttpResponse.json(
+        { message: 'کد وارد شده صحیح نیست' },
+        { status: 400 }
+      );
+    }
+    return HttpResponse.json({
+      user: {
+        id: 'user-1',
+        phoneNumber,
+      },
+      session: {
+        id: 'session-1',
+      },
+    });
+  }),
 ];
