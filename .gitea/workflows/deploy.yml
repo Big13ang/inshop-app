@@ -1,0 +1,91 @@
+# =============================================================================
+# Frontend CI/CD — Gitea Actions Workflow
+# Builds, tests, and deploys the Next.js frontend application to Docker Swarm.
+#
+# Required Gitea repo secrets:  REGISTRY_USER, REGISTRY_PASS
+# Required repo variables:      REGISTRY_HOST (registry.dev.inshop.internal),
+#                               NPM_REGISTRY  (https://npm.dev.inshop.internal)
+# =============================================================================
+name: frontend-ci-cd
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ${{ vars.REGISTRY_HOST }}/inshop/frontend
+  SERVICE: application_frontend
+
+jobs:
+  build-test-push:
+    runs-on: docker
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Point @inshop scope at internal Verdaccio
+        run: |
+          echo "@inshop:registry=${{ vars.NPM_REGISTRY }}" >> .npmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Log in to the internal registry
+        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Build image (Next.js standalone)
+        run: docker build -t "${IMAGE}:${GITHUB_SHA}" .
+
+      - name: Push and capture digest
+        id: push
+        run: |
+          docker push "${IMAGE}:${GITHUB_SHA}"
+          digest=$(docker inspect --format='{{ index .RepoDigests 0 }}' "${IMAGE}:${GITHUB_SHA}")
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "Pushed ${digest}"
+
+  deploy:
+    needs: build-test-push
+    runs-on: swarm-deploy
+    steps:
+      - name: Log in to the internal registry (so --with-registry-auth can pull)
+        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Deploy the exact digest
+        run: |
+          set -euo pipefail
+          DIGEST="${{ needs.build-test-push.outputs.digest }}"
+          docker service update \
+            --image "${DIGEST}" \
+            --update-order start-first \
+            --update-failure-action rollback \
+            --with-registry-auth \
+            "${SERVICE}"
+
+      - name: Post-deploy health check
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 30); do
+            state=$(docker service ls --filter name=${SERVICE} --format '{{ .Replicas }}')
+            running=${state%%/*}; desired=${state##*/}
+            if [ -n "${running}" ] && [ "${running}" = "${desired}" ]; then
+              echo "Frontend healthy."; exit 0
+            fi
+            sleep 5
+          done
+          docker service rollback "${SERVICE}" || true
+          exit 1
