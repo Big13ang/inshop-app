@@ -10,18 +10,20 @@ name: frontend-ci-cd
 
 on:
   push:
-    branches: [master, main]
-  workflow_dispatch:
+    branches:
+      - master
+      - main
+  workflow_dispatch: {}
 
 env:
-  IMAGE: ${{ vars.REGISTRY_HOST }}/inshop/frontend
+  IMAGE: "${{ vars.REGISTRY_HOST }}/inshop/frontend"
   SERVICE: application_frontend
 
 jobs:
   build-test-push:
     runs-on: docker
     outputs:
-      digest: ${{ steps.push.outputs.digest }}
+      digest: "${{ steps.push.outputs.digest }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
