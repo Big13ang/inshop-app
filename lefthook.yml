@@ -1,0 +1,10 @@
+# Lefthook Git hooks configuration
+# Runs linting and testing locally before every git push.
+# Reference: https://github.com/evilmartians/lefthook
+
+pre-push:
+  commands:
+    lint:
+      run: npm run lint
+    test:
+      run: npm run test

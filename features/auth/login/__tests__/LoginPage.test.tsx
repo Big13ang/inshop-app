@@ -24,7 +24,7 @@ const mockSendOtp = jest.fn();
 jest.mock('@/lib/auth-client', () => ({
   authClient: {
     phoneNumber: {
-      sendOtp: (...args: any[]) => mockSendOtp(...args),
+      sendOtp: (...args: unknown[]) => mockSendOtp(...args),
       verify: jest.fn(),
     },
   },

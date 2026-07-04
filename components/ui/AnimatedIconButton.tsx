@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useSyncExternalStore, useTransition } from 'react';
 import type { BaseUIEvent } from '@base-ui/react/types';
 import gsap from 'gsap';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ const MOTION = {
   hoverDuration: 0.22,
   pressDuration: 0.1,
 };
+
+const emptySubscribe = () => () => {};
 
 export interface AnimatedIconButtonProps extends Omit<ButtonProps, 'variant' | 'size' | 'shape'> {
   isActive?: boolean;
@@ -31,13 +33,9 @@ export default function AnimatedIconButton({
   ...props
 }: AnimatedIconButtonProps) {
   const [, startTransition] = useTransition();
-  const [isHydrated, setIsHydrated] = useState(false);
+  const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const iconRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
 
   useEffect(() => {
     if (!isActive || !iconRef.current || disabled) return;

@@ -22,7 +22,7 @@ const ERROR_MAP = {
 
 export function useMediaUpload() {
   const service = useRef<UploadService | null>(null);
-  if (!service.current) service.current = createUploadService();
+  if (service.current == null) { service.current = createUploadService(); }
 
   useEffect(() => {
     const current = service.current!;

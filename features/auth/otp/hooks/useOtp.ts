@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { OTP_LENGTH, extractDigits, fillSlots, areAllOtpSlotsFilled, setSlot } from './otpLogic';
 
 const fillEmpty = () => Array(OTP_LENGTH).fill('');
@@ -10,7 +10,9 @@ export function useOtp(onComplete: (code: string) => void) {
   const slotsRef = useRef<string[]>(fillEmpty());
   // Fix 6: keep onComplete in a ref so memoized handlers always invoke the latest callback
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   const focusAt = (index: number) => {
     const clamped = Math.max(0, Math.min(index, OTP_LENGTH - 1));

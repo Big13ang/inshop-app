@@ -74,4 +74,22 @@ Rules:
   - **Verified Badges**: Use `VerifiedBadge` from `@/components/ui/VerifiedBadge` for verification markers.
   - **Toast Notifications**: Use `toast` from `sonner` or `@/components/ui/sonner`.
 
+---
 
+## Git Hooks (Lefthook)
+
+This project uses **Lefthook** to run local-only linting and testing checks before every git push. This ensures code quality before pushing changes to the repository server.
+
+### Available Hooks
+- **Pre-Push**: Runs `npm run lint` and `npm run test` automatically.
+
+### Installation & Usage
+Git hooks are automatically configured on `npm install` (via the `prepare` script). To manually install/sync hooks:
+```bash
+rtk npx lefthook install
+```
+
+To run the pre-push check manually:
+```bash
+rtk npx lefthook run pre-push
+```

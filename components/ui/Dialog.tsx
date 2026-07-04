@@ -52,13 +52,11 @@ function DialogRoot({ isOpen, onClose, children }: DialogRootProps) {
   );
 }
 
+const emptySubscribe = () => () => { };
+
 function DialogPortal({ children }: { children: React.ReactNode }) {
   const { shouldRender } = useDialog();
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  const isMounted = React.useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   if (!isMounted || !shouldRender) return null;
   return createPortal(children, document.body);

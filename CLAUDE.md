@@ -23,4 +23,4 @@ Rules:
   - **Back Button**: Use `BackButton` from `@/components/ui/BackButton` for header/page back buttons.
   - **Verified Badges**: Use `VerifiedBadge` from `@/components/ui/VerifiedBadge` for verification markers.
   - **Toast Notifications**: Use `toast` from `sonner` or `@/components/ui/sonner`.
-
+- **Git Hooks (Lefthook)**: Pre-push git hook runs linting and unit tests locally before pushing to the server. Refer to [AGENTS.md](file:///h:/InShop/inshop-app/AGENTS.md#git-hooks-lefthook) for configuration details.
