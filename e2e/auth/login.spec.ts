@@ -183,7 +183,7 @@ test.describe('Login page — accessibility', () => {
   });
 
   test('phone input label is associated (getByLabel resolves correctly)', async ({
-    loginPage,
+    loginPage: _loginPage,
     page,
   }) => {
     // loginPage fixture navigates to the page first
@@ -196,7 +196,7 @@ test.describe('Login page — accessibility', () => {
     await expect(loginPage.submitButton).toHaveAttribute('type', 'submit');
   });
 
-  test('page has a single h2 heading', async ({ loginPage, page }) => {
+  test('page has a single h2 heading', async ({ loginPage: _loginPage, page }) => {
     const headings = page.getByRole('heading', { level: 2 });
     await expect(headings).toHaveCount(1);
   });
@@ -206,7 +206,7 @@ test.describe('Login page — accessibility', () => {
 // These run automatically in the 'mobile-chrome' Playwright project.
 
 test.describe('Login page — mobile viewport', () => {
-  test('page renders without horizontal scroll', async ({ loginPage, page }) => {
+  test('page renders without horizontal scroll', async ({ loginPage: _loginPage, page }) => {
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     const viewportWidth = page.viewportSize()?.width ?? 0;
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth);

@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
-import type { SendOtpResponse, AuthClientResult } from '../types';
 
 interface UseAuthFlowOptions {
   onSuccessRedirect?: string;

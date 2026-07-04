@@ -61,7 +61,7 @@ test.describe('Add New Post — gallery selection', () => {
     await expect(addPostPage.galleryContainer.getByText('2', { exact: true })).toBeVisible();
   });
 
-  test('clicking a cell that is still uploading does not select it', async ({ addPostPage, page }) => {
+  test('clicking a cell that is still uploading does not select it', async ({ addPostPage }) => {
     await addPostPage.mockSlowUploadApi(5_000);
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },

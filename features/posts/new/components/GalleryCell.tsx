@@ -78,6 +78,7 @@ export default function GalleryCell({ id, selectionIndex, onToggle, onLongPress,
       style={{ contentVisibility: 'auto', containIntrinsicSize: '0 120px' } as React.CSSProperties}
     >
       {/* Thumbnail — always shows localUrl; swaps to uploadedUrl once available */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.uploadedUrl ?? item.localUrl}
         className="w-full h-full object-cover pointer-events-none"

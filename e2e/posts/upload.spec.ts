@@ -78,7 +78,7 @@ test.describe('Add New Post — file upload', () => {
 });
 
 test.describe('Add New Post — upload progress indicator', () => {
-  test('progress indicator appears on the gallery cell while upload is in flight', async ({ addPostPage, page }) => {
+  test('progress indicator appears on the gallery cell while upload is in flight', async ({ addPostPage }) => {
     await addPostPage.mockSlowUploadApi(3_000);
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
@@ -90,7 +90,7 @@ test.describe('Add New Post — upload progress indicator', () => {
     await expect(cell.getByText(/٪/)).toBeVisible({ timeout: 5_000 });
   });
 
-  test('progress overlay disappears after upload completes', async ({ addPostPage, page }) => {
+  test('progress overlay disappears after upload completes', async ({ addPostPage }) => {
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
     ]);

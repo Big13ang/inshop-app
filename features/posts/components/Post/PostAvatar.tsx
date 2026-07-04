@@ -18,6 +18,7 @@ export function PostAvatar({ fallbackAlt = 'فروشنده' }: { fallbackAlt?: s
   }
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={sellerAvatar}
       className="w-10 h-10 rounded-full object-cover border border-primary/10 transition-transform active:scale-95"

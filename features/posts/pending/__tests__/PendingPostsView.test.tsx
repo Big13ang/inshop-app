@@ -35,6 +35,7 @@ jest.mock('@/components/ui/PostSlider', () => ({
   default: ({ images }: { images: string[] }) => (
     <div data-testid="post-slider">
       {images.map((url) => (
+        // eslint-disable-next-line @next/next/no-img-element
         <img key={url} src={url} alt="" />
       ))}
     </div>

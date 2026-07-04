@@ -9,8 +9,6 @@ import { type Page, type Locator, expect } from '@playwright/test';
 import { TEXTS } from '../../features/auth/otp/constants';
 import { VALID_PHONES } from '../fixtures/phones';
 import {
-  mockSendOtpSuccess,
-  mockSendOtpError,
   mockVerifySuccess,
   mockVerifyError,
   mockResendSuccess,

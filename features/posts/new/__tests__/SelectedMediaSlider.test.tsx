@@ -12,6 +12,7 @@ jest.mock('@/components/ui/PostSlider', () => ({
   default: ({ media, onSlideChange }: { media: Array<{ url: string; type: string }>; onSlideChange?: (idx: number) => void }) => (
     <div data-testid="post-slider">
       {media.map((m, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
         <img key={i} src={m.url} alt="" onClick={() => onSlideChange?.(i)} />
       ))}
     </div>

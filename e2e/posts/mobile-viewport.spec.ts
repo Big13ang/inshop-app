@@ -9,7 +9,7 @@
 import { test, expect } from '../fixtures';
 
 test.describe('Add New Post — mobile viewport', () => {
-  test('page renders without horizontal scroll', async ({ addPostPage, page }) => {
+  test('page renders without horizontal scroll', async ({ addPostPage: _addPostPage, page }) => {
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     const viewportWidth = page.viewportSize()?.width ?? 0;
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth);
