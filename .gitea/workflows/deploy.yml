@@ -37,9 +37,10 @@ jobs:
       - name: Point npm at internal Verdaccio registry cache
         run: |
           echo "registry=${{ vars.NPM_REGISTRY }}" > .npmrc
+          echo "strict-ssl=false" >> .npmrc
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint --if-present
