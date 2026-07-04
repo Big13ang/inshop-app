@@ -3,8 +3,9 @@
 # Builds, tests, and deploys the Next.js frontend application to Docker Swarm.
 #
 # Required Gitea repo secrets:  REGISTRY_USER, REGISTRY_PASS
-# Required repo variables:      REGISTRY_HOST (registry.dev.inshop.internal),
-#                               NPM_REGISTRY  (https://npm.dev.inshop.internal)
+# Required repo variables:      REGISTRY_HOST (registry.dev.inshop.internal)
+# Note: npm talks DIRECTLY to verdaccio:4873 on the inshop_proxy overlay.
+# It cannot go through nginx (WireGuard-only firewall blocks job containers).
 # =============================================================================
 name: frontend-ci-cd
 
@@ -36,18 +37,19 @@ jobs:
 
       - name: Point npm at internal Verdaccio registry cache
         run: |
-          echo "registry=${{ vars.NPM_REGISTRY }}"          > .npmrc
-          # Timeouts: verdaccio mirrors can be slow; give them plenty of headroom.
+          # Job containers live on the inshop_proxy Docker overlay.
+          # nginx enforces WireGuard-only access, so we CANNOT use the
+          # https://npm.dev.inshop.internal URL — nginx will refuse the
+          # connection (non-WireGuard source IP).  Instead, reach Verdaccio
+          # directly via its Docker service name on the same overlay.
+          echo "registry=http://verdaccio:4873"             > .npmrc
+          # Timeouts: upstream mirrors (chabokan, abrha, etc.) can be slow.
           echo "fetch-timeout=60000"                        >> .npmrc
           echo "fetch-retry-mintimeout=10000"               >> .npmrc
           echo "fetch-retry-maxtimeout=60000"               >> .npmrc
           echo "fetch-retries=3"                            >> .npmrc
           echo "fetch-retry-factor=2"                       >> .npmrc
-          # Limit npm to a SINGLE connection at a time to avoid reusing a
-          # keepalive socket that the server (nginx→verdaccio) just closed.
-          # This is the client-side guard against "Exit handler never called!".
-          echo "maxsockets=1"                               >> .npmrc
-          echo "network-concurrency=1"                      >> .npmrc
+          # Plain HTTP to Verdaccio — no TLS cert validation needed.
           echo "strict-ssl=false"                           >> .npmrc
 
       - name: Install dependencies
