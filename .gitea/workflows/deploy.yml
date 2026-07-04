@@ -34,25 +34,14 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Configure npm registry (with fallback)
+      - name: Point npm at internal Verdaccio registry cache
         run: |
-          REGISTRY="${{ vars.NPM_REGISTRY }}"
-          echo "Checking if Verdaccio is reachable at ${REGISTRY}..."
-          if curl -sf --connect-timeout 5 --max-time 10 "${REGISTRY}" > /dev/null 2>&1; then
-            echo "✅ Verdaccio is reachable — using internal registry"
-            echo "registry=${REGISTRY}" > .npmrc
-          else
-            echo "⚠️  Verdaccio is unreachable — falling back to public npm registry"
-            echo "registry=https://registry.npmjs.org" > .npmrc
-          fi
-          # Always set timeouts so npm never hangs indefinitely
+          echo "registry=${{ vars.NPM_REGISTRY }}" > .npmrc
           echo "fetch-timeout=30000" >> .npmrc
           echo "fetch-retry-mintimeout=5000" >> .npmrc
           echo "fetch-retry-maxtimeout=20000" >> .npmrc
           echo "fetch-retries=2" >> .npmrc
           echo "strict-ssl=false" >> .npmrc
-          echo "--- .npmrc contents ---"
-          cat .npmrc
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
