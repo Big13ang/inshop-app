@@ -42,10 +42,10 @@ jobs:
           cat /etc/hosts
           echo "--- Local Resolution (getent) ---"
           getent hosts "${{ vars.REGISTRY_HOST }}" || echo "getent hosts: unresolved"
-          echo "--- Host Daemon DNS Resolution (via Alpine container with host network) ---"
-          docker run --rm --net=host alpine nslookup "${{ vars.REGISTRY_HOST }}" || echo "docker run nslookup: failed"
-          echo "--- HTTP Connectivity (curl) ---"
-          curl -Is "http://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl: connection failed"
+          echo "--- Host DNS Resolution (nslookup) ---"
+          nslookup "${{ vars.REGISTRY_HOST }}" || echo "nslookup: failed"
+          echo "--- HTTP Connectivity (curl with timeout) ---"
+          curl --connect-timeout 2 --max-time 3 -Is "http://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl: connection failed or timed out"
           echo "=========================================================="
 
       - name: Log in to the internal registry
@@ -57,7 +57,10 @@ jobs:
       - name: Build image (Next.js standalone)
         run: |
           echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
-          docker build --add-host=npm.dev.inshop.internal:host-gateway -t "${IMAGE}:${GITHUB_SHA}" .
+          docker build \
+            --add-host=npm.dev.inshop.internal:host-gateway \
+            --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            -t "${IMAGE}:${GITHUB_SHA}" .
           echo "Docker image build completed."
 
       - name: Push and capture digest
