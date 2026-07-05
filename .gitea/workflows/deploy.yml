@@ -69,7 +69,7 @@ jobs:
           echo "Pushing built image to registry..."
           docker push "${IMAGE}:${GITHUB_SHA}"
           echo "Image pushed successfully. Capturing repo digest..."
-          digest=$(docker inspect --format='{{ index .RepoDigests 0 }}' "${IMAGE}:${GITHUB_SHA}")
+          digest=$(docker inspect --format='${{ '{{' }} index .RepoDigests 0 ${{ '}}' }}' "${IMAGE}:${GITHUB_SHA}")
           echo "Captured Repo Digest: ${digest}"
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
@@ -114,7 +114,7 @@ jobs:
           set -euo pipefail
           echo "Monitoring deployment health for service: ${SERVICE}..."
           for i in $(seq 1 30); do
-            state=$(docker service ls --filter name=${SERVICE} --format '{{ .Replicas }}')
+            state=$(docker service ls --filter name=${SERVICE} --format '${{ '{{' }} .Replicas ${{ '}}' }}')
             running=${state%%/*}; desired=${state##*/}
             echo "Attempt $i/30: Current service replicas state: $running/$desired running"
             if [ -n "${running}" ] && [ "${running}" = "${desired}" ]; then
