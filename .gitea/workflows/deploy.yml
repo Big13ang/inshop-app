@@ -4,8 +4,8 @@
 #
 # Required Gitea repo secrets:  REGISTRY_USER, REGISTRY_PASS
 # Required repo variables:      REGISTRY_HOST (registry.dev.inshop.internal)
-# Note: npm talks DIRECTLY to verdaccio:4873 on the inshop_proxy overlay.
-# It cannot go through nginx (WireGuard-only firewall blocks job containers).
+# Note: npm uses the Chabokan mirror registry (https://mirror2.chabokan.net/npm/) directly.
+# It cannot go through the internal Verdaccio cache/proxy due to authentication issues.
 # =============================================================================
 name: frontend-ci-cd
 
@@ -35,22 +35,16 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Point npm at internal Verdaccio registry cache
+      - name: Point npm at Chabokan mirror registry
         run: |
-          # Job containers live on the inshop_proxy Docker overlay.
-          # nginx enforces WireGuard-only access, so we CANNOT use the
-          # https://npm.dev.inshop.internal URL — nginx will refuse the
-          # connection (non-WireGuard source IP).  Instead, reach Verdaccio
-          # directly via its Docker service name on the same overlay.
-          echo "registry=http://verdaccio:4873"             > .npmrc
+          # Use Chabokan mirror for dependencies installation to resolve E401 authentication token issues.
+          echo "registry=https://mirror2.chabokan.net/npm/" > .npmrc
           # Timeouts: upstream mirrors (chabokan, abrha, etc.) can be slow.
           echo "fetch-timeout=60000"                        >> .npmrc
           echo "fetch-retry-mintimeout=10000"               >> .npmrc
           echo "fetch-retry-maxtimeout=60000"               >> .npmrc
           echo "fetch-retries=3"                            >> .npmrc
           echo "fetch-retry-factor=2"                       >> .npmrc
-          # Plain HTTP to Verdaccio — no TLS cert validation needed.
-          echo "strict-ssl=false"                           >> .npmrc
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
