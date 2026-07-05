@@ -25,36 +25,27 @@ test.describe('Add New Post — publish loading state', () => {
 });
 
 test.describe('Add New Post — publish success', () => {
-  test('shows the admin-approval toast and redirects back after 30s', async ({
+  test('shows the admin-approval toast and redirects to pending posts page immediately', async ({
     addPostPage,
   }) => {
     await addPostPage.advanceToDetailsPhase();
     await addPostPage.fillCaption('محصول جدید با کیفیت بالا');
 
-    // install() alone keeps real time running; pauseAt() freezes it so
-    // fastForward() below jumps deterministically instead of racing real time.
-    await addPostPage.page.clock.install();
-    const now = await addPostPage.page.evaluate(() => Date.now());
-    await addPostPage.page.clock.pauseAt(now + 5_000);
-
     const publishResponse = addPostPage.page.waitForResponse('**/api/posts');
     await addPostPage.clickShare();
     await publishResponse;
 
-    // Flush the (frozen) clock briefly so the toast's mount animation runs.
-    await addPostPage.page.clock.fastForward(100);
+    // Verify it redirects to the pending page immediately.
+    await expect(addPostPage.page).toHaveURL(/\/app\/posts\/pending$/);
+
+    // Verify the admin-approval toast is visible.
     await expect(addPostPage.page.getByText(text.uploadSuccessTitle)).toBeVisible({
       timeout: 5_000,
     });
     await expect(addPostPage.page.getByText(text.uploadSuccessDesc)).toBeVisible();
 
-    // Still on the form just before the 30s mark — no redirect yet.
-    await addPostPage.page.clock.fastForward(29_800);
-    await expect(addPostPage.captionTextarea).toBeVisible();
-
-    // Crossing the 30s mark triggers router.back() navigation away from the form.
-    await addPostPage.page.clock.fastForward(200);
-    await expect(addPostPage.captionTextarea).not.toBeVisible();
+    // Verify the pending page content is visible.
+    await expect(addPostPage.page.getByText('پست‌های در انتظار بررسی')).toBeVisible();
   });
 });
 

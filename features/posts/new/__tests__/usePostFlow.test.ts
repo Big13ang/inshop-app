@@ -189,10 +189,7 @@ describe('usePostFlow — handleNext', () => {
   });
 
   describe('submission success', () => {
-    beforeEach(() => { jest.useFakeTimers(); });
-    afterEach(() => { jest.useRealTimers(); });
-
-    it('shows a success toast and navigates only after 30s', () => {
+    it('shows a success toast and navigates immediately', () => {
       const onNavigate = jest.fn();
       renderHook(() => usePostFlow(onNavigate));
 
@@ -201,26 +198,9 @@ describe('usePostFlow — handleNext', () => {
       expect(toast.success).toHaveBeenCalledTimes(1);
       expect(toast.success).toHaveBeenCalledWith(
         expect.any(String),
-        expect.objectContaining({ duration: 30000 }),
+        expect.objectContaining({ description: expect.any(String) }),
       );
-      expect(onNavigate).not.toHaveBeenCalled();
-
-      act(() => { jest.advanceTimersByTime(29999); });
-      expect(onNavigate).not.toHaveBeenCalled();
-
-      act(() => { jest.advanceTimersByTime(1); });
       expect(onNavigate).toHaveBeenCalledWith('pending-posts');
-    });
-
-    it('does not navigate after the hook has unmounted', () => {
-      const onNavigate = jest.fn();
-      const { unmount } = renderHook(() => usePostFlow(onNavigate));
-
-      act(() => { capturedOnSuccess?.(); });
-      unmount();
-
-      act(() => { jest.advanceTimersByTime(30000); });
-      expect(onNavigate).not.toHaveBeenCalled();
     });
   });
 });

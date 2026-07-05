@@ -195,6 +195,7 @@ export class AddPostPage {
   async mockPublishApi() {
     this.publishRequestCount = 0;
     await this.page.route('**/api/posts', (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
       this.publishRequestCount += 1;
       return route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'post_1' }) });
     });
@@ -204,6 +205,7 @@ export class AddPostPage {
   async mockPublishApiWithError() {
     this.publishRequestCount = 0;
     await this.page.route('**/api/posts', (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
       this.publishRequestCount += 1;
       return route.fulfill({ status: 500, body: 'Internal Server Error' });
     });
@@ -213,6 +215,7 @@ export class AddPostPage {
   async mockSlowPublishApi(delayMs = 2_000) {
     this.publishRequestCount = 0;
     await this.page.route('**/api/posts', async (route) => {
+      if (route.request().method() !== 'POST') return route.continue();
       this.publishRequestCount += 1;
       await new Promise((r) => setTimeout(r, delayMs));
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ id: 'post_1' }) });
