@@ -36,8 +36,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          echo "Installing npm dependencies using 'npm ci --ignore-scripts'..."
-          npm ci --ignore-scripts
+          echo "Installing npm dependencies using 'npm ci --ignore-scripts --verbose'..."
+          npm ci --ignore-scripts --verbose
           echo "Dependencies successfully installed."
 
       - name: Lint
@@ -133,4 +133,3 @@ jobs:
           echo "=========================================================="
           docker service rollback "${SERVICE}" || true
           exit 1
-
