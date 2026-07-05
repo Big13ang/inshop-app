@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies based on the package-lock.json and any CI .npmrc
 COPY package.json package-lock.json* .npmrc* ./
-RUN npm ci --verbose --registry=http://npm.dev.inshop.internal/
+RUN npm ci --verbose
 
 # Rebuild the source code only when needed
 FROM base AS builder

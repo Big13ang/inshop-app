@@ -35,20 +35,6 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Point npm at local Verdaccio registry
-        run: |
-          echo "Configuring npm registry to use local Verdaccio..."
-          # Use local Verdaccio to cache packages and handle upstream mirrors gracefully.
-          echo "registry=http://npm.dev.inshop.internal/" > .npmrc
-          # Timeouts: upstream mirrors can be slow.
-          echo "fetch-timeout=60000"                        >> .npmrc
-          echo "fetch-retry-mintimeout=10000"               >> .npmrc
-          echo "fetch-retry-maxtimeout=60000"               >> .npmrc
-          echo "fetch-retries=3"                            >> .npmrc
-          echo "fetch-retry-factor=2"                       >> .npmrc
-          echo "Successfully updated .npmrc file contents:"
-          cat .npmrc
-
       - name: Install dependencies
         run: |
           echo "Installing npm dependencies using 'npm ci --ignore-scripts'..."
