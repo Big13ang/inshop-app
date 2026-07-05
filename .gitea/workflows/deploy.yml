@@ -37,6 +37,7 @@ jobs:
 
       - name: Point npm at Liara mirror registry
         run: |
+          echo "Configuring npm registry to use Liara mirror..."
           # Use Liara mirror for dependencies installation to resolve E401 authentication token issues.
           echo "registry=https://package-mirror.liara.ir/repository/npm/" > .npmrc
           # Timeouts: upstream mirrors can be slow.
@@ -45,58 +46,106 @@ jobs:
           echo "fetch-retry-maxtimeout=60000"               >> .npmrc
           echo "fetch-retries=3"                            >> .npmrc
           echo "fetch-retry-factor=2"                       >> .npmrc
+          echo "Successfully updated .npmrc file contents:"
+          cat .npmrc
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: |
+          echo "Installing npm dependencies using 'npm ci --ignore-scripts'..."
+          npm ci --ignore-scripts
+          echo "Dependencies successfully installed."
 
       - name: Lint
-        run: npm run lint --if-present
+        run: |
+          echo "Running linter ('npm run lint')..."
+          npm run lint --if-present
+          echo "Linter check completed."
 
       - name: Test
-        run: npm test --if-present
+        run: |
+          echo "Running test suite ('npm test')..."
+          npm test --if-present
+          echo "Tests completed."
+
+      - name: Diagnostic DNS and Registry Network Check
+        run: |
+          echo "=========================================================="
+          echo "Checking host/container DNS resolution for ${{ vars.REGISTRY_HOST }}..."
+          echo "--- Local /etc/hosts ---"
+          cat /etc/hosts
+          echo "--- Local Resolution (getent) ---"
+          getent hosts "${{ vars.REGISTRY_HOST }}" || echo "getent hosts: unresolved"
+          echo "--- Host Daemon DNS Resolution (via Alpine container with host network) ---"
+          docker run --rm --net=host alpine nslookup "${{ vars.REGISTRY_HOST }}" || echo "docker run nslookup: failed"
+          echo "--- HTTP Connectivity (curl) ---"
+          curl -Iks "https://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl: connection failed"
+          echo "=========================================================="
 
       - name: Log in to the internal registry
-        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+        run: |
+          echo "Logging in to Docker registry ${{ vars.REGISTRY_HOST }}..."
+          echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+          echo "Successfully authenticated with ${{ vars.REGISTRY_HOST }}."
 
       - name: Build image (Next.js standalone)
-        run: docker build -t "${IMAGE}:${GITHUB_SHA}" .
+        run: |
+          echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
+          docker build -t "${IMAGE}:${GITHUB_SHA}" .
+          echo "Docker image build completed."
 
       - name: Push and capture digest
         id: push
         run: |
+          echo "Pushing built image to registry..."
           docker push "${IMAGE}:${GITHUB_SHA}"
+          echo "Image pushed successfully. Capturing repo digest..."
           digest=$(docker inspect --format='{{ index .RepoDigests 0 }}' "${IMAGE}:${GITHUB_SHA}")
+          echo "Captured Repo Digest: ${digest}"
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
-          echo "Pushed ${digest}"
 
   deploy:
     needs: build-test-push
     runs-on: swarm-deploy
     steps:
       - name: Log in to the internal registry (so --with-registry-auth can pull)
-        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+        run: |
+          echo "Logging in to Docker registry ${{ vars.REGISTRY_HOST }}..."
+          echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+          echo "Successfully authenticated with ${{ vars.REGISTRY_HOST }}."
 
       - name: Deploy the exact digest
         run: |
           set -euo pipefail
           DIGEST="${{ needs.build-test-push.outputs.digest }}"
+          echo "Updating Docker Swarm service: ${SERVICE}"
+          echo "Target Image Digest: ${DIGEST}"
           docker service update \
             --image "${DIGEST}" \
             --update-order start-first \
             --update-failure-action rollback \
             --with-registry-auth \
             "${SERVICE}"
+          echo "Swarm service update request successfully sent."
 
       - name: Post-deploy health check
         run: |
           set -euo pipefail
+          echo "Monitoring deployment health for service: ${SERVICE}..."
           for i in $(seq 1 30); do
             state=$(docker service ls --filter name=${SERVICE} --format '{{ .Replicas }}')
             running=${state%%/*}; desired=${state##*/}
+            echo "Attempt $i/30: Current service replicas state: $running/$desired running"
             if [ -n "${running}" ] && [ "${running}" = "${desired}" ]; then
-              echo "Frontend healthy."; exit 0
+              echo "=========================================================="
+              echo "SUCCESS: Frontend deployment is healthy and all replicas are running!"
+              echo "=========================================================="
+              exit 0
             fi
             sleep 5
           done
+          echo "=========================================================="
+          echo "ERROR: Deployment failed to become healthy. Rolling back..."
+          echo "=========================================================="
           docker service rollback "${SERVICE}" || true
           exit 1
+
