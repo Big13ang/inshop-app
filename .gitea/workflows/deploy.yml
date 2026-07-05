@@ -36,8 +36,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          echo "Installing npm dependencies using 'npm ci --ignore-scripts --verbose'..."
-          npm ci --ignore-scripts --verbose
+          echo "Installing npm dependencies using 'npm install --verbose'..."
+          npm install --verbose
           echo "Dependencies successfully installed."
 
       - name: Lint
