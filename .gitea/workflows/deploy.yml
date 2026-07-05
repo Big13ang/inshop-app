@@ -18,6 +18,7 @@ on:
 env:
   IMAGE: "${{ vars.REGISTRY_HOST }}/inshop/frontend"
   SERVICE: application_frontend
+  DOCKER_BUILDKIT: "1"
 
 jobs:
   build-test-push:
@@ -28,18 +29,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
+      - name: Configure npm client for container build
         run: |
+          echo "Configuring .npmrc to ignore-scripts..."
           echo "ignore-scripts=true" >> .npmrc
-          echo "Installing npm dependencies using 'npm install --verbose'..."
-          npm install --verbose
-          echo "Dependencies successfully installed."
 
       - name: Diagnostic DNS and Registry Network Check
         run: |

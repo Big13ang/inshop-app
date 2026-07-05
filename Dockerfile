@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies based on the package-lock.json and any CI .npmrc
 COPY package.json package-lock.json* .npmrc* ./
-RUN npm ci --verbose
+RUN --mount=type=cache,target=/root/.npm npm ci --verbose
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build Next.js
-RUN npm run build
+RUN --mount=type=cache,target=/app/.next/cache npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
