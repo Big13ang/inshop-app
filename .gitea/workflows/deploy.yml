@@ -35,11 +35,11 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Point npm at Abrha mirror registry
+      - name: Point npm at local Verdaccio registry
         run: |
-          echo "Configuring npm registry to use Abrha mirror..."
-          # Use Abrha mirror for dependencies installation to resolve E401 authentication token issues.
-          echo "registry=https://mirror.abrha.net/repository/npm/" > .npmrc
+          echo "Configuring npm registry to use local Verdaccio..."
+          # Use local Verdaccio to cache packages and handle upstream mirrors gracefully.
+          echo "registry=http://npm.dev.inshop.internal/" > .npmrc
           # Timeouts: upstream mirrors can be slow.
           echo "fetch-timeout=60000"                        >> .npmrc
           echo "fetch-retry-mintimeout=10000"               >> .npmrc
@@ -90,7 +90,7 @@ jobs:
       - name: Build image (Next.js standalone)
         run: |
           echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
-          docker build -t "${IMAGE}:${GITHUB_SHA}" .
+          docker build --add-host=npm.dev.inshop.internal:host-gateway -t "${IMAGE}:${GITHUB_SHA}" .
           echo "Docker image build completed."
 
       - name: Push and capture digest
