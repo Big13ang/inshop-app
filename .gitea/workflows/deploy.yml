@@ -22,7 +22,7 @@ env:
 
 jobs:
   build-test-push:
-    runs-on: inshop-dev-runner
+    runs-on: docker
     outputs:
       digest: "${{ steps.push.outputs.digest }}"
     steps:
@@ -75,7 +75,7 @@ jobs:
 
   deploy:
     needs: build-test-push
-    runs-on: inshop-dev-runner
+    runs-on: swarm-deploy
     steps:
       - name: Log in to the internal registry (so --with-registry-auth can pull)
         run: |
