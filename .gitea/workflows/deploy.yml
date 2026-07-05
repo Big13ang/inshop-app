@@ -87,6 +87,18 @@ jobs:
         run: |
           set -euo pipefail
           DIGEST="${{ needs.build-test-push.outputs.digest }}"
+
+          if ! docker service inspect "${SERVICE}" >/dev/null 2>&1; then
+            echo "::error::Service '${SERVICE}' does not exist in Docker Swarm."
+            echo "=========================================================================="
+            echo "ERROR: Service '${SERVICE}' is not deployed."
+            echo "The application stack must be initialized via Ansible before CI/CD can update it."
+            echo "Please run the following command on the swarm manager to deploy the stack first:"
+            echo "  make deploy-app BACKEND_TAG=<git-sha> FRONTEND_TAG=<git-sha>"
+            echo "=========================================================================="
+            exit 1
+          fi
+
           echo "Updating Docker Swarm service: ${SERVICE}"
           echo "Target Image Digest: ${DIGEST}"
           docker service update \
