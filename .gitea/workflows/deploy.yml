@@ -78,7 +78,7 @@ jobs:
           echo "--- Host Daemon DNS Resolution (via Alpine container with host network) ---"
           docker run --rm --net=host alpine nslookup "${{ vars.REGISTRY_HOST }}" || echo "docker run nslookup: failed"
           echo "--- HTTP Connectivity (curl) ---"
-          curl -Iks "https://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl: connection failed"
+          curl -Is "http://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl: connection failed"
           echo "=========================================================="
 
       - name: Log in to the internal registry
