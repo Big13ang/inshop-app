@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies based on the package-lock.json and any CI .npmrc
 COPY package.json package-lock.json* .npmrc* ./
-RUN npm ci --verbose --registry=https://mirror2.chabokan.net/npm/
+RUN npm ci --verbose --registry=https://package-mirror.liara.ir/repository/npm/
 
 # Rebuild the source code only when needed
 FROM base AS builder
