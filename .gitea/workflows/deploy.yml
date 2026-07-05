@@ -36,6 +36,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "ignore-scripts=true" >> .npmrc
           echo "Installing npm dependencies using 'npm install --verbose'..."
           npm install --verbose
           echo "Dependencies successfully installed."
