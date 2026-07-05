@@ -35,11 +35,11 @@ jobs:
           node-version: "22"
           cache: "npm"
 
-      - name: Point npm at Liara mirror registry
+      - name: Point npm at Chabokan mirror registry
         run: |
-          echo "Configuring npm registry to use Liara mirror..."
-          # Use Liara mirror for dependencies installation to resolve E401 authentication token issues.
-          echo "registry=https://package-mirror.liara.ir/repository/npm/" > .npmrc
+          echo "Configuring npm registry to use Chabokan mirror..."
+          # Use Chabokan mirror for dependencies installation to resolve E401 authentication token issues.
+          echo "registry=https://mirror2.chabokan.net/npm/" > .npmrc
           # Timeouts: upstream mirrors can be slow.
           echo "fetch-timeout=60000"                        >> .npmrc
           echo "fetch-retry-mintimeout=10000"               >> .npmrc
