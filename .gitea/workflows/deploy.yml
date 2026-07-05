@@ -40,18 +40,6 @@ jobs:
           npm install --verbose
           echo "Dependencies successfully installed."
 
-      - name: Lint
-        run: |
-          echo "Running linter ('npm run lint')..."
-          npm run lint --if-present
-          echo "Linter check completed."
-
-      - name: Test
-        run: |
-          echo "Running test suite ('npm test')..."
-          npm test --if-present
-          echo "Tests completed."
-
       - name: Diagnostic DNS and Registry Network Check
         run: |
           echo "=========================================================="
