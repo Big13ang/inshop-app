@@ -4,8 +4,7 @@
 #
 # Required Gitea repo secrets:  REGISTRY_USER, REGISTRY_PASS
 # Required repo variables:      REGISTRY_HOST (registry.dev.inshop.internal)
-# Note: npm uses the Liara mirror registry (https://package-mirror.liara.ir/repository/npm/) directly.
-# It cannot go through the internal Verdaccio cache/proxy due to authentication issues.
+
 # =============================================================================
 name: frontend-ci-cd
 
