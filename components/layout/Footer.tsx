@@ -1,15 +1,16 @@
 import { type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import AnimatedIconButton from '@/components/ui/AnimatedIconButton';
 
 export interface FooterTabConfig {
     id: string;
     icon?: LucideIcon;
-    onPress?: () => void;
+    onPress: (id: string) => void;
     isActionButton?: boolean;
-    customRender?: (isActive: boolean) => React.ReactNode;
+    customRender?: (isActive: boolean) => React.ReactNode | null;
     label?: string;
-    variant?: string;
+    disabled?: boolean;
 }
 
 export interface FooterTabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -25,37 +26,45 @@ export function FooterTab({
     className,
     ...props
 }: FooterTabProps) {
+    const renderContent = () => {
+        if (customRender) {
+            return customRender(isActive);
+        }
+
+        if (Icon) {
+            return (
+                <span className="flex flex-col items-center">
+                    <Icon
+                        data-testid="tab-icon"
+                        className={cn(
+                            'size-7',
+                            isActive ? 'text-primary' : 'text-secondary',
+                        )}
+                        strokeWidth={isActive ? 2.5 : 2}
+                        fill={isActive ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                    />
+                </span>
+            );
+        }
+
+        return null;
+    };
+
     return (
-        <button
-            type="button"
+        <AnimatedIconButton
+            isActive={isActive}
             aria-current={isActive ? 'page' : undefined}
-            className={cn(
-                'w-11 h-11 flex items-center justify-center shrink-0',
-                'outline-none select-none',
-                'active:opacity-60 transition-opacity duration-150 rounded-lg hover:cursor-pointer',
-                className,
-            )}
+            className={className}
             {...props}
         >
-            {customRender ? (
-                customRender(isActive)
-            ) : Icon ? (
-                <Icon
-                    className={cn(
-                        'w-[31px] h-[31px] transition-colors duration-150',
-                        isActive ? 'text-primary' : 'text-secondary',
-                    )}
-                    strokeWidth={isActive ? 2.5 : 1.75}
-                    fill={isActive ? 'currentColor' : 'none'}
-                />
-            ) : null}
-        </button>
+            {renderContent()}
+        </AnimatedIconButton>
     );
 }
 
 export interface FooterNavRootProps {
     activeTab: string;
-    onTabChange: (tabId: string) => void;
     tabs: FooterTabConfig[];
     className?: string;
     style?: React.CSSProperties;
@@ -63,7 +72,6 @@ export interface FooterNavRootProps {
 
 export function FooterNavRoot({
     activeTab,
-    onTabChange,
     tabs,
     className,
     style,
@@ -73,10 +81,9 @@ export function FooterNavRoot({
             role="navigation"
             aria-label="Bottom Navigation"
             className={cn(
-                'absolute bottom-0 left-0 right-0 w-full z-50',
-                'h-16',
-                'bg-white border-t border-zinc-100',
-                'flex flex-row items-center justify-around px-4',
+                'absolute bottom-0 left-0 right-0 z-50 h-16 w-full',
+                'flex flex-row items-center justify-around px-4 pb-safe',
+                'border-t border-primary/5 bg-surface-l3/95 backdrop-blur-md',
                 'select-none',
                 className,
             )}
@@ -88,7 +95,9 @@ export function FooterNavRoot({
                     icon={tab.icon}
                     isActive={!tab.isActionButton && activeTab === tab.id}
                     customRender={tab.customRender}
-                    onClick={() => (tab.onPress ? tab.onPress() : onTabChange(tab.id))}
+                    aria-label={tab.label}
+                    onClick={() => tab.onPress(tab.id)}
+                    disabled={tab.disabled}
                 />
             ))}
         </nav>

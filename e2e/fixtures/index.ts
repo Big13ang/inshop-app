@@ -58,7 +58,17 @@ export const test = base.extend<Fixtures>({
    * addPostPage.mockUploadApiWithError() — LIFO routing means the later
    * handler takes priority over this fixture's success mock.
    */
-  addPostPage: async ({ page }, use) => {
+  addPostPage: async ({ page, context }, use) => {
+    // Set a mock session token cookie to bypass proxy authentication check
+    await context.addCookies([
+      {
+        name: 'better-auth.session_token',
+        value: 'mock-session-token',
+        domain: 'localhost',
+        path: '/',
+      },
+    ]);
+
     const addPostPage = new AddPostPage(page);
     await addPostPage.mockUploadApi();
     await addPostPage.mockPublishApi();

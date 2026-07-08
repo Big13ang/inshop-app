@@ -1,0 +1,121 @@
+---
+kind: "recap"
+localOnly: true
+title: "Visual Recap: Improved Footer Navigation, Logout Flow, and API Proxy"
+brief: "Recaps changes introducing the API proxy configuration, updated Footer navigation layout and styling, and fully tested async sign-out functionality."
+---
+
+# Outcome Narrative
+
+This work unit delivers structural changes to navigation, page not found handling, and security boundaries:
+1. **API Authorization Proxy**: Introduced `proxy.ts` (acting as Next.js middleware) replacing legacy middleware hooks. It checks `better-auth` session cookies on `/app/:path*` routes and redirects to `/auth/login` if unauthenticated.
+2. **Bottom Footer Layout & Loading UX**: Updated icon styles (using `Hourglass` instead of `Clock` for pending posts), added disabled states during async operations, and custom rendered an animate-spin loader during the logout process.
+3. **Persian 404 (NotFound) Page**: Created a premium styled Persian "Page Not Found" screen matching the product's overall branding and structure.
+4. **Enhanced E2E & Component Tests**: Updated Playwright and Jest test suites to verify transitions, cookie clearing, spinners, and mock authentications.
+
+# UI Impact Wireframes
+
+<Screen
+  surface="browser"
+  title="404 Page (Not Found)"
+  html={`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;background:var(--wf-paper);color:var(--wf-ink);gap:24px"><div style="margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:12px"><div style="font-size:32px;font-weight:bold;letter-spacing:-1px">inShop</div><div style="font-size:64px;font-weight:900;line-height:1">404</div><div class="wf-pill accent" style="font-weight:bold;font-size:10px">PAGE NOT FOUND</div></div><div style="display:flex;flex-direction:column;gap:8px"><h2 style="font-size:18px;font-weight:bold;margin:0">صفحه مورد نظر در اپلیکیشن وجود ندارد</h2><p class="wf-muted" style="font-size:12px;max-width:280px;margin:0">ممکن است آدرس را اشتباه وارد کرده باشید یا این صفحه به مکان دیگری منتقل شده باشد.</p></div><div style="display:flex;flex-direction:column;width:100%;max-width:260px;gap:12px;margin-top:auto"><button class="primary" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;font-weight:bold"><i data-icon="lock"></i> ورود به حساب</button><a href="#" style="display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;text-decoration:underline"><i data-icon="user"></i> صفحه اصلی</a></div></div>`}
+/>
+
+<Screen
+  surface="popover"
+  title="Bottom Nav - Logging Out State"
+  html={`<div class="wf-card" style="display:flex;align-items:center;justify-content:space-around;height:64px;width:100%;border-top:1px solid var(--wf-line);background:var(--wf-card);padding:0 16px;opacity:0.7"><button disabled style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--wf-muted)"><i data-icon="calendar" style="color:var(--wf-muted)"></i><span style="font-size:10px">صف انتظار</span></button><button disabled style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--wf-muted)"><i data-icon="plus" style="color:var(--wf-muted)"></i><span style="font-size:10px">پست جدید</span></button><button disabled style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--wf-accent)"><div class="wf-spinner" style="width:20px;height:20px;border:2px solid var(--wf-accent);border-top-color:transparent;border-radius:50%"></div><span style="font-size:10px;color:var(--wf-accent)">خروج...</span></button></div>`}
+/>
+
+# File Changes Tree
+
+<FileTree>
+  <File name="proxy.ts" change="added" />
+  <File name="__tests__/proxy.test.ts" change="added" />
+  <File name="app/not-found.tsx" change="added" />
+  <File name="app/__tests__/not-found.test.tsx" change="added" />
+  <File name="components/layout/Footer.tsx" change="modified" />
+  <File name="components/layout/MainFooterNav.tsx" change="modified" />
+  <File name="components/layout/__tests__/Footer.test.tsx" change="added" />
+  <File name="components/layout/__tests__/MainFooterNav.test.tsx" change="added" />
+  <File name="components/ui/Dialog.tsx" change="modified" />
+  <File name="features/auth/hooks/useAuthFlow.ts" change="modified" />
+  <File name="features/auth/hooks/__tests__/useAuthFlow.test.ts" change="modified" />
+  <File name="e2e/posts/navigation-logout.spec.ts" change="added" />
+  <File name="e2e/posts/pending-menu.spec.ts" change="modified" />
+  <File name="e2e/fixtures/index.ts" change="modified" />
+  <File name="e2e/fixtures/authMocks.ts" change="modified" />
+  <File name="tsconfig.json" change="modified" />
+</FileTree>
+
+# Key Changes
+
+<Tabs>
+  <Tab title="proxy.ts">
+    <Diff
+      code={`import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function proxy(request: NextRequest) {
+  const sessionToken = request.cookies.get('better-auth.session_token')?.value ||
+    request.cookies.get('__Secure-better-auth.session_token')?.value;
+
+  if (!sessionToken) {
+    const loginUrl = new URL('/auth/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    '/app/:path*',
+  ],
+};`}
+    />
+  </Tab>
+  
+  <Tab title="MainFooterNav.tsx">
+    <Diff
+      code={`const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    const success = await signOut();
+    setIsLoggingOut(false);
+    if (success) {
+        navigate(ROUTES.login);
+    }
+}
+
+const tabs: FooterTabConfig[] = [
+    {
+        id: ROUTES.pendingPosts,
+        icon: Hourglass,
+        label: 'صف انتظار',
+        onPress: navigate,
+        disabled: isLoggingOut,
+    },
+    {
+        id: ROUTES.newPost,
+        icon: PlusSquare,
+        label: 'پست جدید',
+        onPress: navigate,
+        disabled: isLoggingOut,
+    },
+    {
+        id: 'logout',
+        icon: LogOut,
+        label: 'خروج',
+        isActionButton: true,
+        onPress: handleLogout,
+        disabled: isLoggingOut,
+        customRender: isLoggingOut ? () => (
+            <Loader2 data-testid="logout-spinner" className="size-7 animate-spin text-secondary" />
+        ) : undefined,
+    },
+];`}
+    />
+  </Tab>
+</Tabs>
