@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "types": ["jest", "node", "@testing-library/jest-dom"],
     "plugins": [
       {
         "name": "next"
@@ -33,19 +34,8 @@
   "exclude": [
     "node_modules",
     "temp",
-    // ─── Test infrastructure ──────────────────────────────────────────────────
-    // Excluded from the Next.js tsconfig (moduleResolution: bundler) so that
-    // the language server uses tsconfig.test.json (moduleResolution: node16)
-    // for these files — which correctly resolves msw/node, stream/web, etc.
-    "jest.setup.ts",
-    "jest.polyfills.js",
     "jest.config.js",
     "mocks",
-    "__mocks__",
-    "**/__tests__/**",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx"
+    "__mocks__"
   ]
 }

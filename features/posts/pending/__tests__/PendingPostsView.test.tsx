@@ -29,6 +29,10 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/app/posts/pending',
 }));
 
+jest.mock('@/components/layout/MainFooter', () => ({
+  __esModule: true,
+  default: () => <div data-testid="main-footer" />,
+}));
 
 jest.mock('@/components/ui/PostSlider', () => ({
   __esModule: true,

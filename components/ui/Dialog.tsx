@@ -93,6 +93,7 @@ function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps
         assignRef(ref, node);
       }}
       onClick={onClick || onClose}
+      data-testid="dialog-backdrop"
       className={cn('fixed inset-0 z-[100] cursor-pointer bg-black/60 opacity-0', className)}
       {...props}
     />

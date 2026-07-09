@@ -20,12 +20,15 @@ jest.mock('sonner', () => ({
 
 const mockSendOtp = jest.fn();
 const mockVerify = jest.fn();
+const mockSignOut = jest.fn();
+
 jest.mock('@/lib/auth-client', () => ({
   authClient: {
     phoneNumber: {
       sendOtp: (...args: unknown[]) => mockSendOtp(...args),
       verify: (...args: unknown[]) => mockVerify(...args),
     },
+    signOut: (...args: unknown[]) => mockSignOut(...args),
   },
 }));
 
@@ -153,6 +156,54 @@ describe('useAuthFlow', () => {
       });
 
       expect(mockPush).toHaveBeenCalledWith('/auth/otp?phone=0917%20123%204567');
+    });
+  });
+
+  describe('signOut', () => {
+    it('returns true on successful signOut', async () => {
+      mockSignOut.mockResolvedValue({ error: null });
+
+      const { result } = renderHook(() => useAuthFlow());
+
+      let success: boolean | undefined;
+      await act(async () => {
+        success = await result.current.signOut();
+      });
+
+      expect(success).toBe(true);
+      expect(mockSignOut).toHaveBeenCalled();
+    });
+
+    it('returns false and shows toast on failure', async () => {
+      mockSignOut.mockResolvedValue({
+        error: { message: 'خطا در خروج' },
+      });
+
+      const { result } = renderHook(() => useAuthFlow());
+
+      let success: boolean | undefined;
+      await act(async () => {
+        success = await result.current.signOut();
+      });
+
+      expect(success).toBe(false);
+      expect(toast.error).toHaveBeenCalledWith('خطا در خروج');
+    });
+
+    it('uses fallback message when error message is missing', async () => {
+      mockSignOut.mockResolvedValue({
+        error: {},
+      });
+
+      const { result } = renderHook(() => useAuthFlow());
+
+      let success: boolean | undefined;
+      await act(async () => {
+        success = await result.current.signOut();
+      });
+
+      expect(success).toBe(false);
+      expect(toast.error).toHaveBeenCalledWith('خطا در خروج از حساب کاربری');
     });
   });
 });

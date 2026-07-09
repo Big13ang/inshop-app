@@ -38,9 +38,15 @@ export async function mockVerify(
   status = 200
 ) {
   await page.route('**/api/auth/phone-number/verify', async (route) => {
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+    };
+    if (status === 200) {
+      headers['set-cookie'] = 'better-auth.session_token=mock-session-token; Path=/; SameSite=Lax';
+    }
     await route.fulfill({
       status,
-      contentType: 'application/json',
+      headers,
       body: JSON.stringify(response),
     });
   });

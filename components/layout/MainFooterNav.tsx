@@ -1,8 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useTransition, useState } from 'react';
+import { useAuthFlow } from '@/features/auth/hooks/useAuthFlow';
 import { usePathname, useRouter } from 'next/navigation';
-import { Clock, LogOut, PlusSquare } from 'lucide-react';
+import { Hourglass, LogOut, PlusSquare, Loader2 } from 'lucide-react';
 import Footer, { type FooterTabConfig } from './Footer';
 
 const ROUTES = {
@@ -15,6 +16,8 @@ export default function MainFooterNav() {
     const pathname = usePathname();
     const router = useRouter();
     const [, startTransition] = useTransition();
+    const { signOut } = useAuthFlow();
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     function navigate(href: string) {
         if (pathname === href) return;
@@ -23,27 +26,44 @@ export default function MainFooterNav() {
         });
     }
 
+    const handleLogout = async () => {
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
+        const success = await signOut();
+        setIsLoggingOut(false);
+        if (success) {
+            navigate(ROUTES.login);
+        }
+    }
+
     const tabs: FooterTabConfig[] = [
         {
             id: ROUTES.pendingPosts,
-            icon: Clock,
+            icon: Hourglass,
             label: 'صف انتظار',
-            onPress: () => navigate(ROUTES.pendingPosts),
+            onPress: navigate,
+            disabled: isLoggingOut,
         },
         {
             id: ROUTES.newPost,
             icon: PlusSquare,
             label: 'پست جدید',
-            onPress: () => navigate(ROUTES.newPost),
+            onPress: navigate,
+            disabled: isLoggingOut,
         },
         {
             id: 'logout',
             icon: LogOut,
             label: 'خروج',
             isActionButton: true,
-            onPress: () => navigate(ROUTES.login),
+            onPress: handleLogout,
+            disabled: isLoggingOut,
+            customRender: isLoggingOut ? () => (
+                <Loader2 data-testid="logout-spinner" className="size-7 animate-spin text-secondary" />
+            ) : undefined,
         },
     ];
 
-    return <Footer.Nav activeTab={pathname} onTabChange={navigate} tabs={tabs} />;
+    return <Footer.Nav activeTab={pathname} tabs={tabs} />;
 }
+

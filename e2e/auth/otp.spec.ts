@@ -325,7 +325,10 @@ test.describe('OTP page — retry after failure', () => {
       } else {
         await route.fulfill({
           status: 200,
-          contentType: 'application/json',
+          headers: {
+            'content-type': 'application/json',
+            'set-cookie': 'better-auth.session_token=mock-session-token; Path=/; SameSite=Lax',
+          },
           body: JSON.stringify({ success: true }),
         });
       }

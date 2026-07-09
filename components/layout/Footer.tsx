@@ -6,10 +6,11 @@ import AnimatedIconButton from '@/components/ui/AnimatedIconButton';
 export interface FooterTabConfig {
     id: string;
     icon?: LucideIcon;
-    onPress?: () => void;
+    onPress: (id: string) => void;
     isActionButton?: boolean;
-    customRender?: (isActive: boolean) => React.ReactNode;
+    customRender?: (isActive: boolean) => React.ReactNode | null;
     label?: string;
+    disabled?: boolean;
 }
 
 export interface FooterTabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -25,6 +26,31 @@ export function FooterTab({
     className,
     ...props
 }: FooterTabProps) {
+    const renderContent = () => {
+        if (customRender) {
+            return customRender(isActive);
+        }
+
+        if (Icon) {
+            return (
+                <span className="flex flex-col items-center">
+                    <Icon
+                        data-testid="tab-icon"
+                        className={cn(
+                            'size-7',
+                            isActive ? 'text-primary' : 'text-secondary',
+                        )}
+                        strokeWidth={isActive ? 2.5 : 2}
+                        fill={isActive ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                    />
+                </span>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <AnimatedIconButton
             isActive={isActive}
@@ -32,30 +58,13 @@ export function FooterTab({
             className={className}
             {...props}
         >
-            {customRender ? (
-                customRender(isActive)
-            ) : (
-                <span className="flex flex-col items-center">
-                    {Icon ? (
-                        <Icon
-                            className={cn(
-                                'size-7',
-                                isActive ? 'text-primary' : 'text-secondary',
-                            )}
-                            strokeWidth={isActive ? 2.5 : 2}
-                            fill={isActive ? 'currentColor' : 'none'}
-                            aria-hidden="true"
-                        />
-                    ) : null}
-                </span>
-            )}
+            {renderContent()}
         </AnimatedIconButton>
     );
 }
 
 export interface FooterNavRootProps {
     activeTab: string;
-    onTabChange: (tabId: string) => void;
     tabs: FooterTabConfig[];
     className?: string;
     style?: React.CSSProperties;
@@ -63,7 +72,6 @@ export interface FooterNavRootProps {
 
 export function FooterNavRoot({
     activeTab,
-    onTabChange,
     tabs,
     className,
     style,
@@ -88,7 +96,8 @@ export function FooterNavRoot({
                     isActive={!tab.isActionButton && activeTab === tab.id}
                     customRender={tab.customRender}
                     aria-label={tab.label}
-                    onClick={() => (tab.onPress ? tab.onPress() : onTabChange(tab.id))}
+                    onClick={() => tab.onPress(tab.id)}
+                    disabled={tab.disabled}
                 />
             ))}
         </nav>

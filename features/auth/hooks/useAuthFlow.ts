@@ -45,9 +45,20 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
     router.push(`/auth/otp?phone=${encodeURIComponent(phoneNumber)}`);
   };
 
+  const signOut = async (): Promise<boolean> => {
+    const { error } = await authClient.signOut();
+
+    if (error) {
+      toast.error(error.message || 'خطا در خروج از حساب کاربری');
+      return false;
+    }
+
+    return true;
+  };
   return {
     sendOtp,
     verifyOtp,
     redirectToOtp,
+    signOut,
   };
 }

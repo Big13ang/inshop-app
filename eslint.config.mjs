@@ -28,6 +28,9 @@ const eslintConfig = defineConfig([
     "tmp/**",
     "coverage/**",
     ".claude/**",
+    ".agents/**",
+    ".codex/**",
+
   ]),
 ]);
 

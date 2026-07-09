@@ -34,9 +34,13 @@ import { VALID_PHONES, INVALID_PHONES } from './fixtures/phones';
  * Renders the Login component and returns a configured userEvent instance.
  * Always called inside each test — no shared renders across tests.
  */
-const setup = (props: LoginProps = {}) => {
+const setup = (props: Partial<LoginProps> = {}) => {
   const user = userEvent.setup();
-  render(<Login {...props} />);
+  const defaultProps: LoginProps = {
+    onSubmit: jest.fn(),
+    ...props,
+  };
+  render(<Login {...defaultProps} />);
   return { user };
 };
 
