@@ -100,6 +100,24 @@ describe('Login — accessibility', () => {
   });
 });
 
+// ─── Suite 2.5: Digit Conversion ─────────────────────────────────────────────
+
+describe('Login — digit conversion', () => {
+  it('converts Persian digits to English digits automatically in the phone field', async () => {
+    const { user } = setup();
+    const input = getPhoneInput();
+    await user.type(input, '۰۹۱۲۳۴۵۶۷۸۹'); // Persian digits for 09123456789
+    await waitFor(() => expect(input).toHaveValue('09123456789'));
+  });
+
+  it('converts Arabic digits to English digits automatically in the phone field', async () => {
+    const { user } = setup();
+    const input = getPhoneInput();
+    await user.type(input, '٠٩١٢٣٤٥٦٧٨٩'); // Arabic digits for 09123456789
+    await waitFor(() => expect(input).toHaveValue('09123456789'));
+  });
+});
+
 // ─── Suite 3: Validation feedback ────────────────────────────────────────────
 
 describe('Login — validation feedback (button state + error visibility)', () => {

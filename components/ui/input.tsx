@@ -25,9 +25,10 @@ const inputVariants = cva(
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement>,
-    VariantProps<typeof inputVariants> {
+  VariantProps<typeof inputVariants> {
   isError?: boolean;
   ref?: React.Ref<HTMLInputElement>;
+  normalize?: (value: string) => string;
 }
 
 function Input({
@@ -36,15 +37,28 @@ function Input({
   variant,
   inputSize = "default",
   isError = false,
+  onChange,
+  normalize,
   ref,
   ...props
 }: InputProps) {
   const activeVariant = isError ? "error" : (variant || "default");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (normalize) {
+      e.target.value = normalize(e.target.value);
+    }
+    if (onChange) {
+      onChange(e);
+    }
+  };
+
   return (
     <input
       ref={ref}
       type={type}
       className={cn(inputVariants({ variant: activeVariant, inputSize, className }))}
+      onChange={handleChange}
       {...props}
     />
   );

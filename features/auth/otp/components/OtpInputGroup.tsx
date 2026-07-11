@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { convertPersianArabicToEnglish } from '@/lib/utils';
 import { OTP_LENGTH } from '../hooks/otpLogic';
 
 interface OtpInputGroupProps {
@@ -29,6 +30,7 @@ export default function OtpInputGroup({
           }}
           type="text"
           inputMode="numeric"
+          normalize={convertPersianArabicToEnglish}
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           autoFocus={i === 0}
           maxLength={1}
@@ -42,3 +44,4 @@ export default function OtpInputGroup({
     </div>
   );
 }
+

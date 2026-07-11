@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, convertPersianArabicToEnglish } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import ErrorMessage from './ErrorMessage';
 
@@ -31,6 +31,7 @@ export default function PhoneInput({
                     type="tel"
                     inputMode="numeric"
                     pattern="[0-9]*"
+                    normalize={convertPersianArabicToEnglish}
                     isError={isError}
                     aria-invalid={isError ? 'true' : 'false'}
                     className={cn(

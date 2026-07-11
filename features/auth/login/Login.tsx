@@ -8,7 +8,6 @@ import TermsText from './components/TermsText';
 import PhoneInput from './components/PhoneInput';
 import SubmitButton from './components/SubmitButton';
 import { loginSchema, LoginFormValues, TEXTS } from './constants';
-import { convertPersianArabicToEnglish } from '@/lib/utils';
 
 export interface LoginProps {
     onSubmit: (data: LoginFormValues) => void | Promise<void>;
@@ -18,7 +17,6 @@ export default function Login({ onSubmit }: LoginProps) {
     const {
         register,
         handleSubmit,
-        setValue,
         formState: { errors, isValid, isSubmitting, dirtyFields },
     } = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -50,10 +48,6 @@ export default function Login({ onSubmit }: LoginProps) {
                     isError={isPhoneError}
                     error={errors.phone?.message}
                     {...register('phone')}
-                    onChange={(e) => {
-                        const cleaned = convertPersianArabicToEnglish(e.target.value);
-                        setValue('phone', cleaned, { shouldValidate: true, shouldDirty: true });
-                    }}
                 />
 
                 <SubmitButton
