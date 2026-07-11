@@ -87,6 +87,20 @@ describe('useAuthFlow', () => {
 
       expect(toast.error).toHaveBeenCalledWith('خطا در ارسال کد تایید');
     });
+
+    it('handles network/unexpected errors gracefully', async () => {
+      mockSendOtp.mockRejectedValue(new Error('Network connection failed'));
+
+      const { result } = renderHook(() => useAuthFlow());
+
+      let success: boolean | undefined;
+      await act(async () => {
+        success = await result.current.sendOtp('09171234567');
+      });
+
+      expect(success).toBe(false);
+      expect(toast.error).toHaveBeenCalledWith('Network connection failed');
+    });
   });
 
   describe('verifyOtp', () => {
@@ -120,6 +134,20 @@ describe('useAuthFlow', () => {
       expect(success).toBe(false);
       expect(toast.error).toHaveBeenCalledWith('کد تایید نامعتبر است');
       expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('handles network/unexpected errors gracefully', async () => {
+      mockVerify.mockRejectedValue(new Error('Verification network error'));
+
+      const { result } = renderHook(() => useAuthFlow());
+
+      let success: boolean | undefined;
+      await act(async () => {
+        success = await result.current.verifyOtp('1234', '09171234567');
+      });
+
+      expect(success).toBe(false);
+      expect(toast.error).toHaveBeenCalledWith('Verification network error');
     });
 
     it('redirects to custom path when onSuccessRedirect is provided', async () => {
@@ -204,6 +232,20 @@ describe('useAuthFlow', () => {
 
       expect(success).toBe(false);
       expect(toast.error).toHaveBeenCalledWith('خطا در خروج از حساب کاربری');
+    });
+
+    it('handles network/unexpected errors gracefully', async () => {
+      mockSignOut.mockRejectedValue(new Error('Sign out network error'));
+
+      const { result } = renderHook(() => useAuthFlow());
+
+      let success: boolean | undefined;
+      await act(async () => {
+        success = await result.current.signOut();
+      });
+
+      expect(success).toBe(false);
+      expect(toast.error).toHaveBeenCalledWith('Sign out network error');
     });
   });
 });

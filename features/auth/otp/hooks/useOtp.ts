@@ -10,6 +10,9 @@ export function useOtp(onComplete: (code: string) => void) {
   const slotsRef = useRef<string[]>(fillEmpty());
   // Fix 6: keep onComplete in a ref so memoized handlers always invoke the latest callback
   const onCompleteRef = useRef(onComplete);
+  // Guard: keep track of the last submitted code to prevent duplicate submissions on rapid events
+  const lastSubmittedCodeRef = useRef<string | null>(null);
+
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
@@ -22,6 +25,16 @@ export function useOtp(onComplete: (code: string) => void) {
   const updateSlots = (next: string[]) => {
     slotsRef.current = next;
     setSlots(next);
+    // Reset the submission guard if slots become incomplete, allowing subsequent submissions of new/edited codes
+    if (!areAllOtpSlotsFilled(next)) {
+      lastSubmittedCodeRef.current = null;
+    }
+  };
+
+  const triggerComplete = (code: string) => {
+    if (code === lastSubmittedCodeRef.current) return;
+    lastSubmittedCodeRef.current = code;
+    onCompleteRef.current(code);
   };
 
   const handleChange = (index: number, value: string) => {
@@ -36,7 +49,7 @@ export function useOtp(onComplete: (code: string) => void) {
 
     if (digit) {
       focusAt(index + 1);
-      if (areAllOtpSlotsFilled(next)) onCompleteRef.current(next.join(''));
+      if (areAllOtpSlotsFilled(next)) triggerComplete(next.join(''));
     }
   };
 
@@ -59,7 +72,7 @@ export function useOtp(onComplete: (code: string) => void) {
     updateSlots(next);
     // Fix 8: focus the slot AFTER the last pasted digit, not the last filled slot
     focusAt(digits.length);
-    if (areAllOtpSlotsFilled(next)) onCompleteRef.current(next.join(''));
+    if (areAllOtpSlotsFilled(next)) triggerComplete(next.join(''));
   };
 
   const reset = () => {
