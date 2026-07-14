@@ -3,6 +3,12 @@ import mockReact from 'react';
 import { server } from './mocks/server';
 import { resetPendingPostsFixture } from './mocks/handlers';
 
+jest.mock('@/env', () => ({
+  env: {
+    NEXT_PUBLIC_API_URL: 'http://localhost:3000',
+  },
+}));
+
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props: mockReact.ComponentProps<'img'>) => {

@@ -16,6 +16,7 @@ function parseArgs(rawArgs) {
     keep: false,
     dryRun: false,
     port: 0,
+    skipDeleted: false,
   };
 
   for (let index = 0; index < rawArgs.length; index += 1) {
@@ -27,6 +28,8 @@ function parseArgs(rawArgs) {
     } else if (arg === "--dry-run") {
       options.dryRun = true;
       options.noOpen = true;
+    } else if (arg === "--skip-deleted") {
+      options.skipDeleted = true;
     } else if (arg === "--port") {
       const next = rawArgs[index + 1];
       if (!next || Number.isNaN(Number(next))) {
@@ -51,7 +54,7 @@ function parseArgs(rawArgs) {
 function usage() {
   return [
     "Usage:",
-    "  node .agents/skills/detail-recap/scripts/detail-recap.js [range] [--no-open] [--keep] [--dry-run] [--port 0]",
+    "  node .agents/skills/detail-recap/scripts/detail-recap.js [range] [--no-open] [--keep] [--dry-run] [--port 0] [--skip-deleted]",
     "",
     "Ranges:",
     "  HEAD              Compare HEAD against the working tree",
@@ -357,11 +360,14 @@ function getNewContent(repoRoot, rangeInfo, filePath) {
   return gitShow(repoRoot, rangeInfo.to, filePath);
 }
 
-function buildFiles(repoRoot, rangeInfo) {
+function buildFiles(repoRoot, rangeInfo, options = {}) {
   const rows = getChangedRows(repoRoot, rangeInfo);
   const files = [];
 
   for (const row of rows) {
+    if (options.skipDeleted && row.status === "D") {
+      continue;
+    }
     const oldPath = row.previousPath || row.filePath;
     const oldContent = gitShow(repoRoot, rangeInfo.from, oldPath);
     const newContent = getNewContent(repoRoot, rangeInfo, row.filePath);
@@ -630,8 +636,8 @@ function getCommitMeta(repoRoot, rangeInfo) {
   }
 }
 
-function buildData(repoRoot, rangeInfo) {
-  const files = buildFiles(repoRoot, rangeInfo);
+function buildData(repoRoot, rangeInfo, options = {}) {
+  const files = buildFiles(repoRoot, rangeInfo, options);
   const reviewLayers = buildReviewLayers(files);
   const drivers = inferDrivers(files);
   const risks = buildRisks(files);
@@ -1920,7 +1926,7 @@ async function main() {
 
   const repoRoot = getRepoRoot();
   const rangeInfo = parseRange(options.range, repoRoot);
-  const data = buildData(repoRoot, rangeInfo);
+  const data = buildData(repoRoot, rangeInfo, options);
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "detail-recap-"));
   writeArtifacts(tempDir, data);
 
@@ -1951,10 +1957,10 @@ async function main() {
     process.exit(1);
   });
 
-  server.listen(options.port, "127.0.0.1", () => {
+  server.listen(options.port, "0.0.0.0", () => {
     const address = server.address();
-    const url = `http://127.0.0.1:${address.port}/detail-recap.html`;
-    console.log(`Review URL: ${url}`);
+    const url = `http://localhost:${address.port}/detail-recap.html`;
+    console.log(`Review URL: ${url} (listening on 0.0.0.0)`);
     console.log("Press Enter to stop the server and delete temp files.");
     if (!options.noOpen) {
       openBrowser(url);

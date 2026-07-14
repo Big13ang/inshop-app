@@ -14,6 +14,7 @@ import { test as base } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { OtpPage } from '../pages/OtpPage';
 import { AddPostPage } from '../pages/AddPostPage';
+import { env } from '@/env';
 
 type Fixtures = {
   loginPage: LoginPage;
@@ -59,19 +60,27 @@ export const test = base.extend<Fixtures>({
    * handler takes priority over this fixture's success mock.
    */
   addPostPage: async ({ page, context }, use) => {
-    // Set a mock session token cookie to bypass proxy authentication check
-    await context.addCookies([
-      {
-        name: 'better-auth.session_token',
-        value: 'mock-session-token',
-        domain: 'localhost',
-        path: '/',
-      },
-    ]);
+    const E2E_MOCK = env.E2E_MOCK !== 'false';
+
+    if (E2E_MOCK) {
+      // Set a mock session token cookie to bypass proxy authentication check
+      await context.addCookies([
+        {
+          name: 'better-auth.session_token',
+          value: 'mock-session-token',
+          domain: 'localhost',
+          path: '/',
+        },
+      ]);
+    }
 
     const addPostPage = new AddPostPage(page);
-    await addPostPage.mockUploadApi();
-    await addPostPage.mockPublishApi();
+
+    if (E2E_MOCK) {
+      await addPostPage.mockUploadApi();
+      await addPostPage.mockPublishApi();
+    }
+
     await addPostPage.goto();
     // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(addPostPage);
