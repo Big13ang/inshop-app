@@ -10,11 +10,12 @@ interface AddPostFooterProps {
   isSubmitting: boolean;
   isUploadPending: boolean;
   isAtLimit: boolean;
+  isSessionLoading?: boolean;
   onNext: () => void;
   onTriggerPicker: () => void;
 }
 
-export default function AddPostFooter({ phase, caption, isSubmitting, isUploadPending, isAtLimit, onNext, onTriggerPicker }: AddPostFooterProps) {
+export default function AddPostFooter({ phase, caption, isSubmitting, isUploadPending, isAtLimit, isSessionLoading = false, onNext, onTriggerPicker }: AddPostFooterProps) {
   if (phase === 'details') {
     const shareDisabled = !caption.trim() || isSubmitting;
     return (
@@ -38,7 +39,7 @@ export default function AddPostFooter({ phase, caption, isSubmitting, isUploadPe
 
   return (
     <Footer.Root className="flex items-center gap-3">
-      <Footer.Button id="btn-next-step" onClick={onNext} disabled={isUploadPending} variant="primary" className="flex-1">
+      <Footer.Button id="btn-next-step" onClick={onNext} disabled={isUploadPending || isSessionLoading} variant="primary" className="flex-1">
         {isUploadPending ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
@@ -46,7 +47,7 @@ export default function AddPostFooter({ phase, caption, isSubmitting, isUploadPe
         )}
         <span className="leading-none">{text.nextButton}</span>
       </Footer.Button>
-      <Footer.Button id="btn-trigger-picker" onClick={onTriggerPicker} disabled={isAtLimit} variant="outline" className="flex-1">
+      <Footer.Button id="btn-trigger-picker" onClick={onTriggerPicker} disabled={isAtLimit || isSessionLoading} variant="outline" className="flex-1">
         <Plus className="w-4 h-4 text-primary" strokeWidth={2.5} />
         <span className="leading-none">{text.addButton}</span>
       </Footer.Button>

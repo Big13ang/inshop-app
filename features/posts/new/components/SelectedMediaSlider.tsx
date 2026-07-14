@@ -5,6 +5,7 @@ import { ImageIcon, Trash2 } from 'lucide-react';
 import { cva } from 'class-variance-authority';
 import { useShallow } from 'zustand/react/shallow';
 import PostSlider from '@/components/ui/PostSlider';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMediaStore } from '../services/mediaStore';
 
@@ -103,14 +104,16 @@ export default function SelectedMediaSlider({
           <span>فایل {activeIdx + 1} از {media.length}</span>
         </div>
 
-        {!isCompact && media.length > 1 ? (
-          <button
+         {!isCompact && media.length > 1 ? (
+          <Button
             onClick={(e) => { e.stopPropagation(); handleRemove(activeIdx); }}
-            className="absolute top-4 left-4 bg-zinc-900/90 text-zinc-300 hover:text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-zinc-950 transition-all border border-white/15 z-[25]"
+            variant="filled"
+            shape="circle"
+            className="absolute top-4 left-4 bg-zinc-900/90 text-zinc-300 hover:text-white size-8 flex items-center justify-center hover:bg-zinc-950 transition-all border border-white/15 z-[25] p-0 min-w-0"
             title="حذف از انتخاب شده‌ها"
           >
             {HOISTED_REMOVE_ICON}
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

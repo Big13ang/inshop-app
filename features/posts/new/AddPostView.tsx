@@ -7,6 +7,7 @@ import AddPostFooter from './components/AddPostFooter';
 import SelectedMediaSlider from './components/SelectedMediaSlider';
 import SelectedGallery from './components/SelectedGallery';
 import PostDetailsForm from './components/PostDetailsForm';
+import AddPostLoadingSkeleton from './components/AddPostLoadingSkeleton';
 import { usePostFlow, type PostFlowNavigationIntent } from './hooks/usePostFlow';
 import { MAX_IMAGES } from './constants';
 import { useMediaStore } from './services/mediaStore';
@@ -19,11 +20,15 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
   const imagesInputRef = useRef<HTMLInputElement>(null);
   const [captionTouched, setCaptionTouched] = useState(false);
 
-  const { phase, caption, setCaption, media, isUploadPending, isSubmitting, handleBack, handleNext } =
+  const { phase, caption, setCaption, media, isUploadPending, isSubmitting, isSessionLoading, handleBack, handleNext } =
     usePostFlow(onNavigate);
   const isAtLimit = useMediaStore((s) => s.itemMap.size >= MAX_IMAGES);
 
   function renderBody() {
+    if (isSessionLoading) {
+      return <AddPostLoadingSkeleton />;
+    }
+
     if (phase === 'select') {
       return (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -75,6 +80,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
         isSubmitting={isSubmitting}
         isUploadPending={isUploadPending}
         isAtLimit={isAtLimit}
+        isSessionLoading={isSessionLoading}
         onNext={handleNext}
         onTriggerPicker={() => imagesInputRef.current?.click()}
       />

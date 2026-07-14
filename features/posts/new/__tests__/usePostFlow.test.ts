@@ -16,13 +16,31 @@ jest.mock('../hooks/useMediaUpload', () => ({
   }),
 }));
 
-jest.mock('../hooks/useSubmitPost', () => ({
-  useSubmitPost: (onSuccess: () => void) => {
-    capturedOnSuccess = onSuccess;
-    return {
-      mutate: mockMutate,
-      isPending: false,
-    };
+jest.mock('@/lib/utils', () => ({
+  http: {
+    post: jest.fn().mockResolvedValue({
+      ok: true,
+      value: { data: { uploadSessionId: 'mock-session-123', expiresAt: '2026-07-14T00:00:00Z' } },
+    }),
+  },
+  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+  formatToUUID: (hex: string) => {
+    if (hex && hex.length === 32 && !hex.includes('-')) {
+      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    }
+    return hex;
+  },
+}));
+
+jest.mock('../../services/postsQueryService', () => ({
+  postsQueryService: {
+    useSubmitPost: (onSuccess: () => void) => {
+      capturedOnSuccess = onSuccess;
+      return {
+        mutate: mockMutate,
+        isPending: false,
+      };
+    },
   },
 }));
 
@@ -47,11 +65,12 @@ function makeItem(id: string, uploadedUrl?: string) {
   };
 }
 
-function setupStore(ids: string[], items: ReturnType<typeof makeItem>[]) {
+function setupStore(ids: string[], items: ReturnType<typeof makeItem>[], sessionId: string | null = 'mock-session-123') {
   act(() => {
     useMediaStore.setState({
       itemMap: new Map(items.map((it) => [it.id, it])),
       selectedIds: ids,
+      uploadSessionId: sessionId,
     });
   });
 }
@@ -59,7 +78,14 @@ function setupStore(ids: string[], items: ReturnType<typeof makeItem>[]) {
 beforeEach(() => {
   jest.clearAllMocks();
   act(() => {
-    useMediaStore.setState({ itemMap: new Map(), selectedIds: [], activePreviewIdx: 0 });
+    useMediaStore.setState({
+      itemMap: new Map(),
+      selectedIds: [],
+      activePreviewIdx: 0,
+      uploadSessionId: 'mock-session-123',
+      expiresAt: null,
+      isSessionLoading: false,
+    });
   });
 });
 
@@ -110,19 +136,21 @@ describe('usePostFlow — handleNext', () => {
       expect(mockMutate).not.toHaveBeenCalled();
     });
 
-    it('submits with all uploadedUrls when every selected item is uploaded', () => {
+    it('submits with description and mediaIds when every selected item is uploaded', () => {
       const { result } = advanceToDetails('my caption');
 
       setupStore(
         ['a', 'b'],
-        [makeItem('a', 'https://cdn/a.jpg'), makeItem('b', 'https://cdn/b.jpg')],
+        [makeItem('a', 'https://cdn/a'), makeItem('b', 'https://cdn/b')],
+        'mock-session-123',
       );
 
       act(() => { result.current.handleNext(); });
 
       expect(mockMutate).toHaveBeenCalledWith({
-        caption: 'my caption',
-        mediaUrls: ['https://cdn/a.jpg', 'https://cdn/b.jpg'],
+        uploadSessionId: 'mock-session-123',
+        description: 'my caption',
+        mediaIds: ['a', 'b'],
       });
     });
 
@@ -189,11 +217,28 @@ describe('usePostFlow — handleNext', () => {
   });
 
   describe('submission success', () => {
-    it('shows a success toast and navigates immediately', () => {
+    it('shows a success toast, resets the state and mediaStore, and navigates immediately', async () => {
       const onNavigate = jest.fn();
-      renderHook(() => usePostFlow(onNavigate));
 
-      act(() => { capturedOnSuccess?.(); });
+      // Set some initial state to verify it gets reset
+      setupStore(['a'], [makeItem('a', 'https://cdn/a.jpg')]);
+
+      const { result } = renderHook(() => usePostFlow(onNavigate));
+
+      // Move to details and set caption to dirty the local states
+      act(() => { result.current.handleNext(); }); // select -> details
+      act(() => { result.current.setCaption('some text'); });
+
+      expect(result.current.phase).toBe('details');
+      expect(result.current.caption).toBe('some text');
+      expect(useMediaStore.getState().selectedIds).toEqual(['a']);
+      expect(useMediaStore.getState().itemMap.size).toBe(1);
+
+      await act(async () => {
+        capturedOnSuccess?.();
+        // Allow microtasks/promises to resolve
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
 
       expect(toast.success).toHaveBeenCalledTimes(1);
       expect(toast.success).toHaveBeenCalledWith(
@@ -201,6 +246,14 @@ describe('usePostFlow — handleNext', () => {
         expect.objectContaining({ description: expect.any(String) }),
       );
       expect(onNavigate).toHaveBeenCalledWith('pending-posts');
+
+      // Verify local states are reset
+      expect(result.current.phase).toBe('select');
+      expect(result.current.caption).toBe('');
+
+      // Verify mediaStore is reset
+      expect(useMediaStore.getState().selectedIds).toEqual([]);
+      expect(useMediaStore.getState().itemMap.size).toBe(0);
     });
   });
 });

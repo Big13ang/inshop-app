@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { bulletDot } from './utils';
 
 function BulletDot({
@@ -16,7 +17,10 @@ function BulletDot({
   const distVariant = dist === 0 ? 0 : dist === 1 ? 1 : dist === 2 ? 2 : ('far' as const);
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon-xs"
+      shape="circle"
       onClick={(e) => {
         e.stopPropagation();
         onClick(idx);

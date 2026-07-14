@@ -49,12 +49,11 @@ jest.mock('@/components/ui/PostSlider', () => ({
 const mockMutate = jest.fn();
 let mockData: PendingPost[] = [];
 
-jest.mock('../hooks/usePendingPosts', () => ({
-  usePendingPosts: () => ({ data: mockData, isLoading: false }),
-}));
-
-jest.mock('../hooks/useDeletePendingPost', () => ({
-  useDeletePendingPost: () => ({ mutate: mockMutate, isPending: false }),
+jest.mock('../../services/postsQueryService', () => ({
+  postsQueryService: {
+    usePendingPosts: () => ({ data: mockData, isLoading: false }),
+    useDeletePendingPost: () => ({ mutate: mockMutate, isPending: false }),
+  },
 }));
 
 function post(overrides: Partial<PendingPost> = {}): PendingPost {

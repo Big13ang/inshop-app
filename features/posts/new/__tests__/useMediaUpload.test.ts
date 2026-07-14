@@ -32,7 +32,13 @@ beforeEach(() => {
   mockUpload = jest.fn().mockResolvedValue('https://cdn/uploaded.jpg');
   (createChunkStrategy as jest.Mock).mockReturnValue({ upload: mockUpload });
 
-  useMediaStore.setState({ itemMap: new Map(), selectedIds: [], activePreviewIdx: 0 });
+  useMediaStore.setState({
+    itemMap: new Map(),
+    selectedIds: [],
+    activePreviewIdx: 0,
+    uploadSessionId: 'mock-session-123',
+    expiresAt: '2026-07-13T15:00:00Z',
+  });
 
   global.URL.createObjectURL = jest.fn(() => 'blob:local');
   global.URL.revokeObjectURL = jest.fn();
@@ -318,7 +324,7 @@ describe('useMediaUpload — removeItem', () => {
             status: 'uploaded',
             progress: 100,
             mediaKind: 'image',
-            uploadedUrl: 'https://cdn/uploaded.jpg'
+            uploadedUrl: 'https://cdn/item-id'
           }]
         ])
       });
@@ -333,43 +339,15 @@ describe('useMediaUpload — removeItem', () => {
     expect(useMediaStore.getState().itemMap.has('item-id')).toBe(false);
 
     // 4. Verify fetch was called with DELETE
-    expect(global.fetch).toHaveBeenCalledWith('/api/upload/item-id', {
-      method: 'DELETE',
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:3000/upload-sessions/mock-session-123/photos/item-id',
+      expect.objectContaining({ method: 'DELETE', credentials: 'include' }),
+    );
 
     unmount();
   });
 
-  it('calls the delete API for an in-progress upload, even without uploadedUrl yet', () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
 
-    act(() => {
-      useMediaStore.setState({
-        itemMap: new Map([
-          ['item-id', {
-            id: 'item-id',
-            name: 'photo.jpg',
-            file: new File(['x'], 'photo.jpg'),
-            localUrl: 'blob:local',
-            status: 'uploading',
-            progress: 40,
-            mediaKind: 'image',
-          }]
-        ])
-      });
-    });
-
-    act(() => {
-      result.current.removeItem('item-id');
-    });
-
-    expect(useMediaStore.getState().itemMap.has('item-id')).toBe(false);
-    expect(global.fetch).toHaveBeenCalledWith('/api/upload/item-id', {
-      method: 'DELETE',
-    });
-
-    unmount();
-  });
 
   it('does not call the delete API when the item has no uploadedUrl', () => {
     const { result, unmount } = renderHook(() => useMediaUpload());

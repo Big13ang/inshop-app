@@ -1,4 +1,5 @@
 import * as tus from 'tus-js-client';
+import { env } from '@/env';
 
 // tus-js-client's default XHRHttpStack sends Blob chunk bodies via
 // XMLHttpRequest.send(). MSW's XHR interceptor (used in tests) doesn't relay
@@ -47,6 +48,7 @@ export class FetchRequest implements tus.HttpRequest {
       headers: this.headers,
       body: sendBody,
       signal: this.controller.signal,
+      credentials: 'include',
     });
     return new FetchResponse(res, await res.text());
   }
@@ -94,34 +96,45 @@ export class FetchHttpStack implements tus.HttpStack {
   }
 }
 
+export interface UploadParams {
+  id: string;
+  file: File;
+  onProgress: (pct: number) => void;
+  signal: AbortSignal;
+  options?: { uploadSessionId?: string };
+}
+
 export interface UploadStrategy {
-  upload(
-    id: string,
-    file: File,
-    onProgress: (pct: number) => void,
-    signal: AbortSignal,
-  ): Promise<string>;
+  upload(params: UploadParams): Promise<string>;
 }
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB
 const RETRY_DELAYS = [0, 1_000, 3_000, 5_000];
 
-export function createChunkStrategy(endpoint = '/api/upload'): UploadStrategy {
+export function createChunkStrategy(
+  endpoint = `${env.NEXT_PUBLIC_API_URL}/uploads`,
+): UploadStrategy {
   return {
-    upload(id, file, onProgress, signal): Promise<string> {
+    upload({ id, file, onProgress, signal, options }): Promise<string> {
       return new Promise((resolve, reject) => {
         if (signal.aborted) {
           reject(new DOMException('Aborted', 'AbortError'));
           return;
         }
 
+        const uploadSessionId = options?.uploadSessionId || '';
         const upload = new tus.Upload(file, {
           endpoint,
           chunkSize: CHUNK_SIZE,
           retryDelays: RETRY_DELAYS,
           removeFingerprintOnSuccess: true,
           httpStack: new FetchHttpStack(),
-          metadata: { id, filename: file.name, filetype: file.type },
+          metadata: {
+            id,
+            filename: file.name,
+            filetype: file.type,
+            ...(uploadSessionId ? { uploadSessionId } : {}),
+          },
           onProgress: (bytesUploaded, bytesTotal) => {
             onProgress(Math.round((bytesUploaded / bytesTotal) * 100));
           },

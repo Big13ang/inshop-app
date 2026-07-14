@@ -7,7 +7,11 @@ import AddPostView from '../AddPostView';
 import { Toaster } from '../../../../components/ui/sonner';
 import { text } from '../constants';
 import { useMediaStore } from '../services/mediaStore';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { server } from '../../../../mocks/server';
+
+// Pre-set session so the store's module-scope ensureSession() skips.
+useMediaStore.setState({ uploadSessionId: 'mock-session-123', isSessionLoading: false });
 
 // ── Global browser API stubs ──────────────────────────────────────────────────
 
@@ -30,12 +34,22 @@ beforeAll(() => {
   });
 });
 
+beforeEach(() => {
+  useMediaStore.setState({
+    uploadSessionId: 'mock-session-123',
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    isSessionLoading: false,
+  });
+});
+
 // Reset the media store between tests so state doesn't bleed.
 afterEach(() => {
   useMediaStore.setState({
     itemMap: new Map(),
     selectedIds: [],
     activePreviewIdx: 0,
+    uploadSessionId: null,
+    expiresAt: null,
   });
 });
 
@@ -98,7 +112,7 @@ describe('AddPostView — selection phase', () => {
     const input = container.querySelector('input[multiple]') as HTMLInputElement;
     await userEvent.setup().upload(input, bigFile);
     await waitFor(() => {
-      expect(screen.getByText('حجم عکس نباید بیشتر از ۱۰ مگابایت باشد')).toBeInTheDocument();
+      expect(screen.getByText(ERROR_MESSAGES.upload.imageSizeLimit)).toBeInTheDocument();
     });
   });
 
@@ -187,9 +201,9 @@ describe('AddPostView — details phase', () => {
     }, { timeout: 4000 });
   });
 
-  it('shows error toast when POST /api/posts fails', async () => {
+  it('shows error toast when POST /upload-sessions/publish fails', async () => {
     server.use(
-      http.post('/api/posts', () => new HttpResponse(null, { status: 500 })),
+      http.post('http://localhost:3000/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
     );
     const { user, container } = setup();
     await advanceToDetails(user, container);
@@ -198,13 +212,13 @@ describe('AddPostView — details phase', () => {
     await user.click(screen.getByRole('button', { name: text.shareButton }));
 
     await waitFor(() => {
-      expect(screen.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید')).toBeInTheDocument();
+      expect(screen.getByText(ERROR_MESSAGES.posts.submitFailed)).toBeInTheDocument();
     }, { timeout: 5000 });
   });
 
   it('Share button is disabled and shows a spinner while the mutation is in flight', async () => {
     server.use(
-      http.post('/api/posts', () => new Promise(() => { })), // never resolves
+      http.post('http://localhost:3000/upload-sessions/publish', () => new Promise(() => { })), // never resolves
     );
     const { user, container } = setup();
     await advanceToDetails(user, container);
@@ -222,7 +236,7 @@ describe('AddPostView — details phase', () => {
 
   it('preserves caption text and selected images after a failed submission', async () => {
     server.use(
-      http.post('/api/posts', () => new HttpResponse(null, { status: 500 })),
+      http.post('http://localhost:3000/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
     );
     const { user, container } = setup();
     await advanceToDetails(user, container);
@@ -231,7 +245,7 @@ describe('AddPostView — details phase', () => {
     await user.click(screen.getByRole('button', { name: text.shareButton }));
 
     await waitFor(() => {
-      expect(screen.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید')).toBeInTheDocument();
+      expect(screen.getByText(ERROR_MESSAGES.posts.submitFailed)).toBeInTheDocument();
     }, { timeout: 5000 });
 
     // Caption preserved

@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
+
 export const text = {
   // Header
   headerTitle: 'پست‌های در انتظار بررسی',
@@ -21,7 +23,8 @@ export const text = {
   deleteLabel: 'حذف پیش‌نویس',
   deleteHint: 'لغو انتشار و حذف',
   deleteSuccess: 'درخواست انتشار با موفقیت لغو و پیش نویس حذف شد.',
-  deleteError: 'حذف پیش‌نویس با خطا مواجه شد، دوباره تلاش کنید.',
+  deleteError: ERROR_MESSAGES.posts.deleteDraftFailed,
+
 
   // Rejection overlay
   rejectionTitle: 'عدم تأیید انتشار پست',

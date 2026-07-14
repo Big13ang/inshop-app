@@ -8,15 +8,18 @@ import { type UploadService, createUploadService } from '../services/uploadServi
 import { validateBatch } from '../services/validateBatch';
 import { buildMediaItem } from '../services/buildMediaItem';
 import { MAX_IMAGES } from '../constants';
+import { env } from '@/env';
+import { http, formatToUUID } from '@/lib/utils';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const ERROR_MAP = {
   video: {
-    size: 'حجم ویدیو نباید بیشتر از ۵۰۰ مگابایت باشد',
-    format: 'فقط MP4، WebM و MOV مجاز است',
+    size: ERROR_MESSAGES.upload.videoSizeLimit,
+    format: ERROR_MESSAGES.upload.videoFormatLimit,
   },
   image: {
-    size: 'حجم عکس نباید بیشتر از ۱۰ مگابایت باشد',
-    format: 'فقط JPG، PNG و WebP مجاز است',
+    size: ERROR_MESSAGES.upload.imageSizeLimit,
+    format: ERROR_MESSAGES.upload.imageFormatLimit,
   },
 } as const;
 
@@ -30,6 +33,13 @@ export function useMediaUpload() {
   }, []);
 
   function addFiles(files: File[], kind: MediaKind = 'image') {
+    const uploadSessionId = useMediaStore.getState().uploadSessionId;
+    if (!uploadSessionId) {
+      toast.warning(ERROR_MESSAGES.upload.preparingUpload);
+      return;
+    }
+
+
     const currentCount = useMediaStore.getState().itemMap.size;
     const remaining = MAX_IMAGES - currentCount;
 
@@ -71,10 +81,17 @@ export function useMediaUpload() {
     service.current!.cancel(id);
     useMediaStore.getState().removeItem(id);
 
-    // 'uploaded' has a server file via uploadedUrl; 'uploading' has one
-    // because the upload already started — both need server-side cleanup.
-    if (item?.uploadedUrl || item?.status === 'uploading') {
-      void fetch(`/api/upload/${id}`, { method: 'DELETE' });
+    // Only delete from server if the file was actually uploaded.
+    if (item?.uploadedUrl || item?.status === 'uploaded') {
+      const uploadSessionId = useMediaStore.getState().uploadSessionId;
+      if (uploadSessionId) {
+        const url = item.uploadedUrl;
+        const mediaId = url ? url.substring(url.lastIndexOf('/') + 1) : id;
+        const formattedMediaId = formatToUUID(mediaId);
+        void http.delete(
+          `${env.NEXT_PUBLIC_API_URL}/upload-sessions/${uploadSessionId}/photos/${formattedMediaId}`
+        );
+      }
     }
   }
 

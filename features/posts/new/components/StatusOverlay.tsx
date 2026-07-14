@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { X, Clock, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { MediaItem, MediaStatus } from '../types';
 
 const STATUS_CONFIG: Record<
@@ -63,12 +64,13 @@ export default function StatusOverlay({ item, onRetry }: StatusOverlayProps) {
       ) : null}
 
       {item.status === 'failed' && onRetry ? (
-        <button
+        <Button
           onClick={(e) => { e.stopPropagation(); onRetry(); }}
-          className="pointer-events-auto mt-1 text-[9px] text-red-300 underline"
+          variant="link"
+          className="pointer-events-auto mt-1 text-[9px] text-red-300 underline h-auto p-0"
         >
           تلاش دوباره
-        </button>
+        </Button>
       ) : null}
     </div>
   );

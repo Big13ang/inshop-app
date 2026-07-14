@@ -1,8 +1,10 @@
 import pLimit from 'p-limit';
+import { toast } from 'sonner';
 import { Result } from '@/lib/utils/result';
 import { type MediaItem } from '../types';
 import { type UploadStrategy, createChunkStrategy } from './chunkStrategy';
 import { useMediaStore } from './mediaStore';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 export interface UploadService {
   /** Queues items for upload, respecting the concurrency limit. */
@@ -30,11 +32,16 @@ export function createUploadService(
 
     useMediaStore.getState()._setStatus(id, 'uploading');
 
+    const uploadSessionId = useMediaStore.getState().uploadSessionId || undefined;
+
     const result = await Result.try(
-      strategy.upload(id, file,
-        (pct) => useMediaStore.getState()._setProgress(id, pct),
-        ctrl.signal,
-      ),
+      strategy.upload({
+        id,
+        file,
+        onProgress: (pct) => useMediaStore.getState()._setProgress(id, pct),
+        signal: ctrl.signal,
+        options: { uploadSessionId },
+      }),
     );
 
     controllers.delete(id);
@@ -48,7 +55,21 @@ export function createUploadService(
 
     Result.match(result, {
       ok: (url) => useMediaStore.getState()._setUploaded(id, url),
-      err: () => useMediaStore.getState()._setStatus(id, 'failed'),
+      err: (error) => {
+        useMediaStore.getState()._setStatus(id, 'failed');
+        let errorMsg = ERROR_MESSAGES.upload.failed;
+        if (error instanceof Error) {
+          if (error.message.includes('resolution') || error.message.includes('1080')) {
+            errorMsg = ERROR_MESSAGES.upload.resolutionTooSmall;
+          } else {
+            const cleanMsg = error.message.replace(/^tus:\s*/i, '');
+            if (cleanMsg && cleanMsg.length < 150) {
+              errorMsg = cleanMsg;
+            }
+          }
+        }
+        toast.error(errorMsg);
+      },
     });
   }
 

@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface PostStatusBadgeProps {
   icon: React.ReactNode;
@@ -15,10 +16,14 @@ export function PostStatusBadge({ icon, children, onClick, className }: PostStat
 
   if (onClick) {
     return (
-      <button onClick={onClick} className={cn(baseClassName, 'cursor-pointer transition-all active:scale-95')}>
+      <Button
+        variant="ghost"
+        onClick={onClick}
+        className={cn(baseClassName, 'transition-all active:scale-95')}
+      >
         {icon}
         <span>{children}</span>
-      </button>
+      </Button>
     );
   }
 

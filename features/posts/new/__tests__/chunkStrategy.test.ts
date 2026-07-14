@@ -1,4 +1,5 @@
 import { createChunkStrategy } from '../services/chunkStrategy';
+import { env } from '@/env';
 
 // ── tus-js-client mock ───────────────────────────────────────────────────────
 //
@@ -62,7 +63,12 @@ const latestUpload = () => MockUpload.instances[MockUpload.instances.length - 1]
 describe('createChunkStrategy', () => {
   it('passes the media id and file metadata to tus.Upload', async () => {
     const strategy = createChunkStrategy();
-    const uploadPromise = strategy.upload('my-id', fileOf(10), jest.fn(), new AbortController().signal);
+    const uploadPromise = strategy.upload({
+      id: 'my-id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: new AbortController().signal,
+    });
 
     latestUpload().options.onSuccess();
     await uploadPromise;
@@ -77,7 +83,12 @@ describe('createChunkStrategy', () => {
   it('reports progress as a percentage', async () => {
     const onProgress = jest.fn();
     const strategy = createChunkStrategy();
-    const uploadPromise = strategy.upload('id', fileOf(10), onProgress, new AbortController().signal);
+    const uploadPromise = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress,
+      signal: new AbortController().signal,
+    });
 
     latestUpload().options.onProgress(50, 200);
     latestUpload().options.onSuccess();
@@ -88,7 +99,12 @@ describe('createChunkStrategy', () => {
 
   it('resolves with the tus upload URL on success', async () => {
     const strategy = createChunkStrategy();
-    const uploadPromise = strategy.upload('id', fileOf(10), jest.fn(), new AbortController().signal);
+    const uploadPromise = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: new AbortController().signal,
+    });
 
     latestUpload().options.onSuccess();
     const url = await uploadPromise;
@@ -98,7 +114,12 @@ describe('createChunkStrategy', () => {
 
   it('rejects with the tus error on failure', async () => {
     const strategy = createChunkStrategy();
-    const uploadPromise = strategy.upload('id', fileOf(10), jest.fn(), new AbortController().signal);
+    const uploadPromise = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: new AbortController().signal,
+    });
 
     latestUpload().options.onError(new Error('tus failed'));
 
@@ -108,7 +129,12 @@ describe('createChunkStrategy', () => {
   it('aborts the underlying upload and rejects when the signal fires', async () => {
     const ctrl = new AbortController();
     const strategy = createChunkStrategy();
-    const uploadPromise = strategy.upload('id', fileOf(10), jest.fn(), ctrl.signal);
+    const uploadPromise = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: ctrl.signal,
+    });
 
     ctrl.abort();
 
@@ -122,9 +148,49 @@ describe('createChunkStrategy', () => {
     const strategy = createChunkStrategy();
 
     await expect(
-      strategy.upload('id', fileOf(10), jest.fn(), ctrl.signal),
+      strategy.upload({
+        id: 'id',
+        file: fileOf(10),
+        onProgress: jest.fn(),
+        signal: ctrl.signal,
+      }),
     ).rejects.toThrow();
 
     expect(MockUpload.instances).toHaveLength(0);
+  });
+
+  it('uses env.NEXT_PUBLIC_API_URL/uploads as the default endpoint', async () => {
+    const strategy = createChunkStrategy();
+    const uploadPromise = strategy.upload({
+      id: 'my-id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: new AbortController().signal,
+    });
+    latestUpload().options.onSuccess();
+    await uploadPromise;
+
+    expect(latestUpload().options.endpoint).toBe(`${env.NEXT_PUBLIC_API_URL}/uploads`);
+  });
+
+  it('appends uploadSessionId from options to tus metadata', async () => {
+    const strategy = createChunkStrategy();
+    const uploadPromise = strategy.upload({
+      id: 'my-id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: new AbortController().signal,
+      options: { uploadSessionId: 'session-xyz' },
+    });
+
+    latestUpload().options.onSuccess();
+    await uploadPromise;
+
+    expect(latestUpload().options.metadata).toEqual({
+      id: 'my-id',
+      filename: 'f.jpg',
+      filetype: 'image/jpeg',
+      uploadSessionId: 'session-xyz',
+    });
   });
 });

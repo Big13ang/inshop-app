@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
+
 export const MAX_IMAGES = 10;
 
 export const text = {
@@ -10,16 +12,18 @@ export const text = {
   shareButton: 'اشتراک‌گذاری',
 
   // Validation alerts
-  alertNoImages: 'لطفاً حداقل ۱ تصویر برای آلبوم انتخاب فرمایید',
-  alertNoCaption: 'متن کپشن نمی‌تواند خالی باشد',
-  alertUploadsInProgress: 'لطفاً صبر کنید تا آپلود تصاویر کامل شود',
-  alertInvalidImageFormat: 'فرمت فایل نامعتبر است (فقط JPG، PNG، WEBP مجاز است)',
-  alertImageTooLarge: 'حجم عکس نباید بیشتر از ۱۰ مگابایت باشد',
+  alertNoImages: ERROR_MESSAGES.validation.noImages,
+  alertNoCaption: ERROR_MESSAGES.validation.noCaption,
+  alertUploadsInProgress: ERROR_MESSAGES.validation.uploadsInProgress,
+  alertInvalidImageFormat: ERROR_MESSAGES.upload.imageFormatLimit,
+  alertImageTooLarge: ERROR_MESSAGES.upload.imageSizeLimit,
+  loadingSession: 'در حال آماده‌سازی برای بارگذاری...',
 
   // Caption form
   captionLabel: 'توضیحات محصول',
   captionPlaceholder: 'توضیحات محصول را در این قسمت بنویسید',
-  captionError: 'توضیحات محصول اجباری است',
+  captionError: ERROR_MESSAGES.validation.captionRequired,
+
 
   // Upload overlay
   uploadingTitle: 'در حال بارگذاری پست...',

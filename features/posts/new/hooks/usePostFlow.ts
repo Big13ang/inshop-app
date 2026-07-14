@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useMediaStore } from '../services/mediaStore';
+import { formatToUUID } from '@/lib/utils';
 import { useMediaUpload } from './useMediaUpload';
-import { useSubmitPost } from './useSubmitPost';
+import { postsQueryService } from '../../services/postsQueryService';
 import { text } from '../constants';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
+
 
 export type PostFlowNavigationIntent = 'back' | 'pending-posts';
 
@@ -21,10 +24,16 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
     ),
   );
 
-  const submitPost = useSubmitPost(() => {
+  useMediaStore((s) => s.uploadSessionId);
+  const isSessionLoading = useMediaStore((s) => s.isSessionLoading);
+
+  const submitPost = postsQueryService.useSubmitPost(() => {
     toast.success(text.uploadSuccessTitle, {
       description: text.uploadSuccessDesc,
     });
+    setPhase('select');
+    setCaption('');
+    useMediaStore.getState().reset();
     onNavigate('pending-posts');
   });
 
@@ -60,11 +69,23 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
       return;
     }
 
-    const mediaUrls = selectedIds
-      .map((id) => itemMap.get(id)?.uploadedUrl)
-      .filter((url): url is string => !!url);
+    const uploadSessionId = useMediaStore.getState().uploadSessionId;
+    if (!uploadSessionId) {
+      toast.warning(ERROR_MESSAGES.upload.sessionInvalid);
+      return;
+    }
 
-    submitPost.mutate({ caption, mediaUrls });
+    const mediaIds = selectedIds.map((id) => {
+      const url = itemMap.get(id)?.uploadedUrl;
+      const mediaId = url ? url.substring(url.lastIndexOf('/') + 1) : id;
+      return formatToUUID(mediaId);
+    });
+
+    submitPost.mutate({
+      uploadSessionId,
+      description: caption,
+      mediaIds,
+    });
   }
 
   return {
@@ -74,6 +95,7 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
     media,
     isUploadPending,
     isSubmitting: submitPost.isPending,
+    isSessionLoading,
     handleBack,
     handleNext,
   };

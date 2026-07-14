@@ -60,9 +60,10 @@ describe('FetchRequest.send', () => {
     expect(url).toBe('/api/upload');
     expect(init.method).toBe('POST');
     expect(init.headers).toEqual({ 'Upload-Length': '100' });
+    expect(init.credentials).toBe('include');
   });
 
-  it('wraps the fetch Response in a FetchResponse exposing status/header/body', async () => {
+  it('wraps the fetch Response in a FetchResponse exposing status/header/body/underlyingObject', async () => {
     const request = new FetchRequest('PATCH', '/api/upload/abc');
 
     const response = await request.send();
@@ -70,6 +71,19 @@ describe('FetchRequest.send', () => {
     expect(response.getStatus()).toBe(200);
     expect(response.getHeader('Upload-Offset')).toBe('10');
     expect(response.getBody()).toBe('ok-body');
+    expect(response.getUnderlyingObject()).toBeInstanceOf(Response);
+  });
+
+  it('exposes set headers via getHeader', () => {
+    const request = new FetchRequest('POST', '/api/upload');
+    request.setHeader('Upload-Length', '100');
+    expect(request.getHeader('Upload-Length')).toBe('100');
+    expect(request.getHeader('Non-Existent')).toBeUndefined();
+  });
+
+  it('returns itself as the underlying object', () => {
+    const request = new FetchRequest('POST', '/api/upload');
+    expect(request.getUnderlyingObject()).toBe(request);
   });
 
   it('aborts the in-flight request via the AbortController signal', async () => {
