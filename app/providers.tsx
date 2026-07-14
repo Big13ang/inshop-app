@@ -1,10 +1,9 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { getQueryClient } from '@/lib/query-client';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  // One QueryClient per browser session — useState ensures it's not recreated on re-render
-  const [client] = useState(() => new QueryClient());
+  const client = getQueryClient();
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

@@ -1,3 +1,5 @@
+import type { QueryClient } from '@tanstack/react-query';
+
 export const queryKeys = {
   posts: {
     all: ['posts'] as const,
@@ -9,3 +11,21 @@ export const queryKeys = {
     session: ['auth', 'session'] as const,
   },
 } as const;
+
+export const queryCacheFactory = {
+  posts: {
+    invalidatePending: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.posts.pending() });
+    },
+    invalidateAll: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.posts.all });
+    },
+  },
+
+  auth: {
+    invalidateSession: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+    },
+  },
+};
+
