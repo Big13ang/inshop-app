@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+
 import { TEXTS } from '../constants';
 import { Button } from '@/components/ui/button';
 import { useCountdown } from '../hooks/useCountdown';
@@ -12,13 +12,8 @@ interface OtpTimerProps {
 }
 
 export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpTimerProps) {
-  const handleResendComplete = useCallback(() => {
-    // Timer expired - resend button will appear
-  }, []);
-
   const { timeLeft, isExpired, reset } = useCountdown({
     initialSeconds: initialTime,
-    onComplete: handleResendComplete,
   });
 
   const formatTime = (seconds: number) => {

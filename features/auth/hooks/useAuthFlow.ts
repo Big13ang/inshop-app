@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 import { tryCatchAuth } from '@/lib/utils';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 interface UseAuthFlowOptions {
   onSuccessRedirect?: string;
@@ -16,7 +17,7 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
   const sendOtp = async (phoneNumber: string): Promise<boolean> => {
     const { data, error } = await tryCatchAuth(
       authClient.phoneNumber.sendOtp({ phoneNumber }),
-      'خطا در ارسال کد تایید'
+      ERROR_MESSAGES.auth.sendOtpFailed
     );
 
     if (error) {
@@ -32,7 +33,7 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
   const verifyOtp = async (code: string, phoneNumber: string): Promise<boolean> => {
     const { error } = await tryCatchAuth(
       authClient.phoneNumber.verify({ code, phoneNumber }),
-      'خطا در تایید کد تایید'
+      ERROR_MESSAGES.auth.verifyOtpFailed
     );
 
     if (error) {
@@ -50,7 +51,7 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
   const signOut = async (): Promise<boolean> => {
     const { error } = await tryCatchAuth(
       authClient.signOut(),
-      'خطا در خروج از حساب کاربری'
+      ERROR_MESSAGES.auth.signOutFailed
     );
 
     return !error;

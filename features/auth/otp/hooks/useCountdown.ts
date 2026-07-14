@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 interface UseCountdownOptions {
   initialSeconds: number;
@@ -21,9 +21,9 @@ export function useCountdown({
 
   const isExpired = timeLeft <= 0;
 
-  const reset = useCallback((newSeconds?: number) => {
+  const reset = (newSeconds?: number) => {
     setTimeLeft(newSeconds ?? initialSeconds);
-  }, [initialSeconds]);
+  };
 
   useEffect(() => {
     if (isExpired) {

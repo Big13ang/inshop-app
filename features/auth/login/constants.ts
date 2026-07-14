@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
+
 export const TEXTS = {
     title: 'ورود / ثبت‌نام',
     subtitle: 'شماره تلفن همراه خود را وارد کنید.',
@@ -6,8 +8,8 @@ export const TEXTS = {
     submit: 'دریافت کد تایید',
     terms: 'با ورود، شرایط استفاده و سیاست حریم خصوصی را می‌پذیرید.',
     isSubmitting: 'در حال ارسال...',
-    errorRequiredPhone: 'وارد کردن شماره تلفن همراه الزامی است.',
-    errorInvalidPhone: 'شماره تلفن همراه معتبر نیست. (مثال: 09171234567)',
+    errorRequiredPhone: ERROR_MESSAGES.auth.requiredPhone,
+    errorInvalidPhone: ERROR_MESSAGES.auth.invalidPhone,
 };
 
 import { z } from 'zod/v4';
@@ -20,4 +22,5 @@ export const loginSchema = z.object({
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
+
 

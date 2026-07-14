@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from '../../../../app/auth/login/page';
 import { toast } from 'sonner';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
@@ -61,7 +62,7 @@ describe('LoginPage Integration', () => {
   it('displays an error toast when sendOtp API fails', async () => {
     mockSendOtp.mockResolvedValue({
       data: null,
-      error: { message: 'شماره تلفن نامعتبر است' },
+      error: { message: 'شماره تلفن همراه وارد شده نامعتبر است.' },
     });
 
     const user = userEvent.setup();
@@ -76,7 +77,7 @@ describe('LoginPage Integration', () => {
 
     await waitFor(() => {
       expect(mockSendOtp).toHaveBeenCalledWith({ phoneNumber: '09000000000' });
-      expect(toast.error).toHaveBeenCalledWith('شماره تلفن نامعتبر است');
+      expect(toast.error).toHaveBeenCalledWith('شماره تلفن همراه وارد شده نامعتبر است.');
       expect(mockPush).not.toHaveBeenCalled();
     });
   });
@@ -98,7 +99,7 @@ describe('LoginPage Integration', () => {
     await user.click(submitBtn);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('خطا در ارسال کد تایید');
+      expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.auth.sendOtpFailed);
       expect(mockPush).not.toHaveBeenCalled();
     });
   });

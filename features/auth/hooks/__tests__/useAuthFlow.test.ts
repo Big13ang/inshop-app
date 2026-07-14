@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAuthFlow } from '../useAuthFlow';
 import { toast } from 'sonner';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
@@ -59,7 +60,7 @@ describe('useAuthFlow', () => {
     it('returns false and shows error toast on failure', async () => {
       mockSendOtp.mockResolvedValue({
         data: null,
-        error: { message: 'شماره تلفن نامعتبر است' },
+        error: { message: 'شماره تلفن همراه وارد شده نامعتبر است.' },
       });
 
       const { result } = renderHook(() => useAuthFlow());
@@ -70,7 +71,7 @@ describe('useAuthFlow', () => {
       });
 
       expect(success).toBe(false);
-      expect(toast.error).toHaveBeenCalledWith('شماره تلفن نامعتبر است');
+      expect(toast.error).toHaveBeenCalledWith('شماره تلفن همراه وارد شده نامعتبر است.');
     });
 
     it('uses fallback message when error.message is undefined', async () => {
@@ -85,7 +86,7 @@ describe('useAuthFlow', () => {
         await result.current.sendOtp('09171234567');
       });
 
-      expect(toast.error).toHaveBeenCalledWith('خطا در ارسال کد تایید');
+      expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.auth.sendOtpFailed);
     });
 
     it('handles network/unexpected errors gracefully', async () => {
@@ -121,7 +122,7 @@ describe('useAuthFlow', () => {
 
     it('returns false and shows error toast on failure', async () => {
       mockVerify.mockResolvedValue({
-        error: { message: 'کد تایید نامعتبر است' },
+        error: { message: 'کد وارد شده نامعتبر است.' },
       });
 
       const { result } = renderHook(() => useAuthFlow());
@@ -132,7 +133,7 @@ describe('useAuthFlow', () => {
       });
 
       expect(success).toBe(false);
-      expect(toast.error).toHaveBeenCalledWith('کد تایید نامعتبر است');
+      expect(toast.error).toHaveBeenCalledWith('کد وارد شده نامعتبر است.');
       expect(mockPush).not.toHaveBeenCalled();
     });
 
@@ -204,7 +205,7 @@ describe('useAuthFlow', () => {
 
     it('returns false and shows toast on failure', async () => {
       mockSignOut.mockResolvedValue({
-        error: { message: 'خطا در خروج' },
+        error: { message: 'عملیات خروج ناموفق بود.' },
       });
 
       const { result } = renderHook(() => useAuthFlow());
@@ -215,7 +216,7 @@ describe('useAuthFlow', () => {
       });
 
       expect(success).toBe(false);
-      expect(toast.error).toHaveBeenCalledWith('خطا در خروج');
+      expect(toast.error).toHaveBeenCalledWith('عملیات خروج ناموفق بود.');
     });
 
     it('uses fallback message when error message is missing', async () => {
@@ -231,7 +232,7 @@ describe('useAuthFlow', () => {
       });
 
       expect(success).toBe(false);
-      expect(toast.error).toHaveBeenCalledWith('خطا در خروج از حساب کاربری');
+      expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.auth.signOutFailed);
     });
 
     it('handles network/unexpected errors gracefully', async () => {

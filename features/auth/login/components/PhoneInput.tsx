@@ -25,7 +25,7 @@ export default function PhoneInput({
                 {label}
             </label>
 
-            <div className="relative flex items-center">
+            <div className="relative flex items-center" suppressHydrationWarning={true}>
                 <Input
                     ref={ref}
                     type="tel"

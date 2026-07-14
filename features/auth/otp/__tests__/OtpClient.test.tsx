@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import OtpClient from '../OtpClient';
 import { toast } from 'sonner';
 import { TEXTS } from '../constants';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({
@@ -69,7 +70,7 @@ describe('OtpClient Integration', () => {
 
   it('shows error toast when OTP verification fails', async () => {
     mockVerify.mockResolvedValue({
-      error: { message: 'کد تایید نامعتبر است' },
+      error: { message: 'کد وارد شده نامعتبر است.' },
     });
 
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
@@ -86,7 +87,7 @@ describe('OtpClient Integration', () => {
         code: '0000',
         phoneNumber: TEST_PHONE,
       });
-      expect(toast.error).toHaveBeenCalledWith('کد تایید نامعتبر است');
+      expect(toast.error).toHaveBeenCalledWith('کد وارد شده نامعتبر است.');
       expect(mockPush).not.toHaveBeenCalled();
     });
   });
@@ -116,7 +117,7 @@ describe('OtpClient Integration', () => {
   it('shows error toast when resending the OTP code fails', async () => {
     mockSendOtp.mockResolvedValue({
       data: null,
-      error: { message: 'محدودیت ارسال مجدد کد' },
+      error: { message: 'محدودیت زمانی ارسال مجدد کد فعال است.' },
     });
 
     render(<OtpClient phone={TEST_PHONE} />);
@@ -131,7 +132,7 @@ describe('OtpClient Integration', () => {
 
     await waitFor(() => {
       expect(mockSendOtp).toHaveBeenCalledWith({ phoneNumber: TEST_PHONE });
-      expect(toast.error).toHaveBeenCalledWith('محدودیت ارسال مجدد کد');
+      expect(toast.error).toHaveBeenCalledWith('محدودیت زمانی ارسال مجدد کد فعال است.');
     });
   });
 
@@ -147,7 +148,7 @@ describe('OtpClient Integration', () => {
     // First verify fails, second succeeds
     mockVerify
       .mockResolvedValueOnce({
-        error: { message: 'کد تایید نامعتبر است' },
+        error: { message: 'کد وارد شده نامعتبر است.' },
       })
       .mockResolvedValueOnce({
         error: null,
@@ -165,7 +166,7 @@ describe('OtpClient Integration', () => {
     await user.type(inputs[3], '0');
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('کد تایید نامعتبر است');
+      expect(toast.error).toHaveBeenCalledWith('کد وارد شده نامعتبر است.');
     });
 
     // Inputs should still be in the DOM and interactive
