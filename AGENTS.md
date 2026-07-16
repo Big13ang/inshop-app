@@ -63,6 +63,8 @@ Rules:
 ## Developer Directives
 
 - **RTK Usage**: Always prepend `rtk` to any shell command you run on this machine (e.g., `rtk git status`, `rtk npm test`).
+- **Use Project HTTP Client**: Always use the project's custom `http` client (from `@/lib/utils`) instead of the native `fetch` API for making network requests. This ensures standard URL normalization, cookies/credentials management, and use of the `Result` wrapper pattern.
+- **Extract Functions**: Avoid defining inline functions that span more than one line (e.g., multiline callback handlers or event listeners). Always extract them into named helper functions/handlers within the component or module to improve readability and testability.
 - **No Response Transformation**: Do not transform backend API response field names or status values to custom frontend structures. Keep backend field names (e.g., `description`, `createdAt`, `rejectReason`) and status values (e.g., `'PENDING_REVIEW'`, `'REJECTED'`) as-is in frontend query services and models. Only use lightweight rendering utilities (e.g., `getMediaUrl`) to convert backend URLs/data at render time.
 - **Clean Architecture**: Use the `Result` pattern (`Result.ok`, `Result.err`) anywhere you can for cleaner, exception-free code.
 - **Use Custom UI Components**: Always prioritize using custom UI components defined in the project over raw HTML elements or external components.

@@ -30,7 +30,27 @@ jest.mock('next/navigation', () => ({
       get: jest.fn(),
     };
   },
+  usePathname() {
+    return '';
+  },
 }));
+
+jest.mock('@tanstack/react-query', () => {
+  const original = jest.requireActual('@tanstack/react-query');
+  return {
+    ...original,
+    useQueryClient: () => {
+      try {
+        return original.useQueryClient();
+      } catch {
+        return {
+          invalidateQueries: jest.fn(),
+          setQueryData: jest.fn(),
+        };
+      }
+    },
+  };
+});
 
 // jsdom's window.crypto lacks SubtleCrypto (.subtle). Expose Node's webcrypto.
 if (!globalThis.crypto?.subtle) {

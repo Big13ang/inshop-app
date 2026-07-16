@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { http } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
-import { profileService } from '@/features/profile/services/profileService';
+import { useUser } from '@/features/profile/context/UserContext';
 import type { UserProfile } from '@/features/profile/services/profileService';
 import type { PendingPost } from '../pending/types';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
@@ -73,7 +73,7 @@ function mapBackendPost(post: BackendPost, user: UserProfile): PendingPost {
 
 export const postsQueryService = {
   usePendingPosts() {
-    const { data: user } = profileService.useProfile();
+    const { user } = useUser();
 
     return useQuery<PendingPost[]>({
       queryKey: queryKeys.posts.pending(),

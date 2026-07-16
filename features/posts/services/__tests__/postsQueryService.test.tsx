@@ -6,13 +6,18 @@ import { server } from '@/mocks/server';
 import { postsQueryService, POST_STATUS } from '../postsQueryService';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import type { PendingPost } from '../../pending/types';
+import { UserProvider } from '@/features/profile/context/UserContext';
 
 jest.mock('sonner', () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
 import { toast } from 'sonner';
 
 function createWrapper(client: QueryClient) {
   const QueryClientWrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    <QueryClientProvider client={client}>
+      <UserProvider>
+        {children}
+      </UserProvider>
+    </QueryClientProvider>
   );
   QueryClientWrapper.displayName = 'QueryClientWrapper';
   return QueryClientWrapper;

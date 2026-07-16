@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+export const AUTH_COOKIE_KEYS = [
+  'better-auth.session_token',
+  '__Secure-better-auth.session_token',
+] as const;
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isLoggedIn = !!(
-    request.cookies.get('better-auth.session_token')?.value ||
-    request.cookies.get('__Secure-better-auth.session_token')?.value
+  const isLoggedIn = AUTH_COOKIE_KEYS.some(
+    (key) => request.cookies.get(key)?.value
   );
 
   if (pathname === '/') {

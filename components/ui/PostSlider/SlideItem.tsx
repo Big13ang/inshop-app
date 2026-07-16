@@ -16,6 +16,14 @@ export function SlideItem({
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setIsLoaded(true);
+    const img = e.currentTarget;
+    if (img.naturalWidth && img.naturalHeight) {
+      onImageLoad?.(item.url, img.naturalWidth / img.naturalHeight);
+    }
+  };
+
   return (
     <div
       className={slideContainer({ objectFit })}
@@ -43,13 +51,7 @@ export function SlideItem({
           'w-full h-full select-none relative z-10'
         )}
         id={`slide-img-${idx}`}
-        onLoad={(e) => {
-          setIsLoaded(true);
-          const img = e.currentTarget;
-          if (img.naturalWidth && img.naturalHeight) {
-            onImageLoad?.(item.url, img.naturalWidth / img.naturalHeight);
-          }
-        }}
+        onLoad={handleImageLoad}
         onError={() => setIsLoaded(true)}
         loading="lazy"
         referrerPolicy="no-referrer"

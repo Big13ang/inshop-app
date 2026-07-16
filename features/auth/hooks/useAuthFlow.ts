@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { authClient } from '@/lib/auth-client';
 import { tryCatchAuth } from '@/lib/utils';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import { queryKeys, queryCacheFactory } from '@/lib/query-keys';
 
 interface UseAuthFlowOptions {
   onSuccessRedirect?: string;
@@ -12,6 +14,7 @@ interface UseAuthFlowOptions {
 
 export function useAuthFlow(options: UseAuthFlowOptions = {}) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { onSuccessRedirect = '/app/posts/new' } = options;
 
   const sendOtp = async (phoneNumber: string): Promise<boolean> => {
@@ -40,6 +43,9 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
       return false;
     }
 
+    // Invalidate profile query to fetch immediately
+    queryCacheFactory.profile.invalidateMe(queryClient);
+
     router.push(onSuccessRedirect);
     return true;
   };
@@ -53,6 +59,12 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
       authClient.signOut(),
       ERROR_MESSAGES.auth.signOutFailed
     );
+
+    if (!error) {
+      // Clear profile query cache and invalidate
+      queryClient.setQueryData(queryKeys.profile.me, null);
+      queryCacheFactory.profile.invalidateMe(queryClient);
+    }
 
     return !error;
   };
