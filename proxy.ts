@@ -2,15 +2,22 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function proxy(request: NextRequest) {
-  console.log("PROXY REQUEST URL:", request.url);
-  console.log("PROXY COOKIES:", request.cookies.getAll().map(c => `${c.name}=${c.value}`));
-  const sessionToken = request.cookies.get('better-auth.session_token')?.value ||
-    request.cookies.get('__Secure-better-auth.session_token')?.value;
+  const { pathname } = request.nextUrl;
+  const isLoggedIn = !!(
+    request.cookies.get('better-auth.session_token')?.value ||
+    request.cookies.get('__Secure-better-auth.session_token')?.value
+  );
 
-  if (!sessionToken) {
+  if (pathname === '/') {
+    const destination = isLoggedIn ? '/app/posts/pending' : '/auth/login';
+    return NextResponse.redirect(new URL(destination, request.url));
+  }
+
+  if (pathname.startsWith('/app') && !isLoggedIn) {
     const loginUrl = new URL('/auth/login', request.url);
-    // Option to redirect back to the original page after successful login
-    loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+
+    loginUrl.searchParams.set('callbackUrl', pathname);
+
     return NextResponse.redirect(loginUrl);
   }
 
@@ -19,6 +26,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/app/:path*',
   ],
 };
