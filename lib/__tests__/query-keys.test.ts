@@ -16,6 +16,7 @@ describe('queryCacheFactory', () => {
   it('provides the correct domain-separated query keys structure', () => {
     expect(queryKeys.posts.all).toEqual(['posts']);
     expect(queryKeys.posts.pending()).toEqual(['posts', 'pending']);
+    expect(queryKeys.profile.me).toEqual(['profile', 'me']);
   });
 
   it('invalidates pending posts cache queries', async () => {
@@ -23,6 +24,14 @@ describe('queryCacheFactory', () => {
 
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['posts', 'pending'],
+    });
+  });
+
+  it('invalidates profile me cache queries', async () => {
+    await queryCacheFactory.profile.invalidateMe(queryClient);
+
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['profile', 'me'],
     });
   });
 });

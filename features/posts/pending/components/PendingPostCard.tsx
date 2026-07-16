@@ -6,21 +6,22 @@ import { Post, usePostContext } from '@/features/posts/components/Post';
 import { text } from '../constants';
 import RejectionOverlay from './RejectionOverlay';
 import type { PendingPost } from '../types';
+import { POST_STATUS } from '../../services/postsQueryService';
 
 interface PendingPostCardProps {
   post: PendingPost;
   onOpenMenu: (id: string) => void;
 }
 
-function PendingStatusOverlay({ status, rejectionReason }: { status: PendingPost['status']; rejectionReason?: string }) {
+function PendingStatusOverlay({ status, rejectReason }: { status: PendingPost['status']; rejectReason?: string | null }) {
   const { state, actions } = usePostContext();
-  const isRejected = status === 'rejected';
+  const isRejected = status === POST_STATUS.REJECTED;
 
   return (
     <>
-      {isRejected && !state.isOverlayDismissed ? (
+      {isRejected && !state.isOverlayDismissed && rejectReason ? (
         <RejectionOverlay
-          rejectionReason={rejectionReason}
+          rejectionReason={rejectReason}
           onDismiss={() => {
             actions.dismissOverlay();
             toast.info(text.rejectionDismissedToast);
@@ -63,7 +64,7 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
         </Post.Header>
 
         <Post.Media>
-          <PendingStatusOverlay status={post.status} rejectionReason={post.rejectionReason} />
+          <PendingStatusOverlay status={post.status} rejectReason={post.rejectReason} />
         </Post.Media>
 
         <Post.Body>

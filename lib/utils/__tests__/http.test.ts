@@ -1,4 +1,5 @@
 import { http } from '../http';
+import { env } from '@/env';
 
 describe('http.request', () => {
   beforeEach(() => {
@@ -17,7 +18,7 @@ describe('http.request', () => {
     const result = await http.request('/test-endpoint');
 
     expect(result).toEqual({ ok: true, value: mockData });
-    expect(global.fetch).toHaveBeenCalledWith('/test-endpoint', expect.objectContaining({
+    expect(global.fetch).toHaveBeenCalledWith(`${env.NEXT_PUBLIC_API_URL}/test-endpoint`, expect.objectContaining({
       credentials: 'include',
     }));
   });
@@ -60,6 +61,74 @@ describe('http.request', () => {
       error: {
         message: 'Failed to fetch',
         raw: expect.any(Error),
+      },
+    });
+  });
+
+  it('automatically unwraps standard ApiResponse data envelope', async () => {
+    const wrappedData = {
+      success: true,
+      message: 'Done',
+      data: { id: 1, name: 'Test' },
+      meta: { currentDateTime: '2026-06-29T10:55:54.956Z' },
+    };
+    const mockResponse = new Response(JSON.stringify(wrappedData), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    jest.spyOn(global, 'fetch').mockResolvedValue(mockResponse);
+
+    const result = await http.request('/wrapped-endpoint');
+
+    expect(result).toEqual({ ok: true, value: { id: 1, name: 'Test' } });
+  });
+
+  it('automatically unwraps and preserves pagination structure for PaginatedApiResponse', async () => {
+    const wrappedData = {
+      success: true,
+      data: [{ id: 1 }],
+      pagination: { nextCursor: 'abc', hasNext: true },
+    };
+    const mockResponse = new Response(JSON.stringify(wrappedData), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    jest.spyOn(global, 'fetch').mockResolvedValue(mockResponse);
+
+    const result = await http.request('/paginated-endpoint');
+
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        data: [{ id: 1 }],
+        pagination: { nextCursor: 'abc', hasNext: true },
+      },
+    });
+  });
+
+  it('returns failure Result when success is false in ApiResponse body', async () => {
+    const wrappedData = {
+      success: false,
+      message: 'لطفا وارد حساب کاربری خود شوید',
+      data: [],
+    };
+    const mockResponse = new Response(JSON.stringify(wrappedData), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    jest.spyOn(global, 'fetch').mockResolvedValue(mockResponse);
+
+    const result = await http.request('/error-success-false');
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        status: 200,
+        message: 'لطفا وارد حساب کاربری خود شوید',
+        raw: wrappedData,
       },
     });
   });

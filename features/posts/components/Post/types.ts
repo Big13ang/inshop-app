@@ -1,8 +1,10 @@
+import type { BackendMedia } from '../../services/postsQueryService';
+
 export interface BasePostData {
   id: string;
-  caption: string;
-  mediaUrls: string[];
-  submittedAt: string;
+  description: string;
+  media?: BackendMedia[];
+  createdAt: string;
   sellerName: string;
   sellerAvatar: string;
   isVerified: boolean;

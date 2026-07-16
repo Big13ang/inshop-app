@@ -5,7 +5,7 @@ export function PostTimestamp() {
 
   return (
     <span className="text-[10px] font-medium text-zinc-400">
-      {new Date(state.post.submittedAt).toLocaleDateString('fa-IR')}
+      {new Date(state.post.createdAt).toLocaleDateString('fa-IR')}
     </span>
   );
 }

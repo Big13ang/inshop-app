@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import MainFooter from '@/components/layout/MainFooter';
 import { Menu } from '@/components/ui/Menu';
 import { Button } from '@/components/ui/button';
-import { postsQueryService } from '../services/postsQueryService';
+import { postsQueryService, POST_STATUS } from '../services/postsQueryService';
 import PendingPostCard from './components/PendingPostCard';
 import { text } from './constants';
 
@@ -53,7 +53,7 @@ export default function PendingPostsView({ onBack, onAddPost }: PendingPostsView
       <MainFooter />
 
       <Menu.Root isOpen={activeMenuId !== null} onClose={() => setActiveMenuId(null)}>
-        <Menu.Title right={activePost?.status === 'rejected' ? text.statusRejectedShort : text.statusPending}>
+        <Menu.Title right={activePost?.status === POST_STATUS.REJECTED ? text.statusRejectedShort : text.statusPending}>
           {text.menuTitle}
         </Menu.Title>
         <Menu.Item

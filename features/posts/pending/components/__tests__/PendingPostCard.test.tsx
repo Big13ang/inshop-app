@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import PendingPostCard from '../PendingPostCard';
 import { text } from '../../constants';
 import type { PendingPost } from '../../types';
+import { POST_STATUS } from '../../../services/postsQueryService';
 
 jest.mock('@/components/ui/PostSlider', () => ({
   __esModule: true,
@@ -19,11 +20,31 @@ jest.mock('@/components/ui/PostSlider', () => ({
 function post(overrides: Partial<PendingPost> = {}): PendingPost {
   return {
     id: 'post-1',
-    caption: 'یک کپشن نمونه',
-    mediaUrls: ['https://example.com/a.jpg'],
-    submittedAt: '2026-01-01T00:00:00.000Z',
-    status: 'pending',
-    title: 'دستبند النگویی مدرن',
+    sellerId: 'seller-1',
+    description: 'یک کپشن نمونه',
+    media: [
+      {
+        id: 'media-1',
+        uploadSessionId: 'session-1',
+        sellerId: 'seller-1',
+        postId: 'post-1',
+        status: 'ready',
+        storageKey: 'photo-1.jpg',
+        originalFileName: 'photo-1.jpg',
+        mimeType: 'image/jpeg',
+        sizeBytes: 1000,
+        order: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        url: 'https://example.com/a.jpg'
+      }
+    ],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    status: POST_STATUS.PENDING_REVIEW,
+    rejectReason: null,
+    reviewedBy: null,
+    reviewedAt: null,
     sellerName: 'گالری طلای مدرن',
     sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
     isVerified: true,
@@ -38,14 +59,14 @@ describe('PendingPostCard', () => {
   });
 
   it('shows the rejected badge and overlay for a rejected post', () => {
-    render(<PendingPostCard post={post({ status: 'rejected', rejectionReason: 'دلیل' })} onOpenMenu={jest.fn()} />);
+    render(<PendingPostCard post={post({ status: POST_STATUS.REJECTED, rejectReason: 'دلیل' })} onOpenMenu={jest.fn()} />);
     expect(screen.getByText(text.statusRejected)).toBeInTheDocument();
     expect(screen.getByText('دلیل')).toBeInTheDocument();
   });
 
   it('hides the overlay after it is dismissed', async () => {
     const user = userEvent.setup();
-    render(<PendingPostCard post={post({ status: 'rejected', rejectionReason: 'دلیل' })} onOpenMenu={jest.fn()} />);
+    render(<PendingPostCard post={post({ status: POST_STATUS.REJECTED, rejectReason: 'دلیل' })} onOpenMenu={jest.fn()} />);
 
     await user.click(screen.getByText(text.rejectionActionText));
 
@@ -63,7 +84,7 @@ describe('PendingPostCard', () => {
   });
 
   it('renders the caption', () => {
-    render(<PendingPostCard post={post({ caption: 'متن خاص' })} onOpenMenu={jest.fn()} />);
+    render(<PendingPostCard post={post({ description: 'متن خاص' })} onOpenMenu={jest.fn()} />);
     expect(screen.getByText('متن خاص')).toBeInTheDocument();
   });
 

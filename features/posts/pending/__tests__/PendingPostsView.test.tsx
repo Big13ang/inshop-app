@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import PendingPostsView from '../PendingPostsView';
 import { text } from '../constants';
 import type { PendingPost } from '../types';
+import { POST_STATUS } from '../../services/postsQueryService';
 
 jest.mock('gsap', () => ({
   killTweensOf: jest.fn(),
@@ -50,6 +51,12 @@ const mockMutate = jest.fn();
 let mockData: PendingPost[] = [];
 
 jest.mock('../../services/postsQueryService', () => ({
+  POST_STATUS: {
+    PENDING_REVIEW: 'PENDING_REVIEW',
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED',
+    DELETED: 'DELETED',
+  },
   postsQueryService: {
     usePendingPosts: () => ({ data: mockData, isLoading: false }),
     useDeletePendingPost: () => ({ mutate: mockMutate, isPending: false }),
@@ -59,11 +66,31 @@ jest.mock('../../services/postsQueryService', () => ({
 function post(overrides: Partial<PendingPost> = {}): PendingPost {
   return {
     id: 'post-1',
-    caption: 'کپشن',
-    mediaUrls: ['https://example.com/a.jpg'],
-    submittedAt: '2026-01-01T00:00:00.000Z',
-    status: 'pending',
-    title: 'دستبند النگویی مدرن',
+    sellerId: 'seller-1',
+    description: 'کپشن',
+    media: [
+      {
+        id: 'media-1',
+        uploadSessionId: 'session-1',
+        sellerId: 'seller-1',
+        postId: 'post-1',
+        status: 'ready',
+        storageKey: 'photo-1.jpg',
+        originalFileName: 'photo-1.jpg',
+        mimeType: 'image/jpeg',
+        sizeBytes: 1000,
+        order: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        url: 'https://example.com/a.jpg'
+      }
+    ],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    status: POST_STATUS.PENDING_REVIEW,
+    rejectReason: null,
+    reviewedBy: null,
+    reviewedAt: null,
     sellerName: 'گالری طلای مدرن',
     sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe',
     isVerified: true,

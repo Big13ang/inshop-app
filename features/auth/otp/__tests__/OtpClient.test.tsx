@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import OtpClient from '../OtpClient';
 import { toast } from 'sonner';
 import { TEXTS } from '../constants';
-import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const mockPush = jest.fn();
 jest.mock('next/navigation', () => ({

@@ -1,7 +1,6 @@
 import { create, type StoreApi } from 'zustand';
 import { type MediaItem, type MediaStatus } from '../types';
 import { http } from '@/lib/utils';
-import { env } from '@/env';
 
 // ── State shape ───────────────────────────────────────────────────────────────
 
@@ -167,14 +166,14 @@ function buildStore(
 
       set({ isSessionLoading: true });
       http
-        .post<{ data: { uploadSessionId: string; expiresAt: string } }>(
-          `${env.NEXT_PUBLIC_API_URL}/upload-sessions`,
+        .post<{ uploadSessionId: string; expiresAt: string }>(
+          '/upload-sessions',
         )
         .then((res) => {
           if (res.ok) {
             get().setUploadSession(
-              res.value.data.uploadSessionId,
-              res.value.data.expiresAt,
+              res.value.uploadSessionId,
+              res.value.expiresAt,
             );
           }
         })

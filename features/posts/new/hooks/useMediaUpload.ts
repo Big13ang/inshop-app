@@ -8,7 +8,6 @@ import { type UploadService, createUploadService } from '../services/uploadServi
 import { validateBatch } from '../services/validateBatch';
 import { buildMediaItem } from '../services/buildMediaItem';
 import { MAX_IMAGES } from '../constants';
-import { env } from '@/env';
 import { http, formatToUUID } from '@/lib/utils';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
@@ -89,7 +88,7 @@ export function useMediaUpload() {
         const mediaId = url ? url.substring(url.lastIndexOf('/') + 1) : id;
         const formattedMediaId = formatToUUID(mediaId);
         void http.delete(
-          `${env.NEXT_PUBLIC_API_URL}/upload-sessions/${uploadSessionId}/photos/${formattedMediaId}`
+          `/upload-sessions/${uploadSessionId}/photos/${formattedMediaId}`
         );
       }
     }

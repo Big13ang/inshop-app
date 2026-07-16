@@ -150,16 +150,34 @@ export const handlers = [
     posts = [
       {
         id,
-        title: 'پست جدید',
+        sellerId: 'seller-1',
         sellerName: 'گالری طلای مدرن',
         sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
         isVerified: true,
-        caption: (body.description as string) ?? '',
-        mediaUrls: Array.isArray(body.mediaIds)
-          ? (body.mediaIds as string[]).map((mid) => `http://localhost:3000/uploads/${mid}`)
+        description: (body.description as string) ?? '',
+        media: Array.isArray(body.mediaIds)
+          ? (body.mediaIds as string[]).map((mid, idx) => ({
+              id: mid,
+              uploadSessionId: (body.uploadSessionId as string) ?? '',
+              sellerId: 'seller-1',
+              postId: id,
+              status: 'ready',
+              storageKey: mid,
+              originalFileName: `${mid}.jpg`,
+              mimeType: 'image/jpeg',
+              sizeBytes: 1000,
+              order: idx,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              url: `http://localhost:3000/uploads/${mid}`
+            }))
           : [],
-        submittedAt: new Date().toISOString(),
-        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'PENDING_REVIEW',
+        rejectReason: null,
+        reviewedBy: null,
+        reviewedAt: null,
       },
       ...posts,
     ];
@@ -171,16 +189,34 @@ export const handlers = [
     posts = [
       {
         id,
-        title: 'پست جدید',
+        sellerId: 'seller-1',
         sellerName: 'گالری طلای مدرن',
         sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
         isVerified: true,
-        caption: (body.description as string) ?? '',
-        mediaUrls: Array.isArray(body.mediaIds)
-          ? (body.mediaIds as string[]).map((mid) => `/api/uploads/${mid}`)
+        description: (body.description as string) ?? '',
+        media: Array.isArray(body.mediaIds)
+          ? (body.mediaIds as string[]).map((mid, idx) => ({
+              id: mid,
+              uploadSessionId: (body.uploadSessionId as string) ?? '',
+              sellerId: 'seller-1',
+              postId: id,
+              status: 'ready',
+              storageKey: mid,
+              originalFileName: `${mid}.jpg`,
+              mimeType: 'image/jpeg',
+              sizeBytes: 1000,
+              order: idx,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              url: `/api/uploads/${mid}`
+            }))
           : [],
-        submittedAt: new Date().toISOString(),
-        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'PENDING_REVIEW',
+        rejectReason: null,
+        reviewedBy: null,
+        reviewedAt: null,
       },
       ...posts,
     ];
@@ -194,14 +230,34 @@ export const handlers = [
     posts = [
       {
         id,
-        title: (body.title as string) ?? 'پست جدید',
+        sellerId: 'seller-1',
         sellerName: 'گالری طلای مدرن',
         sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
         isVerified: true,
-        caption: (body.caption as string) ?? '',
-        mediaUrls: Array.isArray(body.mediaUrls) ? (body.mediaUrls as string[]) : [],
-        submittedAt: new Date().toISOString(),
-        status: 'pending',
+        description: (body.caption as string) ?? '',
+        media: Array.isArray(body.mediaUrls)
+          ? (body.mediaUrls as string[]).map((url, idx) => ({
+              id: `media-${idx}`,
+              uploadSessionId: 'legacy',
+              sellerId: 'seller-1',
+              postId: id,
+              status: 'ready',
+              storageKey: `legacy-${idx}`,
+              originalFileName: `legacy-${idx}.jpg`,
+              mimeType: 'image/jpeg',
+              sizeBytes: 1000,
+              order: idx,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              url
+            }))
+          : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: 'PENDING_REVIEW',
+        rejectReason: null,
+        reviewedBy: null,
+        reviewedAt: null,
       },
       ...posts,
     ];

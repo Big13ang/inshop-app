@@ -1,9 +1,7 @@
 import type { BasePostData } from '../components/Post/types';
-
-export type PendingPostStatus = 'pending' | 'rejected' | 'approved';
+import type { PostStatus } from '../services/postsQueryService';
 
 export interface PendingPost extends BasePostData {
-  status: PendingPostStatus;
-  rejectionReason?: string;
-  title: string;
+  status: PostStatus;
+  rejectReason: string | null;
 }

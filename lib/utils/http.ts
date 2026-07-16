@@ -1,3 +1,4 @@
+import { env } from '@/env';
 import { Result } from './result';
 
 export interface HttpError {
@@ -5,6 +6,23 @@ export interface HttpError {
   message: string;
   code?: string;
   raw?: unknown;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+  meta?: {
+    currentDateTime?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface PaginatedApiResponse<T> extends ApiResponse<T[]> {
+  pagination: {
+    nextCursor: string | null;
+    hasNext: boolean;
+  };
 }
 
 export interface HttpRequestOptions extends Omit<RequestInit, 'body'> {
@@ -15,6 +33,15 @@ export const http = {
   async request<T>(url: string, options: HttpRequestOptions = {}): Promise<Result<T, HttpError>> {
     const { body, headers: customHeaders, ...restOptions } = options;
     const headers = new Headers(customHeaders);
+
+    let absoluteUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      const baseUrl = env.NEXT_PUBLIC_API_URL.endsWith('/')
+        ? env.NEXT_PUBLIC_API_URL.slice(0, -1)
+        : env.NEXT_PUBLIC_API_URL;
+      const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+      absoluteUrl = `${baseUrl}${normalizedPath}`;
+    }
 
     let serializedBody: BodyInit | undefined;
     if (body !== undefined) {
@@ -32,7 +59,7 @@ export const http = {
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(absoluteUrl, {
         ...restOptions,
         headers,
         body: serializedBody,
@@ -62,6 +89,22 @@ export const http = {
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const json = await response.json();
+        if (json && typeof json === 'object' && 'success' in json) {
+          if (!json.success) {
+            return Result.err({
+              status: response.status,
+              message: json.message || 'Request failed',
+              raw: json,
+            });
+          }
+          if ('pagination' in json) {
+            return Result.ok({
+              data: json.data,
+              pagination: json.pagination,
+            } as unknown as T);
+          }
+          return Result.ok(json.data as T);
+        }
         return Result.ok(json as T);
       }
 

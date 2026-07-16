@@ -6,6 +6,7 @@ import { resetPendingPostsFixture } from './mocks/handlers';
 jest.mock('@/env', () => ({
   env: {
     NEXT_PUBLIC_API_URL: 'http://localhost:3000',
+    NEXT_PUBLIC_CDN_URL: 'http://localhost:9000/inshop-uploads',
   },
 }));
 

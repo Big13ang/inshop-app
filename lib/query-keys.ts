@@ -10,6 +10,9 @@ export const queryKeys = {
   auth: {
     session: ['auth', 'session'] as const,
   },
+  profile: {
+    me: ['profile', 'me'] as const,
+  },
 } as const;
 
 export const queryCacheFactory = {
@@ -25,6 +28,12 @@ export const queryCacheFactory = {
   auth: {
     invalidateSession: (queryClient: QueryClient) => {
       return queryClient.invalidateQueries({ queryKey: queryKeys.auth.session });
+    },
+  },
+
+  profile: {
+    invalidateMe: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
     },
   },
 };
