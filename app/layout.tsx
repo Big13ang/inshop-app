@@ -3,18 +3,22 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
 import { getServerProfile } from "@/features/profile/services/profileServerService";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "inShop | اینشاپ ",
 };
 
-export default async function RootLayout({
+async function ProvidersWithProfile({ children }: { children: React.ReactNode }) {
+  const user = await getServerProfile();
+  return <Providers initialUser={user}>{children}</Providers>;
+}
+
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getServerProfile();
-
   return (
     <html
       lang="FA-IR"
@@ -24,9 +28,11 @@ export default async function RootLayout({
       <body className="h-dvh flex flex-col overflow-hidden md:items-center">
         <div className="h-dvh w-full md:max-w-app md:shadow-app-shell">
           <div className="flex flex-col h-full w-full overflow-hidden md:bg-background">
-            <Providers initialUser={user}>
-              {children}
-            </Providers>
+            <Suspense fallback={<div className="h-full w-full bg-background" />}>
+              <ProvidersWithProfile>
+                {children}
+              </ProvidersWithProfile>
+            </Suspense>
           </div>
         </div>
         <Toaster position="top-center" dir="rtl" />
