@@ -33,7 +33,7 @@ const sliderContainerVariants = cva(
 );
 
 export default function SelectedMediaSlider({
-  aspectClassName = 'aspect-[4/5]',
+  aspectClassName = 'aspect-square',
   isCompact = false,
 }: SelectedMediaSliderProps) {
   const activeIdx = useMediaStore((s) => s.activePreviewIdx);
@@ -88,11 +88,10 @@ export default function SelectedMediaSlider({
     <div
       style={{ contentVisibility: 'auto' } as React.CSSProperties}
       className={cn(
-        sliderContainerVariants({ state: isCompact ? 'compact' : 'default' }),
-        aspectClassName
+        sliderContainerVariants({ state: isCompact ? 'compact' : 'default' })
       )}
     >
-      <div className="w-full h-full relative overflow-hidden bg-zinc-950">
+      <div className="w-full relative overflow-hidden bg-zinc-950">
         <PostSlider
           media={media}
           activeSlide={activeIdx}

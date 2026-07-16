@@ -9,6 +9,7 @@ import {
   CONTAINER_CLASSES,
   emptySubscribe,
   normalizeMediaItems,
+  calculatePostMediaAspectRatio,
 } from './utils';
 import { SlideItem } from './SlideItem';
 import { BulletDots } from './BulletDots';
@@ -29,6 +30,15 @@ export default function PostSlider({
 
   const [currentSlide, setCurrentSlide] = useState(() => activeSlide ?? 0);
   const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
+
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+
+  const handleImageLoad = (url: string, ratio: number) => {
+    setAspectRatios((prev) => {
+      if (prev[url] === ratio) return prev;
+      return { ...prev, [url]: ratio };
+    });
+  };
 
   const onSlideChangeRef = useRef(onSlideChange);
   useEffect(() => {
@@ -85,11 +95,20 @@ export default function PostSlider({
     }
   };
 
+  const activeUrl = items[currentSlide]?.url;
+  const firstUrl = items[0]?.url;
+  const activeRatio = (activeUrl ? aspectRatios[activeUrl] : undefined) ?? (firstUrl ? aspectRatios[firstUrl] : undefined);
+  const containerAspectRatio = calculatePostMediaAspectRatio(items.length, activeRatio);
+
   if (items.length === 0) return null;
 
   if (!isHydrated) {
     return (
-      <div className={CONTAINER_CLASSES} id="post-slider-container-skeleton">
+      <div 
+        className={CONTAINER_CLASSES} 
+        id="post-slider-container-skeleton"
+        style={{ aspectRatio: containerAspectRatio }}
+      >
         <div className="absolute inset-0 bg-neutral-200 animate-shimmer" />
       </div>
     );
@@ -103,6 +122,10 @@ export default function PostSlider({
       onKeyDown={handleKeyDown}
       role="region"
       aria-label="گالری تصاویر"
+      style={{ 
+        aspectRatio: containerAspectRatio,
+        transition: 'aspect-ratio 0.3s ease-in-out',
+      }}
     >
       <div ref={sliderRef} className="keen-slider h-full w-full">
         {items.map((item, idx) => (
@@ -111,6 +134,7 @@ export default function PostSlider({
             item={item}
             idx={idx}
             objectFit={objectFit}
+            onImageLoad={handleImageLoad}
           />
         ))}
       </div>

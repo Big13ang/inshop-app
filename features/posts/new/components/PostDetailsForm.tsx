@@ -17,7 +17,7 @@ export default function PostDetailsForm({
   caption,
   onCaptionChange,
   hasInputError,
-  aspectClassName = 'aspect-[4/5] max-h-[50vh]',
+  aspectClassName = 'aspect-square',
 }: PostDetailsFormProps) {
   const formRef = useRef<HTMLDivElement>(null);
 

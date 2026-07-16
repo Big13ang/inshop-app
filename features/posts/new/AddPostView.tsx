@@ -32,7 +32,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
     if (phase === 'select') {
       return (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <SelectedMediaSlider aspectClassName="aspect-[4/5] max-h-[50vh]" />
+          <SelectedMediaSlider aspectClassName="aspect-square" />
           <div className="flex-1 min-h-0 overflow-y-auto pb-20">
             <SelectedGallery
               onRetry={media.retryUpload}

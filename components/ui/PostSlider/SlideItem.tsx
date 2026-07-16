@@ -7,10 +7,12 @@ export function SlideItem({
   item,
   idx,
   objectFit,
+  onImageLoad,
 }: {
   item: MediaItem;
   idx: number;
   objectFit: 'cover' | 'contain';
+  onImageLoad?: (url: string, ratio: number) => void;
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -41,7 +43,13 @@ export function SlideItem({
           'w-full h-full select-none relative z-10'
         )}
         id={`slide-img-${idx}`}
-        onLoad={() => setIsLoaded(true)}
+        onLoad={(e) => {
+          setIsLoaded(true);
+          const img = e.currentTarget;
+          if (img.naturalWidth && img.naturalHeight) {
+            onImageLoad?.(item.url, img.naturalWidth / img.naturalHeight);
+          }
+        }}
         onError={() => setIsLoaded(true)}
         loading="lazy"
         referrerPolicy="no-referrer"

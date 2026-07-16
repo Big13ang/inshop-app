@@ -11,7 +11,7 @@ export function PostMedia({ children }: PostMediaProps) {
   const mediaUrls = state.post.media?.map(getMediaUrl) ?? [];
 
   return (
-    <div className="relative aspect-[4/5] w-full overflow-hidden bg-surface-container">
+    <div className="relative w-full overflow-hidden bg-surface-container">
       <PostSlider images={mediaUrls} />
       {children}
     </div>
