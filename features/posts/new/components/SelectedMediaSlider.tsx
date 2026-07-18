@@ -88,7 +88,8 @@ export default function SelectedMediaSlider({
     <div
       style={{ contentVisibility: 'auto' } as React.CSSProperties}
       className={cn(
-        sliderContainerVariants({ state: isCompact ? 'compact' : 'default' })
+        sliderContainerVariants({ state: isCompact ? 'compact' : 'default' }),
+        !isCompact && 'max-h-[50vh]'
       )}
     >
       <div className="w-full relative overflow-hidden bg-zinc-950">
