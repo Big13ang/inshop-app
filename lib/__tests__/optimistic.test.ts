@@ -76,7 +76,7 @@ describe('optimistic helpers', () => {
       });
 
       const testError = new Error('test error');
-      config.onError(testError, 'new value', null);
+      config.onError(testError, 'new value', undefined);
 
       expect(onErrorMock).toHaveBeenCalledWith(testError, 'new value');
     });

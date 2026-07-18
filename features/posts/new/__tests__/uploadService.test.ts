@@ -23,6 +23,7 @@ function item(overrides: Partial<MediaItem> = {}): MediaItem {
     status: 'queued',
     progress: 0,
     mediaKind: 'image',
+    validated: true,
     ...overrides,
   };
 }

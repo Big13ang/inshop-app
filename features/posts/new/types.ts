@@ -17,5 +17,6 @@ export interface MediaItem {
   status: MediaStatus;
   progress: number;
   mediaKind: MediaKind;
+  validated: boolean;
   uploadedUrl?: string;
 }

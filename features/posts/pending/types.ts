@@ -1,7 +1,6 @@
 import type { BasePostData } from '../components/Post/types';
-import type { PostStatus } from '../services/postsQueryService';
+import type { PostStatus, BackendPost } from '../services/postsQueryService';
 
-export interface PendingPost extends BasePostData {
+export interface PendingPost extends BasePostData, Omit<BackendPost, 'status'> {
   status: PostStatus;
-  rejectReason: string | null;
 }

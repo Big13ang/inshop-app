@@ -1,6 +1,10 @@
 import { type MediaItem, type MediaKind } from '../types';
 
-export function buildMediaItem(file: File, mediaKind: MediaKind = 'image'): MediaItem {
+export function buildMediaItem(
+  file: File,
+  mediaKind: MediaKind = 'image',
+  validated = false,
+): MediaItem {
   return {
     id: crypto.randomUUID(),
     name: file.name,
@@ -9,5 +13,6 @@ export function buildMediaItem(file: File, mediaKind: MediaKind = 'image'): Medi
     status: 'queued',
     progress: 0,
     mediaKind,
+    validated,
   };
 }

@@ -19,9 +19,15 @@ jest.mock('sonner', () => ({
   toast: { warning: jest.fn(), error: jest.fn() },
 }));
 
+jest.mock('../services/uploadSession', () => ({
+  ensureSession: jest.fn().mockResolvedValue(undefined),
+  resetSessionPromise: jest.fn(),
+}));
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const jpg = (name = 'photo.jpg') => new File(['x'], name, { type: 'image/jpeg' });
+const JPEG_HEADER = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 3, 0x20, 3, 0x20, 3, 0, 0, 0, 0]);
+const jpg = (name = 'photo.jpg') => new File([JPEG_HEADER], name, { type: 'image/jpeg' });
 
 let mockUpload: jest.Mock;
 let uuidCounter = 0;
@@ -181,7 +187,7 @@ describe('useMediaUpload — MAX_IMAGES limit', () => {
     const itemMap = new Map(
       Array.from({ length: 10 }, (_, i) => [
         `existing-${i}`,
-        { id: `existing-${i}`, name: 'x.jpg', file: null, localUrl: 'blob:x', status: 'uploaded' as const, progress: 100, mediaKind: 'image' as const },
+        { id: `existing-${i}`, name: 'x.jpg', file: null, localUrl: 'blob:x', status: 'uploaded' as const, progress: 100, mediaKind: 'image' as const, validated: true },
       ]),
     );
     useMediaStore.setState({ itemMap });
@@ -324,7 +330,8 @@ describe('useMediaUpload — removeItem', () => {
             status: 'uploaded',
             progress: 100,
             mediaKind: 'image',
-            uploadedUrl: 'https://cdn/item-id'
+            uploadedUrl: 'https://cdn/item-id',
+            validated: true
           }]
         ])
       });
@@ -363,6 +370,7 @@ describe('useMediaUpload — removeItem', () => {
             status: 'failed',
             progress: 0,
             mediaKind: 'image',
+            validated: true
           }]
         ])
       });

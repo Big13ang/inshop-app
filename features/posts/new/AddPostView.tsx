@@ -11,6 +11,7 @@ import AddPostLoadingSkeleton from './components/AddPostLoadingSkeleton';
 import { usePostFlow, type PostFlowNavigationIntent } from './hooks/usePostFlow';
 import { MAX_IMAGES } from './constants';
 import { useMediaStore } from './services/mediaStore';
+import { isMobile } from '@/lib/utils';
 
 interface AddPostViewProps {
   onNavigate: (intent: PostFlowNavigationIntent) => void;
@@ -20,8 +21,18 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
   const imagesInputRef = useRef<HTMLInputElement>(null);
   const [captionTouched, setCaptionTouched] = useState(false);
 
-  const { phase, caption, setCaption, media, isUploadPending, isSubmitting, isSessionLoading, handleBack, handleNext } =
-    usePostFlow(onNavigate);
+  const {
+    phase,
+    caption,
+    setCaption,
+    media,
+    isUploadPending,
+    isSubmitting,
+    isSessionLoading,
+    isValidating,
+    handleBack,
+    handleNext,
+  } = usePostFlow(onNavigate);
   const isAtLimit = useMediaStore((s) => s.itemMap.size >= MAX_IMAGES);
 
   function renderBody() {
@@ -54,13 +65,17 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
     );
   }
 
+  const accept = isMobile()
+    ? 'image/*'
+    : 'image/jpeg,image/png,image/webp';
+
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full bg-surface-l3 relative overflow-hidden select-none">
       {/* accept="image/*" opens native gallery on iOS/Android */}
       <input
         ref={imagesInputRef}
         type="file"
-        accept="image/*"
+        accept={accept}
         multiple
         className="hidden"
         onChange={(e) => {
@@ -81,6 +96,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
         isUploadPending={isUploadPending}
         isAtLimit={isAtLimit}
         isSessionLoading={isSessionLoading}
+        isValidating={isValidating}
         onNext={handleNext}
         onTriggerPicker={() => imagesInputRef.current?.click()}
       />

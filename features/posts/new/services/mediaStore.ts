@@ -1,6 +1,5 @@
 import { create, type StoreApi } from 'zustand';
 import { type MediaItem, type MediaStatus } from '../types';
-import { http } from '@/lib/utils';
 
 // ── State shape ───────────────────────────────────────────────────────────────
 
@@ -12,7 +11,6 @@ export interface MediaStoreState {
   activePreviewIdx: number;
   uploadSessionId: string | null;
   expiresAt: string | null;
-  isSessionLoading: boolean;
 
   // ── Public actions ──────────────────────────────────────────────────────────
   /** Appends items — never replaces existing ones. */
@@ -22,7 +20,6 @@ export interface MediaStoreState {
   /** Toggles selection — only works when item.status === 'uploaded'. */
   toggleSelected(id: string): void;
   setUploadSession(id: string, expiresAt: string): void;
-  ensureSession(): void;
   reset(): void;
 
   // ── Internal actions (called by upload callbacks) ───────────────────────────
@@ -66,9 +63,15 @@ function buildStore(
     activePreviewIdx: 0,
     uploadSessionId: null,
     expiresAt: null,
-    isSessionLoading: false,
 
     addItems(items) {
+      if (process.env.NODE_ENV !== 'production') {
+        for (const item of items) {
+          if (!item.validated) {
+            console.warn(`[mediaStore] item "${item.name}" was added without validation`);
+          }
+        }
+      }
       set((s) => {
         const next = new Map(s.itemMap);
         for (const item of items) {
@@ -160,28 +163,6 @@ function buildStore(
       set({ uploadSessionId: id, expiresAt });
     },
 
-    ensureSession() {
-      const current = get();
-      if (current.uploadSessionId || current.isSessionLoading) return;
-
-      set({ isSessionLoading: true });
-      http
-        .post<{ uploadSessionId: string; expiresAt: string }>(
-          '/upload-sessions',
-        )
-        .then((res) => {
-          if (res.ok) {
-            get().setUploadSession(
-              res.value.uploadSessionId,
-              res.value.expiresAt,
-            );
-          }
-        })
-        .finally(() => {
-          set({ isSessionLoading: false });
-        });
-    },
-
     reset() {
       // Revoke all local URLs outside state updater
       for (const item of get().itemMap.values()) {
@@ -200,10 +181,7 @@ function buildStore(
         activePreviewIdx: 0,
         uploadSessionId: null,
         expiresAt: null,
-        isSessionLoading: false,
       });
-
-      get().ensureSession();
     },
   };
 }
@@ -215,9 +193,3 @@ export function createMediaStore(): StoreApi<MediaStoreState> {
 
 /** Module-level singleton for production use. */
 export const useMediaStore = create<MediaStoreState>()((set, get) => buildStore(set, get));
-
-// Auto-fetch session when store initializes without one.
-const initialState = useMediaStore.getState();
-if (!initialState.uploadSessionId) {
-  initialState.ensureSession();
-}

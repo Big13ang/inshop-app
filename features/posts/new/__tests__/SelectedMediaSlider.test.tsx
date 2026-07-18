@@ -31,6 +31,7 @@ function uploadedItem(id: string, url: string): MediaItem {
     status: 'uploaded',
     progress: 100,
     mediaKind: 'image',
+    validated: true,
   };
 }
 

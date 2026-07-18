@@ -13,6 +13,9 @@ jest.mock('../hooks/useMediaUpload', () => ({
     addFiles: jest.fn(),
     cancelUpload: jest.fn(),
     removeItem: jest.fn(),
+    resetSession: jest.fn(),
+    isSessionLoading: false,
+    isValidating: false,
   }),
 }));
 
@@ -24,7 +27,9 @@ jest.mock('@/lib/utils', () => ({
     }),
   },
   cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
-  formatToUUID: (hex: string) => {
+  extractMediaId: (url: string | null | undefined, fallbackId: string) => {
+    const raw = url ? url.substring(url.lastIndexOf('/') + 1) : fallbackId;
+    const hex = raw;
     if (hex && hex.length === 32 && !hex.includes('-')) {
       return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
     }
@@ -84,7 +89,6 @@ beforeEach(() => {
       activePreviewIdx: 0,
       uploadSessionId: 'mock-session-123',
       expiresAt: null,
-      isSessionLoading: false,
     });
   });
 });

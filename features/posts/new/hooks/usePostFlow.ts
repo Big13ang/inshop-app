@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useMediaStore } from '../services/mediaStore';
-import { formatToUUID } from '@/lib/utils';
+import { extractMediaId } from '@/lib/utils';
 import { useMediaUpload } from './useMediaUpload';
 import { postsQueryService } from '../../services/postsQueryService';
 import { text } from '../constants';
@@ -25,7 +25,6 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
   );
 
   useMediaStore((s) => s.uploadSessionId);
-  const isSessionLoading = useMediaStore((s) => s.isSessionLoading);
 
   const submitPost = postsQueryService.useSubmitPost(() => {
     toast.success(text.uploadSuccessTitle, {
@@ -33,6 +32,7 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
     });
     setPhase('select');
     setCaption('');
+    media.resetSession();
     useMediaStore.getState().reset();
     onNavigate('pending-posts');
   });
@@ -77,8 +77,7 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
 
     const mediaIds = selectedIds.map((id) => {
       const url = itemMap.get(id)?.uploadedUrl;
-      const mediaId = url ? url.substring(url.lastIndexOf('/') + 1) : id;
-      return formatToUUID(mediaId);
+      return extractMediaId(url, id);
     });
 
     submitPost.mutate({
@@ -95,7 +94,8 @@ export function usePostFlow(onNavigate: (intent: PostFlowNavigationIntent) => vo
     media,
     isUploadPending,
     isSubmitting: submitPost.isPending,
-    isSessionLoading,
+    isSessionLoading: media.isSessionLoading,
+    isValidating: media.isValidating,
     handleBack,
     handleNext,
   };

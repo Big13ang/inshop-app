@@ -35,6 +35,7 @@ const createMockItem = (overrides: Partial<MediaItem>): MediaItem => ({
   status: 'uploaded',
   progress: 100,
   mediaKind: 'image',
+  validated: true,
   ...overrides,
 });
 

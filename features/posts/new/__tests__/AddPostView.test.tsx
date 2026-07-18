@@ -10,8 +10,8 @@ import { useMediaStore } from '../services/mediaStore';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { server } from '../../../../mocks/server';
 
-// Pre-set session so the store's module-scope ensureSession() skips.
-useMediaStore.setState({ uploadSessionId: 'mock-session-123', isSessionLoading: false });
+// Pre-set session so ensureSession() in uploadSession.ts is a no-op.
+useMediaStore.setState({ uploadSessionId: 'mock-session-123' });
 
 // ── Global browser API stubs ──────────────────────────────────────────────────
 
@@ -38,7 +38,6 @@ beforeEach(() => {
   useMediaStore.setState({
     uploadSessionId: 'mock-session-123',
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    isSessionLoading: false,
   });
 });
 
@@ -72,7 +71,8 @@ const addImageFile = async (
   user: ReturnType<typeof userEvent.setup>,
   container: HTMLElement,
 ) => {
-  const file = new File(['img'], 'photo.jpg', { type: 'image/jpeg' });
+  const jpegHeader = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 3, 0x20, 3, 0x20, 3, 0, 0, 0, 0]);
+  const file = new File([jpegHeader], 'photo.jpg', { type: 'image/jpeg' });
   const input = container.querySelector('input[multiple]') as HTMLInputElement;
   await user.upload(input, file);
 };
@@ -97,11 +97,11 @@ describe('AddPostView — selection phase', () => {
 
   it('shows a toast for unsupported file types', async () => {
     const { user, container } = setup();
-    const badFile = new File(['x'], 'photo.heic', { type: 'image/heic' });
+    const badFile = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
     const input = container.querySelector('input[multiple]') as HTMLInputElement;
     await user.upload(input, badFile);
     await waitFor(() => {
-      expect(screen.getByText(/JPG|PNG|WebP/)).toBeInTheDocument();
+      expect(screen.getByText(/JPG|PNG|WebP/i)).toBeInTheDocument();
     });
   });
 

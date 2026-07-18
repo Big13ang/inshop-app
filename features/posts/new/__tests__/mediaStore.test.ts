@@ -12,6 +12,7 @@ function item(overrides: Partial<MediaItem> = {}): MediaItem {
     status: 'queued',
     progress: 0,
     mediaKind: 'image',
+    validated: true,
     ...overrides,
   };
 }
@@ -253,24 +254,16 @@ describe('mediaStore', () => {
     URL.revokeObjectURL = originalRevoke;
   });
 
-  // Slice 11 — useMediaStore singleton auto-fetch session
-  it('useMediaStore singleton auto-fetches session when instantiated', async () => {
-    // Isolate the module load so that useMediaStore is imported fresh
-    // after the MSW server has been started in beforeAll.
-    let isolatedMediaStore: ReturnType<typeof createMediaStore>;
-    jest.isolateModules(() => {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const mediaStoreModule = require('../services/mediaStore');
-      isolatedMediaStore = mediaStoreModule.useMediaStore;
-    });
+  // Slice 11 — setUploadSession and reset correctly clear session state
+  it('setUploadSession stores the session and reset clears it', () => {
+    const store = createMediaStore();
+    store.getState().setUploadSession('session-abc', '2026-07-13T15:00:00Z');
+    expect(store.getState().uploadSessionId).toBe('session-abc');
+    expect(store.getState().expiresAt).toBe('2026-07-13T15:00:00Z');
 
-    // Wait for the async MSW request to resolve and update the store
-    let count = 0;
-    while (!isolatedMediaStore.getState().uploadSessionId && count < 20) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      count++;
-    }
-    expect(isolatedMediaStore.getState().uploadSessionId).toBe('mock-session-123');
+    store.getState().reset();
+    expect(store.getState().uploadSessionId).toBeNull();
+    expect(store.getState().expiresAt).toBeNull();
   });
 });
 

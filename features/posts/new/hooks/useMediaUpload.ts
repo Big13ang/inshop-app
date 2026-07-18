@@ -1,68 +1,99 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { type MediaKind } from '../types';
 import { useMediaStore } from '../services/mediaStore';
 import { type UploadService, createUploadService } from '../services/uploadService';
 import { validateBatch } from '../services/validateBatch';
 import { buildMediaItem } from '../services/buildMediaItem';
+import { ensureSession, resetSessionPromise } from '../services/uploadSession';
 import { MAX_IMAGES } from '../constants';
-import { http, formatToUUID } from '@/lib/utils';
+import { http, extractMediaId } from '@/lib/utils';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
-
-const ERROR_MAP = {
-  video: {
-    size: ERROR_MESSAGES.upload.videoSizeLimit,
-    format: ERROR_MESSAGES.upload.videoFormatLimit,
-  },
-  image: {
-    size: ERROR_MESSAGES.upload.imageSizeLimit,
-    format: ERROR_MESSAGES.upload.imageFormatLimit,
-  },
-} as const;
 
 export function useMediaUpload() {
   const service = useRef<UploadService | null>(null);
-  if (service.current == null) { service.current = createUploadService(); }
+  if (service.current == null) {
+    service.current = createUploadService();
+  }
 
+  const [isValidating, setIsValidating] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
+  const validationController = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount — the only legitimate lifecycle effect here.
+  // No state synchronization; purely resource teardown.
   useEffect(() => {
     const current = service.current!;
-    return () => current.cancelAll();
+    return () => {
+      current.cancelAll();
+      validationController.current?.abort();
+    };
   }, []);
 
-  function addFiles(files: File[], kind: MediaKind = 'image') {
+  async function addFiles(files: File[], kind: MediaKind = 'image') {
+    const currentCount = useMediaStore.getState().itemMap.size;
+    const remaining = MAX_IMAGES - currentCount;
+    if (remaining <= 0) return;
+
+    // Ensure a session exists before uploading — called on demand (no useEffect).
+    // isSessionLoading gates the UI while the request is in flight.
+    if (!useMediaStore.getState().uploadSessionId) {
+      setIsSessionLoading(true);
+      await ensureSession();
+      setIsSessionLoading(false);
+    }
+
     const uploadSessionId = useMediaStore.getState().uploadSessionId;
     if (!uploadSessionId) {
       toast.warning(ERROR_MESSAGES.upload.preparingUpload);
       return;
     }
 
-
-    const currentCount = useMediaStore.getState().itemMap.size;
-    const remaining = MAX_IMAGES - currentCount;
-
-    if (remaining <= 0) return;
-
     const capped = files.slice(0, remaining);
 
-    const { valid, rejected } = validateBatch(capped, kind);
+    // Cancel in-flight validation before starting a new batch.
+    validationController.current?.abort();
+    const controller = new AbortController();
+    validationController.current = controller;
+
+    setIsValidating(true);
+
+    let result;
+    try {
+      result = await validateBatch(capped, kind, controller.signal);
+    } catch {
+      if (!controller.signal.aborted) {
+        setIsValidating(false);
+      }
+      return;
+    }
+
+    if (controller.signal.aborted) {
+      return;
+    }
+    setIsValidating(false);
+
+    const { valid, rejected } = result;
 
     if (rejected.length > 0) {
-      const allSizeErrors = rejected.every((r) => r.reason.includes('حجم'));
-      const type = allSizeErrors ? 'size' : 'format';
+      const groups = new Map<string, number>();
+      for (const r of rejected) {
+        groups.set(r.reason, (groups.get(r.reason) || 0) + 1);
+      }
 
-      const title = ERROR_MAP[kind][type];
-
-      toast.warning(title, {
-        description: `${rejected.length} فایل نادیده گرفته شد`,
-        position: 'top-center',
-      });
+      for (const [reason, count] of groups.entries()) {
+        toast.warning(reason, {
+          description: `${count} فایل نادیده گرفته شد`,
+          position: 'top-center',
+        });
+      }
     }
 
     if (valid.length === 0) return;
 
-    const items = valid.map((f) => buildMediaItem(f, kind));
+    const items = valid.map((f) => buildMediaItem(f, kind, true));
     useMediaStore.getState().addItems(items);
     service.current!.enqueue(items);
   }
@@ -84,15 +115,18 @@ export function useMediaUpload() {
     if (item?.uploadedUrl || item?.status === 'uploaded') {
       const uploadSessionId = useMediaStore.getState().uploadSessionId;
       if (uploadSessionId) {
-        const url = item.uploadedUrl;
-        const mediaId = url ? url.substring(url.lastIndexOf('/') + 1) : id;
-        const formattedMediaId = formatToUUID(mediaId);
+        const formattedMediaId = extractMediaId(item.uploadedUrl, id);
         void http.delete(
-          `/upload-sessions/${uploadSessionId}/photos/${formattedMediaId}`
+          `/upload-sessions/${uploadSessionId}/photos/${formattedMediaId}`,
         );
       }
     }
   }
 
-  return { addFiles, cancelUpload, removeItem, retryUpload };
+  /** Resets the session promise so the next addFiles call re-fetches. */
+  function resetSession() {
+    resetSessionPromise();
+  }
+
+  return { addFiles, cancelUpload, removeItem, retryUpload, resetSession, isValidating, isSessionLoading };
 }
