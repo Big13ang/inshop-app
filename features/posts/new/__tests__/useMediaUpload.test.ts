@@ -89,7 +89,7 @@ describe('useMediaUpload — addFiles', () => {
     unmount();
   });
 
-  it('marks an item as failed when the upload rejects', async () => {
+  it('removes an item from the gallery when the upload rejects', async () => {
     mockUpload.mockRejectedValue(new Error('network error'));
 
     const { result, unmount } = renderHook(() => useMediaUpload());
@@ -97,8 +97,7 @@ describe('useMediaUpload — addFiles', () => {
     act(() => { result.current.addFiles([jpg()]); });
 
     await waitFor(() => {
-      const items = [...useMediaStore.getState().itemMap.values()];
-      expect(items[0]?.status).toBe('failed');
+      expect(useMediaStore.getState().itemMap.size).toBe(0);
     });
 
     unmount();
@@ -272,7 +271,7 @@ describe('useMediaUpload — cancelUpload', () => {
 // ── retryUpload ───────────────────────────────────────────────────────────────
 
 describe('useMediaUpload — retryUpload', () => {
-  it('requeues a failed item and marks it uploaded on the next attempt', async () => {
+  it('retry is a no-op when the item was already removed after failure', async () => {
     mockUpload
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValue('https://cdn/retried.jpg');
@@ -281,20 +280,12 @@ describe('useMediaUpload — retryUpload', () => {
 
     act(() => { result.current.addFiles([jpg()]); });
 
-    let failedId!: string;
     await waitFor(() => {
-      const items = [...useMediaStore.getState().itemMap.values()];
-      const failed = items.find((i) => i.status === 'failed');
-      expect(failed).toBeDefined();
-      failedId = failed!.id;
+      expect(useMediaStore.getState().itemMap.size).toBe(0);
     });
 
-    act(() => { result.current.retryUpload(failedId); });
-
-    await waitFor(() => {
-      expect(useMediaStore.getState().itemMap.get(failedId)?.status).toBe('uploaded');
-      expect(useMediaStore.getState().itemMap.get(failedId)?.uploadedUrl).toBe('https://cdn/retried.jpg');
-    });
+    // retry should not crash — item is already gone
+    act(() => { result.current.retryUpload('non-existent-id'); });
 
     unmount();
   });

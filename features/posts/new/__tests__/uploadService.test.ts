@@ -53,7 +53,7 @@ describe('createUploadService', () => {
     expect(useMediaStore.getState().itemMap.get('a')?.uploadedUrl).toBe('https://cdn/f.jpg');
   });
 
-  it('marks an item failed when the strategy rejects', async () => {
+  it('removes an item from the gallery when the strategy rejects', async () => {
     const upload = jest.fn().mockRejectedValue(new Error('network error'));
     const service = createUploadService(fakeStrategy(upload));
 
@@ -63,7 +63,7 @@ describe('createUploadService', () => {
 
     await new Promise(process.nextTick);
 
-    expect(useMediaStore.getState().itemMap.get('a')?.status).toBe('failed');
+    expect(useMediaStore.getState().itemMap.get('a')).toBeUndefined();
   });
 
   it('limits concurrent uploads to the configured concurrency', async () => {
@@ -131,7 +131,7 @@ describe('createUploadService', () => {
     expect(useMediaStore.getState().itemMap.get('a')?.uploadedUrl).toBeUndefined();
   });
 
-  it('retry requeues a failed item and marks it uploaded on the next attempt', async () => {
+  it('retry is a no-op when the item was already removed after failure', async () => {
     const upload = jest.fn()
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValue('https://cdn/retried.jpg');
@@ -142,13 +142,10 @@ describe('createUploadService', () => {
     service.enqueue([a]);
 
     await new Promise(process.nextTick);
-    expect(useMediaStore.getState().itemMap.get('a')?.status).toBe('failed');
+    expect(useMediaStore.getState().itemMap.get('a')).toBeUndefined();
 
+    // retry should not crash — item is already gone
     service.retry('a');
-    await new Promise(process.nextTick);
-
-    expect(useMediaStore.getState().itemMap.get('a')?.status).toBe('uploaded');
-    expect(useMediaStore.getState().itemMap.get('a')?.uploadedUrl).toBe('https://cdn/retried.jpg');
   });
 
   it('cancelAll aborts every in-flight upload', async () => {

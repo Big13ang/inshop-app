@@ -56,7 +56,7 @@ export function createUploadService(
     Result.match(result, {
       ok: (url) => useMediaStore.getState()._setUploaded(id, url),
       err: (error) => {
-        useMediaStore.getState()._setStatus(id, 'failed');
+        useMediaStore.getState().removeItem(id);
         let errorMsg: string = ERROR_MESSAGES.upload.failed;
         if (error instanceof Error) {
           if (error.message.includes('resolution') || error.message.includes('1080')) {
