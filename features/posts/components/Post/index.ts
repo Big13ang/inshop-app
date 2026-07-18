@@ -9,6 +9,7 @@ import { PostMedia } from './PostMedia';
 import { PostStatusBadge } from './PostStatusBadge';
 import { PostBody } from './PostBody';
 import { PostCaption } from './PostCaption';
+import { PostVerifiedBadge } from './PostVerifiedBadge';
 
 export const Post = {
   Provider: PostProvider,
@@ -25,6 +26,7 @@ export const Post = {
   StatusBadge: PostStatusBadge,
   Body: PostBody,
   Caption: PostCaption,
+  VerifiedBadge: PostVerifiedBadge,
 };
 
 export { usePostContext } from './PostContext';

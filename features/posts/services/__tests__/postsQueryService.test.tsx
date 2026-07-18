@@ -106,7 +106,19 @@ describe('postsQueryService', () => {
         httpMock.get('*/seller/posts', () => HttpResponse.json({ success: true, ...backendPosts })),
         httpMock.get('*/me', () => HttpResponse.json({
           success: true,
-          data: { ...sellerInfo, instagramId: 'inshop.gallery' },
+          data: {
+            ...sellerInfo,
+            businessData: {
+              id: 1,
+              preRegistrationId: 1,
+              shopName: 'Inshop Gallery',
+              instagramId: 'inshop.gallery',
+              guildId: 'guild-1',
+              address: 'Test address',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          },
         })),
       );
 

@@ -54,6 +54,7 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
             <Post.AuthorBlock>
               <Post.AuthorNameRow>
                 <Post.AuthorName />
+                <Post.VerifiedBadge />
               </Post.AuthorNameRow>
               <Post.Timestamp />
             </Post.AuthorBlock>

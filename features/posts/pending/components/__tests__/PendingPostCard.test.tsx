@@ -88,6 +88,21 @@ describe('PendingPostCard', () => {
     expect(screen.getByText('متن خاص')).toBeInTheDocument();
   });
 
+  it('truncates long captions and expands them from the more button', async () => {
+    const user = userEvent.setup();
+    const description =
+      'این متن طولانی برای تست کوتاه شدن توضیحات پست استفاده می‌شود و باید ابتدا فقط بخشی از آن نمایش داده شود. ادامه متن بعد از کلیک روی دکمه بیشتر قابل مشاهده می‌شود.';
+
+    render(<PendingPostCard post={post({ description })} onOpenMenu={jest.fn()} />);
+
+    expect(screen.queryByText(description)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'بیشتر...' }));
+
+    expect(screen.getByText(description)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'بیشتر...' })).not.toBeInTheDocument();
+  });
+
   it('renders the seller details (avatar, name)', () => {
     render(
       <PendingPostCard
