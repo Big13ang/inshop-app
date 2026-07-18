@@ -23,6 +23,7 @@ export interface UserProfile {
     id: number;
     preRegistrationId: number;
     shopName: string;
+    instagramId?: string | null;
     guildId: string;
     address: string;
     createdAt: string;

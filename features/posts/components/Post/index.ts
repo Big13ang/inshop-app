@@ -3,7 +3,6 @@ import { PostRoot } from './PostRoot';
 import { PostHeader, PostHeaderInfo, PostAuthorBlock, PostAuthorNameRow } from './PostHeader';
 import { PostAvatar } from './PostAvatar';
 import { PostAuthorName } from './PostAuthorName';
-import { PostVerifiedBadge } from './PostVerifiedBadge';
 import { PostTimestamp } from './PostTimestamp';
 import { PostMenuButton } from './PostMenuButton';
 import { PostMedia } from './PostMedia';
@@ -20,7 +19,6 @@ export const Post = {
   AuthorNameRow: PostAuthorNameRow,
   Avatar: PostAvatar,
   AuthorName: PostAuthorName,
-  VerifiedBadge: PostVerifiedBadge,
   Timestamp: PostTimestamp,
   MenuButton: PostMenuButton,
   Media: PostMedia,

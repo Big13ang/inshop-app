@@ -100,6 +100,24 @@ describe('postsQueryService', () => {
       expect(posts[2].status).toBe(POST_STATUS.REJECTED);
       expect(posts[2].rejectReason).toBe('Image quality too low');
     });
+
+    it('uses the profile instagram id as the post author name when available', async () => {
+      server.use(
+        httpMock.get('*/seller/posts', () => HttpResponse.json({ success: true, ...backendPosts })),
+        httpMock.get('*/me', () => HttpResponse.json({
+          success: true,
+          data: { ...sellerInfo, instagramId: 'inshop.gallery' },
+        })),
+      );
+
+      const { result } = renderHook(() => postsQueryService.usePendingPosts(), {
+        wrapper: createWrapper(queryClient),
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(result.current.data?.[0].sellerName).toBe('inshop.gallery');
+    });
   });
 
   describe('useSubmitPost', () => {

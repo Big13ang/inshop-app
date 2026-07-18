@@ -62,10 +62,14 @@ interface CursorPaginatedResult<T> {
   pagination: { nextCursor: string | null; hasNext: boolean };
 }
 
+function getUserInstagramId(user: UserProfile): string | null {
+  return user.businessData?.instagramId || null;
+}
+
 function mapBackendPost(post: BackendPost, user: UserProfile): PendingPost {
   return {
     ...post,
-    sellerName: user.name,
+    sellerName: getUserInstagramId(user) || user.name,
     sellerAvatar: '',
     isVerified: user.isVerifiedSeller,
   };
