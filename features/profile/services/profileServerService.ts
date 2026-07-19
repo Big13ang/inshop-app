@@ -4,26 +4,23 @@ import { AUTH_COOKIE_KEYS } from '@/proxy';
 import type { UserProfile } from './profileService';
 
 export async function getServerProfile(): Promise<UserProfile | null> {
-  const cookieResult = await Result.try(cookies());
-  if (!cookieResult.ok) {
-    console.error('Error reading cookies on server:', cookieResult.error);
-    return null;
-  }
-  const cookieStore = cookieResult.value;
+  const cookieStore = await cookies();
 
-  const sessionToken = AUTH_COOKIE_KEYS.reduce<string | undefined>(
-    (acc, key) => acc || cookieStore.get(key)?.value,
+  const sessionCookie = AUTH_COOKIE_KEYS.reduce<
+    { name: string; value: string } | undefined
+  >(
+    (acc, key) => acc || cookieStore.get(key),
     undefined
   );
 
-  if (!sessionToken) {
+  if (!sessionCookie) {
     return null;
   }
 
   const resResult = await Result.try(
     http.get<UserProfile>('/me', {
       headers: {
-        Cookie: `better-auth.session_token=${sessionToken}`,
+        Cookie: `${sessionCookie.name}=${sessionCookie.value}`,
       },
     })
   );
