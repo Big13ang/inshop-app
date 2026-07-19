@@ -68,9 +68,10 @@ export default function GalleryCell({ id, selectionIndex, onToggle, onLongPress,
       onMouseDown={startHold}
       onMouseUp={endHold}
       onMouseLeave={cancelHold}
-      onTouchStart={startHold}
-      onTouchEnd={endHold}
-      onTouchMove={cancelHold}
+      // Temporarily disabled for mobile flicker testing: touch + mouse events can double-toggle selection.
+      // onTouchStart={startHold}
+      // onTouchEnd={endHold}
+      // onTouchMove={cancelHold}
       data-status={item.status}
       data-selected={isSelected}
       className={`aspect-square relative rounded-2xl overflow-hidden cursor-pointer select-none
