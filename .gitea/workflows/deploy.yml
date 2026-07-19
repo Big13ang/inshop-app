@@ -61,6 +61,7 @@ jobs:
             --add-host=npm.dev.inshop.internal:host-gateway \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
+            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
             -t "${IMAGE}:${GITHUB_SHA}" .
           echo "Docker image build completed."
 

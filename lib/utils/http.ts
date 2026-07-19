@@ -1,5 +1,6 @@
 import { env } from '@/env';
 import { Result } from './result';
+import { debugAuth } from './authDebug';
 
 export interface HttpError {
   status?: number;
@@ -31,6 +32,7 @@ export interface HttpRequestOptions extends Omit<RequestInit, 'body'> {
 
 export const http = {
   async request<T>(url: string, options: HttpRequestOptions = {}): Promise<Result<T, HttpError>> {
+    const startedAt = performance.now();
     const { body, headers: customHeaders, ...restOptions } = options;
     const headers = new Headers(customHeaders);
 
@@ -42,6 +44,13 @@ export const http = {
       const normalizedPath = url.startsWith('/') ? url : `/${url}`;
       absoluteUrl = `${baseUrl}${normalizedPath}`;
     }
+
+    debugAuth('http', 'request:start', {
+      method: restOptions.method ?? 'GET',
+      url: absoluteUrl,
+      hasBody: body !== undefined,
+      credentials: 'include',
+    });
 
     let serializedBody: BodyInit | undefined;
     if (body !== undefined) {
@@ -64,6 +73,17 @@ export const http = {
         headers,
         body: serializedBody,
         credentials: 'include',
+      });
+      const durationMs = Math.round(performance.now() - startedAt);
+
+      debugAuth('http', 'request:response', {
+        method: restOptions.method ?? 'GET',
+        url: absoluteUrl,
+        status: response.status,
+        ok: response.ok,
+        durationMs,
+        contentType: response.headers.get('content-type'),
+        hasSetCookieHeader: response.headers.has('set-cookie'),
       });
 
       if (!response.ok) {
@@ -111,6 +131,14 @@ export const http = {
       const text = await response.text();
       return Result.ok(text as unknown as T);
     } catch (err) {
+      const durationMs = Math.round(performance.now() - startedAt);
+      debugAuth('http', 'request:error', {
+        method: restOptions.method ?? 'GET',
+        url: absoluteUrl,
+        durationMs,
+        error: err instanceof Error ? err.message : String(err),
+      });
+
       return Result.err({
         message: err instanceof Error ? err.message : 'Network error',
         raw: err,
