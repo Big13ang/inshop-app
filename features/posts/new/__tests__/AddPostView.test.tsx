@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import AddPostView from '../AddPostView';
 import { Toaster } from '../../../../components/ui/sonner';
 import { text } from '../constants';
@@ -35,6 +36,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  jest.clearAllMocks();
   useMediaStore.setState({
     uploadSessionId: 'mock-session-123',
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -91,7 +93,7 @@ describe('AddPostView — selection phase', () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: text.nextButton }));
     await waitFor(() => {
-      expect(screen.getByText(text.alertNoImages)).toBeInTheDocument();
+      expect(toast.warning).toHaveBeenCalledWith(text.alertNoImages);
     });
   });
 
@@ -101,7 +103,10 @@ describe('AddPostView — selection phase', () => {
     const input = container.querySelector('input[multiple]') as HTMLInputElement;
     await user.upload(input, badFile);
     await waitFor(() => {
-      expect(screen.getByText(/JPG|PNG|WebP/i)).toBeInTheDocument();
+      expect(toast.warning).toHaveBeenCalledWith(
+        text.alertInvalidImageFormat,
+        expect.objectContaining({ position: 'top-center' }),
+      );
     });
   });
 
@@ -112,7 +117,10 @@ describe('AddPostView — selection phase', () => {
     const input = container.querySelector('input[multiple]') as HTMLInputElement;
     await userEvent.setup().upload(input, bigFile);
     await waitFor(() => {
-      expect(screen.getByText(ERROR_MESSAGES.upload.imageSizeLimit)).toBeInTheDocument();
+      expect(toast.warning).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageSizeLimit,
+        expect.objectContaining({ position: 'top-center' }),
+      );
     });
   });
 
@@ -197,7 +205,10 @@ describe('AddPostView — details phase', () => {
     await user.click(screen.getByRole('button', { name: text.shareButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(text.uploadSuccessTitle)).toBeInTheDocument();
+      expect(toast.success).toHaveBeenCalledWith(
+        text.uploadSuccessTitle,
+        expect.objectContaining({ description: text.uploadSuccessDesc }),
+      );
     }, { timeout: 4000 });
   });
 
@@ -212,7 +223,7 @@ describe('AddPostView — details phase', () => {
     await user.click(screen.getByRole('button', { name: text.shareButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(ERROR_MESSAGES.posts.submitFailed)).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.posts.submitFailed);
     }, { timeout: 5000 });
   });
 
@@ -245,7 +256,7 @@ describe('AddPostView — details phase', () => {
     await user.click(screen.getByRole('button', { name: text.shareButton }));
 
     await waitFor(() => {
-      expect(screen.getByText(ERROR_MESSAGES.posts.submitFailed)).toBeInTheDocument();
+      expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.posts.submitFailed);
     }, { timeout: 5000 });
 
     // Caption preserved

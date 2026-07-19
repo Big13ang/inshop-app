@@ -39,7 +39,7 @@ describe('buildMediaItem', () => {
     expect(buildMediaItem(video, 'video').mediaKind).toBe('video');
   });
 
-  it('generates a unique id via crypto.randomUUID', () => {
+  it('generates a unique id via createUuid', () => {
     const result = buildMediaItem(jpg());
     expect(crypto.randomUUID).toHaveBeenCalled();
     expect(result.id).toBe('test-uuid');

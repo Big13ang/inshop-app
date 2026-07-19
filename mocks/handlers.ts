@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw';
+import { createUuid } from '@/lib/utils';
 import { createPendingPostsFixture } from './fixtures';
 
 /**
@@ -146,7 +147,7 @@ export const handlers = [
   // 7. Publish upload-session
   http.post('http://localhost:3000/upload-sessions/publish', async ({ request }) => {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    const id = `post-${crypto.randomUUID()}`;
+    const id = `post-${createUuid()}`;
     posts = [
       {
         id,
@@ -185,7 +186,7 @@ export const handlers = [
   }),
   http.post('/api/upload-sessions/publish', async ({ request }) => {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    const id = `post-${crypto.randomUUID()}`;
+    const id = `post-${createUuid()}`;
     posts = [
       {
         id,
@@ -226,7 +227,7 @@ export const handlers = [
   // Legacy publish endpoint (retained for backward compatibility if other code references it)
   http.post('/api/posts', async ({ request }) => {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    const id = `post-${crypto.randomUUID()}`;
+    const id = `post-${createUuid()}`;
     posts = [
       {
         id,

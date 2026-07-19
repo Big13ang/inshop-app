@@ -1,3 +1,4 @@
+import { createUuid } from '@/lib/utils';
 import { type MediaItem, type MediaKind } from '../types';
 
 export function buildMediaItem(
@@ -6,7 +7,7 @@ export function buildMediaItem(
   validated = false,
 ): MediaItem {
   return {
-    id: crypto.randomUUID(),
+    id: createUuid(),
     name: file.name,
     file,
     localUrl: URL.createObjectURL(file),

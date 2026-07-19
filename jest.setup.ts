@@ -3,6 +3,16 @@ import mockReact from 'react';
 import { server } from './mocks/server';
 import { resetPendingPostsFixture } from './mocks/handlers';
 
+jest.mock('sonner', () => ({
+  Toaster: () => null,
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn(),
+    info: jest.fn(),
+  },
+}));
+
 jest.mock('@/env', () => ({
   env: {
     NEXT_PUBLIC_API_URL: 'http://localhost:3000',

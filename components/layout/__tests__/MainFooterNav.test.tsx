@@ -1,6 +1,7 @@
 import { render, screen, waitFor, act, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MainFooterNav from '../MainFooterNav';
+import { toast } from 'sonner';
 
 const mockPush = jest.fn();
 let mockPathname = '/';
@@ -10,13 +11,6 @@ jest.mock('next/navigation', () => ({
     push: mockPush,
   }),
   usePathname: () => mockPathname,
-}));
-
-const mockToastError = jest.fn();
-jest.mock('sonner', () => ({
-  toast: {
-    error: (msg: string) => mockToastError(msg),
-  },
 }));
 
 const mockSignOut = jest.fn();
@@ -103,7 +97,7 @@ describe('MainFooterNav', () => {
 
     expect(mockSignOut).toHaveBeenCalled();
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('خطای خروج');
+      expect(toast.error).toHaveBeenCalledWith('خطای خروج');
     });
     expect(mockPush).not.toHaveBeenCalled();
   });
