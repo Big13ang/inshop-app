@@ -11,7 +11,11 @@ import { useMediaStore } from '../services/mediaStore';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { server } from '../../../../mocks/server';
 
-// Pre-set session so ensureSession() in uploadSession.ts is a no-op.
+jest.mock('../services/uploadSession', () => ({
+  useUploadSession: () => ({ isPending: false }),
+}));
+
+// Pre-set session so uploads can start immediately.
 useMediaStore.setState({ uploadSessionId: 'mock-session-123' });
 
 // ── Global browser API stubs ──────────────────────────────────────────────────

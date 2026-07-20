@@ -1,41 +1,39 @@
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { http } from '@/lib/utils';
+import { queryKeys } from '@/lib/query-keys';
 import { useMediaStore } from './mediaStore';
 
-// Singleton promise — resolves once the session is ready (or if one already exists).
-// All callers await the same promise; the POST fires exactly once.
-let sessionPromise: Promise<void> | null = null;
-
-/**
- * Ensures an upload session exists in the store.
- * Safe to call multiple times — the HTTP request is made at most once.
- * Does NOT use useEffect; callers simply await this before uploading.
- */
-export function ensureSession(): Promise<void> {
-  if (sessionPromise) return sessionPromise;
-
-  const { uploadSessionId } = useMediaStore.getState();
-  if (uploadSessionId) {
-    sessionPromise = Promise.resolve();
-    return sessionPromise;
-  }
-
-  sessionPromise = http
-    .post<{ uploadSessionId: string; expiresAt: string }>('/upload-sessions')
-    .then((res) => {
-      if (res.ok) {
-        useMediaStore
-          .getState()
-          .setUploadSession(res.value.uploadSessionId, res.value.expiresAt);
-      }
-    });
-
-  return sessionPromise;
+export interface UploadSessionData {
+  uploadSessionId: string;
+  expiresAt: string;
 }
 
-/**
- * Resets the singleton so the next ensureSession() call re-fetches.
- * Call this after the store is reset (e.g. after successful post submission).
- */
-export function resetSessionPromise(): void {
-  sessionPromise = null;
+async function fetchUploadSession(): Promise<UploadSessionData> {
+  const res = await http.post<UploadSessionData>('/upload-sessions');
+  if (!res.ok) throw new Error(res.error.message);
+
+  return res.value;
+}
+
+function syncUploadSession(data: UploadSessionData | undefined) {
+  if (!data) return;
+
+  useMediaStore
+    .getState()
+    .setUploadSession(data.uploadSessionId, data.expiresAt);
+}
+
+export function useUploadSession() {
+  const uploadSessionId = useMediaStore((s) => s.uploadSessionId);
+  const query = useQuery({
+    queryKey: queryKeys.posts.uploadSession(),
+    queryFn: fetchUploadSession,
+    enabled: !uploadSessionId,
+    staleTime: Infinity,
+  });
+
+  useEffect(() => syncUploadSession(query.data), [query.data]);
+
+  return query;
 }

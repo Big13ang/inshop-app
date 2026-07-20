@@ -68,9 +68,6 @@ export default function GalleryCell({ id, selectionIndex, onToggle, onLongPress,
       onMouseDown={startHold}
       onMouseUp={endHold}
       onMouseLeave={cancelHold}
-      onTouchStart={startHold}
-      onTouchEnd={endHold}
-      onTouchMove={cancelHold}
       data-status={item.status}
       data-selected={isSelected}
       className={`aspect-square relative rounded-2xl overflow-hidden cursor-pointer select-none

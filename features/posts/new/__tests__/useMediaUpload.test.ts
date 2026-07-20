@@ -1,4 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
 import { useMediaUpload } from '../hooks/useMediaUpload';
 import { useMediaStore } from '../services/mediaStore';
 import { createChunkStrategy } from '../services/chunkStrategy';
@@ -20,8 +22,7 @@ jest.mock('sonner', () => ({
 }));
 
 jest.mock('../services/uploadSession', () => ({
-  ensureSession: jest.fn().mockResolvedValue(undefined),
-  resetSessionPromise: jest.fn(),
+  useUploadSession: () => ({ isPending: false }),
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -31,9 +32,17 @@ const jpg = (name = 'photo.jpg') => new File([JPEG_HEADER], name, { type: 'image
 
 let mockUpload: jest.Mock;
 let uuidCounter = 0;
+let queryClient: QueryClient;
+
+function wrapper({ children }: { children: ReactNode }) {
+  return createElement(QueryClientProvider, { client: queryClient }, children);
+}
 
 beforeEach(() => {
   uuidCounter = 0;
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
   mockUpload = jest.fn().mockResolvedValue('https://cdn/uploaded.jpg');
   (createChunkStrategy as jest.Mock).mockReturnValue({ upload: mockUpload });
@@ -64,7 +73,7 @@ afterEach(() => {
 
 describe('useMediaUpload — addFiles', () => {
   it('transitions a file from queued → uploading → uploaded on success', async () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg()]); });
 
@@ -77,7 +86,7 @@ describe('useMediaUpload — addFiles', () => {
   });
 
   it('sets uploadedUrl after a successful upload', async () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg()]); });
 
@@ -92,7 +101,7 @@ describe('useMediaUpload — addFiles', () => {
   it('removes an item from the gallery when the upload rejects', async () => {
     mockUpload.mockRejectedValue(new Error('network error'));
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg()]); });
 
@@ -108,7 +117,7 @@ describe('useMediaUpload — addFiles', () => {
 
 describe('useMediaUpload — service initialization', () => {
   it('creates the upload service only once across re-renders', () => {
-    const { rerender, unmount } = renderHook(() => useMediaUpload());
+    const { rerender, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     rerender();
     rerender();
@@ -127,7 +136,7 @@ describe('useMediaUpload — concurrency', () => {
       () => new Promise<string>((resolve) => { resolveFns.push(resolve); }),
     );
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     const files = [jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg'), jpg('d.jpg')];
     act(() => { result.current.addFiles(files); });
@@ -151,7 +160,7 @@ describe('useMediaUpload — concurrency', () => {
       () => new Promise<string>((resolve) => { resolveFns.push(resolve); }),
     );
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg'), jpg('d.jpg')]); });
 
@@ -191,7 +200,7 @@ describe('useMediaUpload — MAX_IMAGES limit', () => {
     );
     useMediaStore.setState({ itemMap });
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
     act(() => { result.current.addFiles([jpg()]); });
 
     expect(useMediaStore.getState().itemMap.size).toBe(10);
@@ -208,7 +217,7 @@ describe('useMediaUpload — cancelUpload', () => {
       () => new Promise<string>((resolve) => { resolveUpload = resolve; }),
     );
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg()]); });
 
@@ -234,7 +243,7 @@ describe('useMediaUpload — cancelUpload', () => {
       () => new Promise<string>((_resolve, reject) => { rejectUpload = reject; }),
     );
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg()]); });
 
@@ -260,7 +269,7 @@ describe('useMediaUpload — cancelUpload', () => {
   });
 
   it('does not crash when cancelling an id that does not exist', () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
     expect(() => {
       act(() => { result.current.cancelUpload('non-existent-id'); });
     }).not.toThrow();
@@ -276,7 +285,7 @@ describe('useMediaUpload — retryUpload', () => {
       .mockRejectedValueOnce(new Error('network error'))
       .mockResolvedValue('https://cdn/retried.jpg');
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => { result.current.addFiles([jpg()]); });
 
@@ -291,7 +300,7 @@ describe('useMediaUpload — retryUpload', () => {
   });
 
   it('does not crash when retrying an id that does not exist', () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
     expect(() => {
       act(() => { result.current.retryUpload('non-existent-id'); });
     }).not.toThrow();
@@ -307,7 +316,7 @@ describe('useMediaUpload — removeItem', () => {
   });
 
   it('cancels the upload, removes the item from store, and calls delete API if uploadedUrl exists', async () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     // 1. Add item with uploadedUrl
     act(() => {
@@ -348,7 +357,7 @@ describe('useMediaUpload — removeItem', () => {
 
 
   it('does not call the delete API when the item has no uploadedUrl', () => {
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     act(() => {
       useMediaStore.setState({
@@ -387,7 +396,7 @@ describe('useMediaUpload — race with cancellation', () => {
       () => new Promise<string>((resolve) => { resolveFns.push(resolve); }),
     );
 
-    const { result, unmount } = renderHook(() => useMediaUpload());
+    const { result, unmount } = renderHook(() => useMediaUpload(), { wrapper });
 
     const files = [jpg('a.jpg'), jpg('b.jpg'), jpg('c.jpg'), jpg('d.jpg')];
     act(() => { result.current.addFiles(files); });
