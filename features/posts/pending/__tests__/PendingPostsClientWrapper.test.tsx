@@ -9,13 +9,11 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ back: mockBack, push: mockPush, replace: jest.fn(), prefetch: jest.fn() }),
 }));
 
-let capturedOnBack: () => void;
 let capturedOnAddPost: () => void;
 
 jest.mock('../PendingPostsView', () => ({
   __esModule: true,
-  default: ({ onBack, onAddPost }: { onBack: () => void; onAddPost: () => void }) => {
-    capturedOnBack = onBack;
+  default: ({ onAddPost }: { onAddPost: () => void }) => {
     capturedOnAddPost = onAddPost;
     return <div data-testid="pending-posts-view" />;
   },
@@ -29,15 +27,6 @@ describe('PendingPostsClientWrapper', () => {
   it('renders PendingPostsView', () => {
     render(<PendingPostsClientWrapper />);
     expect(screen.getByTestId('pending-posts-view')).toBeInTheDocument();
-  });
-
-  it('navigates back via router.back when onBack is invoked', async () => {
-    render(<PendingPostsClientWrapper />);
-
-    capturedOnBack();
-
-    expect(mockBack).toHaveBeenCalled();
-    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('navigates to the new post page via router.push when onAddPost is invoked', async () => {

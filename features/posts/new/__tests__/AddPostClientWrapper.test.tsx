@@ -37,14 +37,14 @@ describe('AddPostClientWrapper', () => {
     expect(screen.getByText(text.headerTitle)).toBeInTheDocument();
   });
 
-  it('navigates back via router.back when leaving the select phase', async () => {
+  it('uses the global back button home behavior when leaving the select phase', async () => {
     const user = userEvent.setup();
     const { container } = renderWithProviders();
 
     const backBtn = container.querySelector('#add-post-back-btn') as HTMLButtonElement;
     await user.click(backBtn);
 
-    expect(mockBack).toHaveBeenCalled();
+    expect(mockBack).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
   });
 

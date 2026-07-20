@@ -30,7 +30,6 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
     isSubmitting,
     isSessionLoading,
     isValidating,
-    handleBack,
     handleNext,
   } = usePostFlow(onNavigate);
   const isAtLimit = useMediaStore((s) => s.itemMap.size >= MAX_IMAGES);
@@ -85,7 +84,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
         }}
       />
 
-      <AddPostHeader onBack={handleBack} />
+      <AddPostHeader />
 
       {renderBody()}
 

@@ -11,11 +11,10 @@ import PendingPostCard from './components/PendingPostCard';
 import { text } from './constants';
 
 interface PendingPostsViewProps {
-  onBack: () => void;
   onAddPost: () => void;
 }
 
-export default function PendingPostsView({ onBack, onAddPost }: PendingPostsViewProps) {
+export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
   const { data: posts = [] } = postsQueryService.usePendingPosts();
   const deletePost = postsQueryService.useDeletePendingPost();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -24,7 +23,7 @@ export default function PendingPostsView({ onBack, onAddPost }: PendingPostsView
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
       <Header.Root>
-        <Header.Back onClick={onBack} id="pending-back-btn" />
+        <Header.Back id="pending-back-btn" />
         <Header.Title>{`${text.headerTitle} (${posts.length})`}</Header.Title>
         <Header.Right />
       </Header.Root>
