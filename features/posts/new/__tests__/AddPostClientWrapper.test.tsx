@@ -19,7 +19,7 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/lib/utils', () => ({
   ...jest.requireActual('@/lib/utils'),
-  goBackSafely: (router: any) => mockGoBackSafely(router),
+  goBackSafely: (router: unknown) => mockGoBackSafely(router),
 }));
 
 afterEach(() => {

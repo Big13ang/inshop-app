@@ -1,7 +1,7 @@
 import { goBackSafely, getIsInternal, setIsInternal } from '../navigation';
 
 describe('navigation utility', () => {
-  let mockRouter: any;
+  let mockRouter: { back: jest.Mock; replace: jest.Mock };
 
   beforeEach(() => {
     mockRouter = {
