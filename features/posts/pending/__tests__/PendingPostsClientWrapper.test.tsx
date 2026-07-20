@@ -4,9 +4,10 @@ import PendingPostsClientWrapper from '../PendingPostsClientWrapper';
 
 const mockBack = jest.fn();
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ back: mockBack, push: mockPush, replace: jest.fn(), prefetch: jest.fn() }),
+  useRouter: () => ({ back: mockBack, push: mockPush, replace: mockReplace, prefetch: jest.fn() }),
 }));
 
 let capturedOnBack: () => void;
@@ -31,12 +32,13 @@ describe('PendingPostsClientWrapper', () => {
     expect(screen.getByTestId('pending-posts-view')).toBeInTheDocument();
   });
 
-  it('navigates back via router.back when onBack is invoked', async () => {
+  it('replaces with home when onBack is invoked', async () => {
     render(<PendingPostsClientWrapper />);
 
     capturedOnBack();
 
-    expect(mockBack).toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith('/');
+    expect(mockBack).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
   });
 
@@ -47,5 +49,6 @@ describe('PendingPostsClientWrapper', () => {
 
     expect(mockPush).toHaveBeenCalledWith('/app/posts/new');
     expect(mockBack).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,8 @@
+'use client';
+
 import { useTransition } from 'react';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Button } from './button';
 
 export interface BackButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,11 +18,21 @@ export default function BackButton({
     ref,
     ...props
 }: BackButtonProps) {
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
+
+    const navigateHome = () => {
+        router.replace('/');
+    };
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         startTransition(() => {
-            onClick?.(event);
+            if (onClick) {
+                onClick(event);
+                return;
+            }
+
+            navigateHome();
         });
     };
 
