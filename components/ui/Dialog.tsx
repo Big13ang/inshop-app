@@ -211,7 +211,7 @@ function DialogContent({
         onMouseUp={dragHandlers.onMouseUp}
         onMouseLeave={dragHandlers.onMouseLeave}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[100] mx-auto w-full max-w-md rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)]',
+          'fixed bottom-0 left-0 right-0 z-[100] mx-auto w-full rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] md:max-w-[var(--container-app)]',
           dragToDismiss && 'cursor-grab active:cursor-grabbing',
           className
         )}

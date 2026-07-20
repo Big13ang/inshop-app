@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 
 import AddPostHeader from './components/AddPostHeader';
+import AddPostOnboardingSheet from './components/AddPostOnboardingSheet';
 import AddPostFooter from './components/AddPostFooter';
 import SelectedMediaSlider from './components/SelectedMediaSlider';
 import SelectedGallery from './components/SelectedGallery';
@@ -84,6 +85,7 @@ export default function AddPostView({ onNavigate }: AddPostViewProps) {
         }}
       />
 
+      <AddPostOnboardingSheet />
       <AddPostHeader />
 
       {renderBody()}
