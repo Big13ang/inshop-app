@@ -1,25 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { type MediaKind } from '../types';
 import { useMediaStore } from '../services/mediaStore';
 import { type UploadService, createUploadService } from '../services/uploadService';
 import { validateBatch } from '../services/validateBatch';
 import { buildMediaItem } from '../services/buildMediaItem';
-import { ensureSession, resetSessionPromise } from '../services/uploadSession';
+import { useUploadSession } from '../services/uploadSession';
 import { MAX_IMAGES } from '../constants';
 import { http, extractMediaId } from '@/lib/utils';
+import { queryKeys } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 export function useMediaUpload() {
+  const queryClient = useQueryClient();
+  const uploadSession = useUploadSession();
   const service = useRef<UploadService | null>(null);
   if (service.current == null) {
     service.current = createUploadService();
   }
 
   const [isValidating, setIsValidating] = useState(false);
-  const [isSessionLoading, setIsSessionLoading] = useState(false);
   const validationController = useRef<AbortController | null>(null);
 
   // Cleanup on unmount — the only legitimate lifecycle effect here.
@@ -36,14 +39,6 @@ export function useMediaUpload() {
     const currentCount = useMediaStore.getState().itemMap.size;
     const remaining = MAX_IMAGES - currentCount;
     if (remaining <= 0) return;
-
-    // Ensure a session exists before uploading — called on demand (no useEffect).
-    // isSessionLoading gates the UI while the request is in flight.
-    if (!useMediaStore.getState().uploadSessionId) {
-      setIsSessionLoading(true);
-      await ensureSession();
-      setIsSessionLoading(false);
-    }
 
     const uploadSessionId = useMediaStore.getState().uploadSessionId;
     if (!uploadSessionId) {
@@ -123,10 +118,18 @@ export function useMediaUpload() {
     }
   }
 
-  /** Resets the session promise so the next addFiles call re-fetches. */
+  /** Clears the cached session so the next post starts with a fresh one. */
   function resetSession() {
-    resetSessionPromise();
+    queryClient.removeQueries({ queryKey: queryKeys.posts.uploadSession() });
   }
 
-  return { addFiles, cancelUpload, removeItem, retryUpload, resetSession, isValidating, isSessionLoading };
+  return {
+    addFiles,
+    cancelUpload,
+    removeItem,
+    retryUpload,
+    resetSession,
+    isValidating,
+    isSessionLoading: uploadSession.isPending,
+  };
 }

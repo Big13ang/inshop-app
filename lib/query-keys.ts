@@ -6,6 +6,7 @@ export const queryKeys = {
     pending: () => [...queryKeys.posts.all, 'pending'] as const,
     details: () => [...queryKeys.posts.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.posts.details(), id] as const,
+    uploadSession: () => [...queryKeys.posts.all, 'upload-session'] as const,
   },
   auth: {
     session: ['auth', 'session'] as const,

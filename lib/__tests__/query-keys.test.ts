@@ -16,6 +16,7 @@ describe('queryCacheFactory', () => {
   it('provides the correct domain-separated query keys structure', () => {
     expect(queryKeys.posts.all).toEqual(['posts']);
     expect(queryKeys.posts.pending()).toEqual(['posts', 'pending']);
+    expect(queryKeys.posts.uploadSession()).toEqual(['posts', 'upload-session']);
     expect(queryKeys.profile.me).toEqual(['profile', 'me']);
   });
 

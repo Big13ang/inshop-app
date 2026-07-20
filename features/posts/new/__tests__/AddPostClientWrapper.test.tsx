@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AddPostClientWrapper from '../AddPostClientWrapper';
 import { text } from '../constants';
+import { queryKeys } from '@/lib/query-keys';
+import { useMediaStore } from '../services/mediaStore';
 
 const mockBack = jest.fn();
 const mockPush = jest.fn();
@@ -15,15 +17,18 @@ jest.mock('next/navigation', () => ({
 afterEach(() => {
   mockBack.mockClear();
   mockPush.mockClear();
+  useMediaStore.getState().reset();
 });
 
 const renderWithProviders = () => {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-  return render(
+  const result = render(
     <QueryClientProvider client={client}>
       <AddPostClientWrapper />
     </QueryClientProvider>,
   );
+
+  return { ...result, client };
 };
 
 describe('AddPostClientWrapper', () => {
@@ -41,5 +46,20 @@ describe('AddPostClientWrapper', () => {
 
     expect(mockBack).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('resets the draft upload session when leaving the route', () => {
+    const { client, unmount } = renderWithProviders();
+
+    useMediaStore.getState().setUploadSession('session-to-clear', '2026-07-21T00:00:00Z');
+    client.setQueryData(queryKeys.posts.uploadSession(), {
+      uploadSessionId: 'session-to-clear',
+      expiresAt: '2026-07-21T00:00:00Z',
+    });
+
+    unmount();
+
+    expect(useMediaStore.getState().uploadSessionId).toBeNull();
+    expect(client.getQueryData(queryKeys.posts.uploadSession())).toBeUndefined();
   });
 });
