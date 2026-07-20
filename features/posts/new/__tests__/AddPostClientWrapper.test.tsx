@@ -10,15 +10,23 @@ import { useMediaStore } from '../services/mediaStore';
 const mockBack = jest.fn();
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
+const mockGoBackSafely = jest.fn();
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ back: mockBack, push: mockPush, replace: mockReplace, prefetch: jest.fn() }),
+  usePathname: () => '/posts/new',
+}));
+
+jest.mock('@/lib/utils', () => ({
+  ...jest.requireActual('@/lib/utils'),
+  goBackSafely: (router: unknown) => mockGoBackSafely(router),
 }));
 
 afterEach(() => {
   mockBack.mockClear();
   mockPush.mockClear();
   mockReplace.mockClear();
+  mockGoBackSafely.mockClear();
   useMediaStore.getState().reset();
 });
 
@@ -46,9 +54,7 @@ describe('AddPostClientWrapper', () => {
     const backBtn = container.querySelector('#add-post-back-btn') as HTMLButtonElement;
     await user.click(backBtn);
 
-    expect(mockReplace).toHaveBeenCalledWith('/');
-    expect(mockBack).not.toHaveBeenCalled();
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockGoBackSafely).toHaveBeenCalled();
   });
 
   it('resets the draft upload session when leaving the route', () => {

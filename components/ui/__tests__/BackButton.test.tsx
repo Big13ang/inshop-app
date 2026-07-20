@@ -2,25 +2,34 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BackButton from '../BackButton';
 
+const mockGoBackSafely = jest.fn();
+const mockBack = jest.fn();
 const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace }),
+  useRouter: () => ({ back: mockBack, replace: mockReplace }),
+}));
+
+jest.mock('@/lib/utils', () => ({
+  ...jest.requireActual('@/lib/utils'),
+  goBackSafely: (router: unknown) => mockGoBackSafely(router),
 }));
 
 afterEach(() => {
+  mockGoBackSafely.mockClear();
+  mockBack.mockClear();
   mockReplace.mockClear();
 });
 
 describe('BackButton', () => {
-  it('replaces with home when no custom onClick is provided', async () => {
+  it('calls goBackSafely with router when no custom onClick is provided', async () => {
     const user = userEvent.setup();
 
     render(<BackButton />);
 
     await user.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(mockReplace).toHaveBeenCalledWith('/');
+    expect(mockGoBackSafely).toHaveBeenCalled();
   });
 
   it('uses the custom onClick when provided', async () => {
@@ -32,6 +41,6 @@ describe('BackButton', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
 
     expect(onClick).toHaveBeenCalled();
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockGoBackSafely).not.toHaveBeenCalled();
   });
 });
