@@ -1,4 +1,5 @@
 export { cn } from './cn';
+export { storage } from './localStorage';
 export { convertPersianArabicToEnglish } from './numbers';
 export { Result } from './result';
 export type { Result as ResultType } from './result';
