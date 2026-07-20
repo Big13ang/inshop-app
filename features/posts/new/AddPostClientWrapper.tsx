@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -6,7 +6,6 @@ import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import AddPostView from './AddPostView';
 import { queryKeys } from '@/lib/query-keys';
 import { useMediaStore } from './services/mediaStore';
-import { PostFlowNavigationIntent } from './hooks/usePostFlow';
 
 function resetDraftSession(queryClient: QueryClient) {
   return () => {
@@ -19,19 +18,16 @@ export default function AddPostClientWrapper() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const handleNavigation = (intent: PostFlowNavigationIntent) => {
+  const handleNavigate = (intent: 'back' | 'pending-posts') => {
     if (intent === 'pending-posts') {
       router.push('/app/posts/pending');
-    } else {
-      router.back()
+      return;
     }
-  }
+
+    router.replace('/');
+  };
 
   useEffect(() => resetDraftSession(queryClient), [queryClient]);
 
-  return (
-    <AddPostView
-      onNavigate={handleNavigation}
-    />
-  );
+  return <AddPostView onNavigate={handleNavigate} />;
 }
