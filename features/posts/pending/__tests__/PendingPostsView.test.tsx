@@ -106,21 +106,21 @@ afterEach(() => {
 describe('PendingPostsView', () => {
   it('shows the empty state when there are no posts', () => {
     mockData = [];
-    render(<PendingPostsView onBack={jest.fn()} onAddPost={jest.fn()} />);
+    render(<PendingPostsView onAddPost={jest.fn()} />);
 
     expect(screen.getByText(text.emptyTitle)).toBeInTheDocument();
   });
 
   it('renders a card for every post', () => {
     mockData = [post({ id: 'a' }), post({ id: 'b' })];
-    render(<PendingPostsView onBack={jest.fn()} onAddPost={jest.fn()} />);
+    render(<PendingPostsView onAddPost={jest.fn()} />);
 
     expect(screen.getAllByTestId('post-slider')).toHaveLength(2);
   });
 
   it('shows the post count in the header', () => {
     mockData = [post({ id: 'a' }), post({ id: 'b' })];
-    render(<PendingPostsView onBack={jest.fn()} onAddPost={jest.fn()} />);
+    render(<PendingPostsView onAddPost={jest.fn()} />);
 
     expect(screen.getByText(`${text.headerTitle} (2)`)).toBeInTheDocument();
   });
@@ -128,7 +128,7 @@ describe('PendingPostsView', () => {
   it('deletes the post when the menu delete action is confirmed', async () => {
     const user = userEvent.setup();
     mockData = [post({ id: 'a' })];
-    render(<PendingPostsView onBack={jest.fn()} onAddPost={jest.fn()} />);
+    render(<PendingPostsView onAddPost={jest.fn()} />);
 
     await user.click(screen.getByLabelText('بیشتر'));
     await user.click(await screen.findByText(text.deleteLabel));
