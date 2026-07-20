@@ -21,10 +21,7 @@ export default function AddPostClientWrapper() {
   const handleNavigate = (intent: 'back' | 'pending-posts') => {
     if (intent === 'pending-posts') {
       router.push('/app/posts/pending');
-      return;
     }
-
-    router.replace('/');
   };
 
   useEffect(() => resetDraftSession(queryClient), [queryClient]);
