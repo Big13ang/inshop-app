@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { goBackSafely } from '@/lib/utils';
 import { Button } from './button';
 
 export interface BackButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -21,10 +22,6 @@ export default function BackButton({
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
-    const navigateHome = () => {
-        router.replace('/');
-    };
-
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         startTransition(() => {
             if (onClick) {
@@ -32,7 +29,7 @@ export default function BackButton({
                 return;
             }
 
-            navigateHome();
+            goBackSafely(router);
         });
     };
 

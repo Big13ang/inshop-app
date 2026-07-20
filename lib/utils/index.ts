@@ -9,3 +9,4 @@ export type { HttpError, HttpRequestOptions, ApiResponse, PaginatedApiResponse }
 export { createUuid, formatToUUID, extractMediaId } from './uuid';
 export { isMobile } from './platform';
 export { debugAuth, isAuthDebugEnabled } from './authDebug';
+export { goBackSafely } from './navigation';
