@@ -19,6 +19,7 @@ type UploadOptions = {
 jest.mock('tus-js-client', () => {
   class MockUpload {
     static instances: MockUpload[] = [];
+    static mockFindPreviousUploads: () => Promise<unknown[]> = () => Promise.resolve([]);
     url: string | null = 'https://cdn/tus/abc';
     options: UploadOptions;
     aborted = false;
@@ -29,7 +30,7 @@ jest.mock('tus-js-client', () => {
     }
 
     findPreviousUploads() {
-      return Promise.resolve([]);
+      return MockUpload.mockFindPreviousUploads();
     }
 
     resumeFromPreviousUpload() { }
@@ -47,10 +48,12 @@ jest.mock('tus-js-client', () => {
 
 const MockUpload = jest.requireMock<{ Upload: {
   instances: { options: UploadOptions; aborted: boolean }[];
+  mockFindPreviousUploads: () => Promise<unknown[]>;
 } }>('tus-js-client').Upload;
 
 beforeEach(() => {
   MockUpload.instances = [];
+  MockUpload.mockFindPreviousUploads = () => Promise.resolve([]);
 });
 
 const fileOf = (size: number) =>
@@ -192,5 +195,108 @@ describe('createChunkStrategy', () => {
       filetype: 'image/jpeg',
       uploadSessionId: 'session-xyz',
     });
+  });
+
+  it('guards against division by zero when bytesTotal is 0', async () => {
+    const onProgress = jest.fn();
+    const strategy = createChunkStrategy();
+    const uploadPromise = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress,
+      signal: new AbortController().signal,
+    });
+
+    latestUpload().options.onProgress(0, 0);
+    latestUpload().options.onSuccess();
+    await uploadPromise;
+
+    expect(onProgress).toHaveBeenCalledWith(0);
+  });
+
+  it('rejects the promise if findPreviousUploads rejects', async () => {
+    MockUpload.mockFindPreviousUploads = () => Promise.reject(new Error('Storage failure'));
+
+    const strategy = createChunkStrategy();
+    const uploadPromise = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: new AbortController().signal,
+    });
+
+    await expect(uploadPromise).rejects.toThrow('Storage failure');
+  });
+
+  it('cleans up the abort signal listener on success, failure, abort, or findPreviousUploads rejection', async () => {
+    const strategy = createChunkStrategy();
+
+    // Case 1: Success cleanup
+    const signal1 = new AbortController().signal;
+    const addSpy1 = jest.spyOn(signal1, 'addEventListener');
+    const removeSpy1 = jest.spyOn(signal1, 'removeEventListener');
+
+    const promise1 = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: signal1,
+    });
+
+    const listener1 = addSpy1.mock.calls[0][1];
+    latestUpload().options.onSuccess();
+    await promise1;
+    expect(removeSpy1).toHaveBeenCalledWith('abort', listener1);
+
+    // Case 2: Failure cleanup
+    const signal2 = new AbortController().signal;
+    const addSpy2 = jest.spyOn(signal2, 'addEventListener');
+    const removeSpy2 = jest.spyOn(signal2, 'removeEventListener');
+
+    const promise2 = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: signal2,
+    });
+
+    const listener2 = addSpy2.mock.calls[0][1];
+    latestUpload().options.onError(new Error('fail'));
+    await expect(promise2).rejects.toThrow('fail');
+    expect(removeSpy2).toHaveBeenCalledWith('abort', listener2);
+
+    // Case 3: Abort cleanup
+    const ctrl3 = new AbortController();
+    const addSpy3 = jest.spyOn(ctrl3.signal, 'addEventListener');
+    const removeSpy3 = jest.spyOn(ctrl3.signal, 'removeEventListener');
+
+    const promise3 = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: ctrl3.signal,
+    });
+
+    const listener3 = addSpy3.mock.calls[0][1];
+    ctrl3.abort();
+    await expect(promise3).rejects.toThrow();
+    expect(removeSpy3).toHaveBeenCalledWith('abort', listener3);
+
+    // Case 4: findPreviousUploads rejection cleanup
+    MockUpload.mockFindPreviousUploads = () => Promise.reject(new Error('Storage failure'));
+    const signal4 = new AbortController().signal;
+    const addSpy4 = jest.spyOn(signal4, 'addEventListener');
+    const removeSpy4 = jest.spyOn(signal4, 'removeEventListener');
+
+    const promise4 = strategy.upload({
+      id: 'id',
+      file: fileOf(10),
+      onProgress: jest.fn(),
+      signal: signal4,
+    });
+
+    const listener4 = addSpy4.mock.calls[0][1];
+    await expect(promise4).rejects.toThrow('Storage failure');
+    expect(removeSpy4).toHaveBeenCalledWith('abort', listener4);
   });
 });

@@ -183,7 +183,8 @@ function buildTusOptions({
       ...(options?.uploadSessionId ? { uploadSessionId: options.uploadSessionId } : {}),
     },
     onProgress(bytesUploaded, bytesTotal) {
-      onProgress(Math.round((bytesUploaded / bytesTotal) * 100));
+      const percentage = bytesTotal > 0 ? Math.round((bytesUploaded / bytesTotal) * 100) : 0;
+      onProgress(percentage);
     },
     onError: reject,
     onSuccess() {
@@ -198,16 +199,21 @@ function buildTusOptions({
  * @param {AbortSignal} signal - The abort controller signal.
  * @param {tus.Upload} upload - The active tus Upload client instance.
  * @param {(reason: unknown) => void} reject - Rejection callback.
+ * @returns {() => void} A cleanup function to remove the listener.
  */
 function wireAbortSignal(
   signal: AbortSignal,
   upload: tus.Upload,
   reject: (reason: unknown) => void,
-): void {
-  signal.addEventListener('abort', () => {
+): () => void {
+  const onAbort = () => {
     upload.abort();
     reject(abortedError());
-  });
+  };
+  signal.addEventListener('abort', onAbort);
+  return () => {
+    signal.removeEventListener('abort', onAbort);
+  };
 }
 
 /**
@@ -236,17 +242,27 @@ export function createChunkStrategy(
           return;
         }
 
+        const cleanup = { abort: undefined as (() => void) | undefined };
+        const safeResolve = (url: string) => {
+          cleanup.abort?.();
+          resolve(url);
+        };
+        const safeReject = (reason: unknown) => {
+          cleanup.abort?.();
+          reject(reason);
+        };
+
         const tusOptions = buildTusOptions({
           params,
           endpoint,
-          resolve,
-          reject,
+          resolve: safeResolve,
+          reject: safeReject,
           getUpload: () => tusUpload,
         });
         const tusUpload = new tus.Upload(params.file, tusOptions);
 
-        wireAbortSignal(params.signal, tusUpload, reject);
-        resumeOrStart(tusUpload);
+        cleanup.abort = wireAbortSignal(params.signal, tusUpload, safeReject);
+        resumeOrStart(tusUpload).catch(safeReject);
       });
     },
   };
