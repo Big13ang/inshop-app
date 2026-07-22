@@ -5,9 +5,9 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the package-lock.json and any CI .npmrc
-COPY package.json package-lock.json* .npmrc* ./
-RUN --mount=type=cache,target=/root/.npm npm ci --verbose
+# Install dependencies based on the package-lock.json and CI-provided npm auth.
+COPY package.json package-lock.json* ./
+RUN --mount=type=cache,target=/root/.npm --mount=type=secret,id=npmrc,target=/app/.npmrc npm ci --verbose
 
 # Rebuild the source code only when needed
 FROM base AS builder

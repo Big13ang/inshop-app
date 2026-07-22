@@ -2,8 +2,9 @@
 # Frontend CI/CD — Gitea Actions Workflow
 # Builds, tests, and deploys the Next.js frontend application to Docker Swarm.
 #
-# Required Gitea repo secrets:  REGISTRY_USER, REGISTRY_PASS
-# Required repo variables:      REGISTRY_HOST (registry.dev.inshop.internal)
+# Required Gitea repo secrets:  REGISTRY_USER, REGISTRY_PASS, NPM_USER, NPM_PASS
+# Required repo variables:      REGISTRY_HOST (registry.inshop.social)
+# NPM registry URL is read from the project .npmrc.
 
 # =============================================================================
 name: frontend-ci-cd
@@ -30,9 +31,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure npm client for container build
+        env:
+          NPM_USER: "${{ secrets.NPM_USER }}"
+          NPM_PASS: "${{ secrets.NPM_PASS }}"
         run: |
-          echo "Configuring .npmrc to ignore-scripts..."
-          echo "ignore-scripts=true" >> .npmrc
+          set -euo pipefail
+          test -f .npmrc
+          npm_registry="$(npm config get registry --userconfig .npmrc)"
+          test -n "$npm_registry"
+          npm_host="$(node -e "console.log(new URL(process.argv[1]).host)" "$npm_registry")"
+          npm_auth="$(printf '%s:%s' "$NPM_USER" "$NPM_PASS" | base64 | tr -d '\n')"
+          cp .npmrc .npmrc.ci
+          {
+            echo "//$npm_host/:_auth=$npm_auth"
+            echo "//$npm_host/:always-auth=true"
+            echo "ignore-scripts=true"
+          } >> .npmrc.ci
+          echo "Configured npm auth for $npm_host."
 
       - name: Diagnostic DNS and Registry Network Check
         run: |
@@ -58,7 +73,7 @@ jobs:
         run: |
           echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
           docker build \
-            --add-host=npm.dev.inshop.internal:host-gateway \
+            --secret id=npmrc,src=.npmrc.ci \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
             --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
