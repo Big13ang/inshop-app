@@ -33,6 +33,8 @@ jest.mock('@/lib/auth-client', () => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  sessionStorage.clear();
+  window.HTMLMediaElement.prototype.play = jest.fn().mockResolvedValue(undefined);
 });
 
 describe('LoginPage Integration', () => {
