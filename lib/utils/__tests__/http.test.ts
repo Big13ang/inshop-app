@@ -1,4 +1,4 @@
-import { http } from '../http';
+import { http, navigation } from '../http';
 import { env } from '@/env';
 
 describe('http.request', () => {
@@ -132,4 +132,55 @@ describe('http.request', () => {
       },
     });
   });
+
+  describe('interceptors & 401 redirect', () => {
+    let redirectSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      redirectSpy = jest.spyOn(navigation, 'redirect').mockImplementation(() => {});
+    });
+
+    it('redirects user to /auth/login when response status is 401', async () => {
+      const mockResponse = new Response(JSON.stringify({ message: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+      jest.spyOn(global, 'fetch').mockResolvedValue(mockResponse);
+
+      const result = await http.request('/protected-endpoint');
+
+      expect(result.ok).toBe(false);
+      expect(redirectSpy).toHaveBeenCalledWith('/auth/login');
+    });
+
+    it('allows registering and unregistering custom request and response interceptors', async () => {
+      const requestFn = jest.fn();
+      const responseFn = jest.fn();
+
+      const unregisterReq = http.interceptors.request.use(requestFn);
+      const unregisterRes = http.interceptors.response.use(responseFn);
+
+      const mockResponse = new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+      jest.spyOn(global, 'fetch').mockResolvedValue(mockResponse);
+
+      await http.request('/custom-interceptor-test');
+
+      expect(requestFn).toHaveBeenCalledTimes(1);
+      expect(responseFn).toHaveBeenCalledTimes(1);
+
+      unregisterReq();
+      unregisterRes();
+
+      await http.request('/custom-interceptor-test-2');
+
+      expect(requestFn).toHaveBeenCalledTimes(1);
+      expect(responseFn).toHaveBeenCalledTimes(1);
+    });
+  });
 });
+
+
+

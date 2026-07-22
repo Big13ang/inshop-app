@@ -3,6 +3,8 @@ node_modules
 .git
 .gitea
 *.local
+.npmrc
+.npmrc.ci
 README.md
 docs
 playwright-report
