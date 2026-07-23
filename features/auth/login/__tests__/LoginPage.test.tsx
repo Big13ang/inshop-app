@@ -6,11 +6,15 @@ import { toast } from 'sonner';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
-    replace: jest.fn(),
+    replace: mockReplace,
     prefetch: jest.fn(),
+  }),
+  useSearchParams: () => ({
+    get: jest.fn().mockReturnValue(null),
   }),
 }));
 
@@ -57,7 +61,7 @@ describe('LoginPage Integration', () => {
     await waitFor(() => {
       expect(mockSendOtp).toHaveBeenCalledWith({ phoneNumber: '09171234567' });
       expect(toast.success).toHaveBeenCalledWith('کد تایید ارسال شد');
-      expect(mockPush).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
+      expect(mockReplace).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
     });
   });
 
@@ -80,7 +84,7 @@ describe('LoginPage Integration', () => {
     await waitFor(() => {
       expect(mockSendOtp).toHaveBeenCalledWith({ phoneNumber: '09000000000' });
       expect(toast.error).toHaveBeenCalledWith('شماره تلفن همراه وارد شده نامعتبر است.');
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 
@@ -102,7 +106,7 @@ describe('LoginPage Integration', () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.auth.sendOtpFailed);
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 
@@ -141,7 +145,7 @@ describe('LoginPage Integration', () => {
     await waitFor(() => {
       expect(mockSendOtp).toHaveBeenCalledTimes(2);
       expect(toast.success).toHaveBeenCalledWith('کد تایید ارسال شد');
-      expect(mockPush).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
+      expect(mockReplace).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
     });
   });
 });

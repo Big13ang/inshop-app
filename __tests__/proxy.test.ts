@@ -130,4 +130,72 @@ describe('Next.js proxy', () => {
       expect(NextResponse.redirect).not.toHaveBeenCalled();
     });
   });
+
+  describe('auth paths', () => {
+    it('redirects to /app/posts/pending if session token is present when accessing /auth/login', () => {
+      const mockRequest = {
+        url: 'http://localhost:4000/auth/login',
+        nextUrl: {
+          pathname: '/auth/login',
+        },
+        cookies: {
+          get: jest.fn().mockImplementation((name) => {
+            if (name === 'better-auth.session_token') {
+              return { value: 'valid-token' };
+            }
+            return undefined;
+          }),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+      } as unknown as NextRequest;
+
+      proxy(mockRequest);
+
+      expect(NextResponse.redirect).toHaveBeenCalled();
+      const redirectedUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
+      expect(redirectedUrl.pathname).toBe('/app/posts/pending');
+    });
+
+    it('redirects to /app/posts/pending if session token is present when accessing /auth/otp', () => {
+      const mockRequest = {
+        url: 'http://localhost:4000/auth/otp?phone=09123456789',
+        nextUrl: {
+          pathname: '/auth/otp',
+        },
+        cookies: {
+          get: jest.fn().mockImplementation((name) => {
+            if (name === 'better-auth.session_token') {
+              return { value: 'valid-token' };
+            }
+            return undefined;
+          }),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+      } as unknown as NextRequest;
+
+      proxy(mockRequest);
+
+      expect(NextResponse.redirect).toHaveBeenCalled();
+      const redirectedUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
+      expect(redirectedUrl.pathname).toBe('/app/posts/pending');
+    });
+
+    it('allows request to proceed if session token is missing when accessing /auth/login', () => {
+      const mockRequest = {
+        url: 'http://localhost:4000/auth/login',
+        nextUrl: {
+          pathname: '/auth/login',
+        },
+        cookies: {
+          get: jest.fn().mockReturnValue(undefined),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+      } as unknown as NextRequest;
+
+      proxy(mockRequest);
+
+      expect(NextResponse.next).toHaveBeenCalled();
+      expect(NextResponse.redirect).not.toHaveBeenCalled();
+    });
+  });
 });

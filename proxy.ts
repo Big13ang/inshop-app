@@ -23,13 +23,25 @@ export function proxy(request: NextRequest) {
     presentAuthCookieNames,
   });
 
-  if (pathname === '/') {
+  const isHome = pathname === '/';
+  const isAuth = pathname.startsWith('/auth');
+  const isApp = pathname.startsWith('/app');
+
+  if (isHome) {
     const destination = isLoggedIn ? '/app/posts/pending' : '/auth/login';
     debugAuth('proxy', 'redirect:root', { destination, isLoggedIn });
     return NextResponse.redirect(new URL(destination, request.url));
   }
 
-  if (pathname.startsWith('/app') && !isLoggedIn) {
+  if (isAuth && isLoggedIn) {
+    debugAuth('proxy', 'redirect:alreadyLoggedIn', {
+      pathname,
+      destination: '/app/posts/pending',
+    });
+    return NextResponse.redirect(new URL('/app/posts/pending', request.url));
+  }
+
+  if (isApp && !isLoggedIn) {
     const loginUrl = new URL('/auth/login', request.url);
 
     loginUrl.searchParams.set('callbackUrl', pathname);
@@ -51,5 +63,6 @@ export const config = {
   matcher: [
     '/',
     '/app/:path*',
+    '/auth/:path*',
   ],
 };
