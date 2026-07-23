@@ -6,11 +6,15 @@ import { toast } from 'sonner';
 import { TEXTS } from '../constants';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
-    replace: jest.fn(),
+    replace: mockReplace,
     prefetch: jest.fn(),
+  }),
+  useSearchParams: () => ({
+    get: jest.fn().mockReturnValue(null),
   }),
 }));
 
@@ -44,7 +48,7 @@ afterEach(() => {
 describe('OtpClient Integration', () => {
   const TEST_PHONE = '09171234567';
 
-  it('completes login successfully and redirects to /app/posts/new', async () => {
+  it('completes login successfully and redirects to /app/posts/pending', async () => {
     mockVerify.mockResolvedValue({
       error: null,
     });
@@ -63,7 +67,7 @@ describe('OtpClient Integration', () => {
         code: '1234',
         phoneNumber: TEST_PHONE,
       });
-      expect(mockPush).toHaveBeenCalledWith('/app/posts/new');
+      expect(mockReplace).toHaveBeenCalledWith('/app/posts/pending');
     });
   });
 
@@ -87,7 +91,7 @@ describe('OtpClient Integration', () => {
         phoneNumber: TEST_PHONE,
       });
       expect(toast.error).toHaveBeenCalledWith('کد وارد شده نامعتبر است.');
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 
@@ -189,7 +193,7 @@ describe('OtpClient Integration', () => {
         code: '1234',
         phoneNumber: TEST_PHONE,
       });
-      expect(mockPush).toHaveBeenCalledWith('/app/posts/new');
+      expect(mockReplace).toHaveBeenCalledWith('/app/posts/pending');
     });
   });
 });

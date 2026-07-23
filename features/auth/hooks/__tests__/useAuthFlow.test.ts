@@ -4,11 +4,16 @@ import { toast } from 'sonner';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
+
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
-    replace: jest.fn(),
+    replace: mockReplace,
     prefetch: jest.fn(),
+  }),
+  useSearchParams: () => ({
+    get: jest.fn().mockReturnValue(null),
   }),
 }));
 
@@ -117,7 +122,7 @@ describe('useAuthFlow', () => {
 
       expect(success).toBe(true);
       expect(mockVerify).toHaveBeenCalledWith({ code: '1234', phoneNumber: '09171234567' });
-      expect(mockPush).toHaveBeenCalledWith('/app/posts/new');
+      expect(mockReplace).toHaveBeenCalledWith('/app/posts/pending');
     });
 
     it('returns false and shows error toast on failure', async () => {
@@ -134,7 +139,7 @@ describe('useAuthFlow', () => {
 
       expect(success).toBe(false);
       expect(toast.error).toHaveBeenCalledWith('کد وارد شده نامعتبر است.');
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
     });
 
     it('handles network/unexpected errors gracefully', async () => {
@@ -162,7 +167,7 @@ describe('useAuthFlow', () => {
         await result.current.verifyOtp('1234', '09171234567');
       });
 
-      expect(mockPush).toHaveBeenCalledWith('/custom/path');
+      expect(mockReplace).toHaveBeenCalledWith('/custom/path');
     });
   });
 
@@ -174,7 +179,7 @@ describe('useAuthFlow', () => {
         result.current.redirectToOtp('09171234567');
       });
 
-      expect(mockPush).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
+      expect(mockReplace).toHaveBeenCalledWith('/auth/otp?phone=09171234567');
     });
 
     it('encodes special characters in phone number', () => {
@@ -184,7 +189,7 @@ describe('useAuthFlow', () => {
         result.current.redirectToOtp('0917 123 4567');
       });
 
-      expect(mockPush).toHaveBeenCalledWith('/auth/otp?phone=0917%20123%204567');
+      expect(mockReplace).toHaveBeenCalledWith('/auth/otp?phone=0917%20123%204567');
     });
   });
 

@@ -11,6 +11,9 @@ jest.mock('next/navigation', () => ({
     push: mockPush,
   }),
   usePathname: () => mockPathname,
+  useSearchParams: () => ({
+    get: jest.fn().mockReturnValue(null),
+  }),
 }));
 
 const mockSignOut = jest.fn();
