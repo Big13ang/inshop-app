@@ -16,7 +16,7 @@ export interface SplashScreenProps {
 export default function SplashScreen({
   onComplete,
   videoUrl = DEFAULT_VIDEO_URL,
-  durationMs = DEFAULT_SPLASH_DURATION_MS,
+  durationMs: _durationMs = DEFAULT_SPLASH_DURATION_MS,
 }: SplashScreenProps) {
   const [phase, setPhase] = useState<'playing' | 'exiting' | 'finished'>('playing');
   const videoRef = useRef<HTMLVideoElement>(null);

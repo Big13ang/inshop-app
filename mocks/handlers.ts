@@ -294,4 +294,16 @@ export const handlers = [
       },
     });
   }),
+  http.get('http://localhost:3000/me', () => {
+    return HttpResponse.json({
+      success: true,
+      data: { id: 'seller-1', name: 'Test Seller', isVerifiedSeller: true },
+    });
+  }),
+  http.get('/me', () => {
+    return HttpResponse.json({
+      success: true,
+      data: { id: 'seller-1', name: 'Test Seller', isVerifiedSeller: true },
+    });
+  }),
 ];

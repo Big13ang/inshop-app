@@ -1,5 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AddPostClientWrapper from '../AddPostClientWrapper';
@@ -60,7 +60,9 @@ describe('AddPostClientWrapper', () => {
   it('resets the draft upload session when leaving the route', () => {
     const { client, unmount } = renderWithProviders();
 
-    useMediaStore.getState().setUploadSession('session-to-clear', '2026-07-21T00:00:00Z');
+    act(() => {
+      useMediaStore.getState().setUploadSession('session-to-clear', '2026-07-21T00:00:00Z');
+    });
     client.setQueryData(queryKeys.posts.uploadSession(), {
       uploadSessionId: 'session-to-clear',
       expiresAt: '2026-07-21T00:00:00Z',
