@@ -7,6 +7,7 @@ import { useUser } from '@/features/profile/context/UserContext';
 import type { UserProfile } from '@/features/profile/services/profileService';
 import type { PendingPost } from '../pending/types';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import { useMediaStore } from '../new/services/mediaStore';
 
 export interface UploadSessionData {
   uploadSessionId: string;
@@ -16,7 +17,7 @@ export interface UploadSessionData {
 export interface SubmitPostPayload {
   uploadSessionId: string;
   description: string;
-  mediaIds?: string[];
+  mediaIds: string[];
 }
 
 export interface BackendMedia {
@@ -75,6 +76,21 @@ function mapBackendPost(post: BackendPost, user: UserProfile): PendingPost {
   };
 }
 
+export interface DeleteUploadSessionPhotoParams {
+  uploadSessionId: string;
+  mediaId: string;
+}
+
+export async function deleteUploadSessionPhoto({
+  uploadSessionId,
+  mediaId,
+}: DeleteUploadSessionPhotoParams): Promise<void> {
+  const res = await http.delete(
+    `/upload-sessions/${uploadSessionId}/photos/${mediaId}`
+  );
+  if (!res.ok) throw new Error(res.error.message);
+}
+
 export const postsQueryService = {
   usePendingPosts() {
     const { user } = useUser();
@@ -126,6 +142,19 @@ export const postsQueryService = {
         onError: () => toast.error(ERROR_MESSAGES.posts.deleteFailed),
         onSettled: () => queryCacheFactory.posts.invalidatePending(queryClient),
       }),
+    });
+  },
+
+  useDeleteUploadSessionPhoto() {
+    return useMutation({
+      mutationFn: deleteUploadSessionPhoto,
+      onSuccess: (_data, { mediaId }) => {
+        useMediaStore.getState().removeItem(mediaId);
+        toast.success(ERROR_MESSAGES.posts.imageDeleteSuccess);
+      },
+      onError: () => {
+        toast.error(ERROR_MESSAGES.posts.deleteFailed);
+      },
     });
   },
 };

@@ -12,30 +12,42 @@
  * Call mockUploadApi() BEFORE goto() so the route is registered before any fetches.
  */
 
-import { type Page, type Locator, expect } from '@playwright/test';
+import { type Page, type Locator, type Route, expect } from '@playwright/test';
+
 import { text } from '../../features/posts/new/constants';
 
-/** 1×1 transparent PNG — small, valid, passes image/* MIME-type validation. */
-export const TINY_PNG = Buffer.from(
+/** Valid 1x1 transparent PNG buffer with complete IDAT chunk so browser image decoder succeeds. */
+export const VALID_PNG_1X1 = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
   'base64',
 );
 
+/** 1080×1080 PNG buffer — passes client-side 1080×1080 header dimension validation. */
+export const TINY_PNG = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  0x00, 0x00, 0x00, 0x0d,
+  0x49, 0x48, 0x44, 0x52,
+  0x00, 0x00, 0x04, 0x38,
+  0x00, 0x00, 0x04, 0x38,
+  0x08, 0x06, 0x00, 0x00, 0x00,
+  0x0e, 0x80, 0xbd, 0x50,
+  0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44,
+  0xae, 0x42, 0x60, 0x82,
+]);
+
 /** 11 MB zero-filled buffer — exceeds the 10 MB image size limit. */
 export const OVERSIZED_PNG = Buffer.alloc(11 * 1024 * 1024);
+
 
 export class AddPostPage {
   readonly page: Page;
 
-  // ── Footer action buttons ─────────────────────────────────────────────────
-  // IDs set in AddPostFooter.tsx — stable regardless of translation changes.
+  // ── Header & Footer ────────────────────────────────────────────────────────
+  readonly headerTitle: Locator;
+  readonly backButton:  Locator;
   readonly nextButton:  Locator;
   readonly addButton:   Locator;
   readonly shareButton: Locator;
-
-  // ── Header ────────────────────────────────────────────────────────────────
-  readonly headerTitle: Locator;
-  readonly backButton:  Locator;
 
   // ── Hidden file input ─────────────────────────────────────────────────────
   // Playwright can set files on hidden inputs via setInputFiles().
@@ -72,58 +84,106 @@ export class AddPostPage {
 
   // ── Route mocking ─────────────────────────────────────────────────────────
 
-  /**
-   * Intercept the tus protocol upload requests and return instant success
-   * responses. Must be called BEFORE goto() so the mocks are active before
-   * the page loads.
-   *
-   * tus-js-client drives three request types against the upload endpoint:
-   *   POST   /api/upload      — creation; reply 201 + Location header
-   *   HEAD   /api/upload/:id  — resume probe; reply current Upload-Offset
-   *   PATCH  /api/upload/:id  — chunk write; reply the new Upload-Offset
-   *
-   * Offsets are tracked per id so HEAD/PATCH stay consistent across chunks
-   * within a single test, mirroring mocks/handlers.ts (the Jest/MSW mocks).
-   */
   uploadOffsets = new Map<string, number>();
 
   async mockUploadApi() {
     this.uploadOffsets.clear();
-    await this.page.route('**/api/upload', (route) => {
-      if (route.request().method() !== 'POST') return route.continue();
-      const id = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      this.uploadOffsets.set(id, 0);
+
+    const handleCorsOptions = (route: any) => {
       return route.fulfill({
-        status: 201,
-        headers: { Location: `/api/upload/${id}`, 'Tus-Resumable': '1.0.0' },
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': 'http://localhost:4000',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Allow-Methods': 'POST, GET, HEAD, PATCH, OPTIONS, DELETE',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Expose-Headers': 'Location, Upload-Offset, Tus-Resumable, Upload-Length',
+        },
       });
-    });
-    await this.page.route('**/api/upload/*', async (route) => {
-      const request = route.request();
-      const id = new URL(request.url()).pathname.split('/').pop()!;
-      if (request.method() === 'HEAD') {
-        const offset = this.uploadOffsets.get(id) ?? 0;
-        return route.fulfill({
-          status: 200,
-          headers: {
-            'Upload-Offset': String(offset),
-            'Tus-Resumable': '1.0.0',
-          },
-        });
+    };
+
+    await this.page.route(
+      (url) => url.pathname.includes('upload'),
+      async (route) => {
+        const request = route.request();
+        const urlStr = request.url();
+
+        if (urlStr.includes('upload-session')) {
+          return route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              uploadSessionId: 'mock-upload-session-123',
+              expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+            }),
+          });
+        }
+
+        if (request.method() === 'OPTIONS') return handleCorsOptions(route);
+
+        if (request.method() === 'POST') {
+          const id = `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          this.uploadOffsets.set(id, 0);
+          return route.fulfill({
+            status: 201,
+            headers: {
+              Location: `http://localhost:4000/uploads/${id}`,
+              'Tus-Resumable': '1.0.0',
+              'Access-Control-Expose-Headers': 'Location, Upload-Offset, Tus-Resumable, Upload-Length',
+              'Access-Control-Allow-Origin': 'http://localhost:4000',
+              'Access-Control-Allow-Credentials': 'true',
+            },
+          });
+        }
+
+        const id = new URL(urlStr).pathname.split('/').pop()!;
+
+        if (request.method() === 'GET') {
+          return route.fulfill({
+            status: 200,
+            contentType: 'image/png',
+            body: VALID_PNG_1X1,
+          });
+        }
+
+
+        if (request.method() === 'HEAD') {
+          const offset = this.uploadOffsets.get(id) ?? 0;
+          return route.fulfill({
+            status: 200,
+            headers: {
+              'Upload-Offset': String(offset),
+              'Tus-Resumable': '1.0.0',
+              'Access-Control-Expose-Headers': 'Location, Upload-Offset, Tus-Resumable, Upload-Length',
+              'Access-Control-Allow-Origin': 'http://localhost:4000',
+              'Access-Control-Allow-Credentials': 'true',
+            },
+          });
+        }
+
+        if (request.method() === 'PATCH') {
+          const startOffset = this.uploadOffsets.get(id) ?? 0;
+          const body = request.postDataBuffer();
+          const offset = startOffset + (body?.byteLength ?? 0);
+          this.uploadOffsets.set(id, offset);
+          return route.fulfill({
+            status: 204,
+            headers: {
+              'Upload-Offset': String(offset),
+              'Tus-Resumable': '1.0.0',
+              'Access-Control-Expose-Headers': 'Location, Upload-Offset, Tus-Resumable, Upload-Length',
+              'Access-Control-Allow-Origin': 'http://localhost:4000',
+              'Access-Control-Allow-Credentials': 'true',
+            },
+          });
+        }
+
+        return route.continue();
       }
-      if (request.method() === 'PATCH') {
-        const startOffset = this.uploadOffsets.get(id) ?? 0;
-        const body = request.postDataBuffer();
-        const offset = startOffset + (body?.byteLength ?? 0);
-        this.uploadOffsets.set(id, offset);
-        return route.fulfill({
-          status: 204,
-          headers: { 'Upload-Offset': String(offset), 'Tus-Resumable': '1.0.0' },
-        });
-      }
-      return route.continue();
-    });
+    );
   }
+
+
 
   /**
    * Override the upload mock to simulate a server error.
@@ -227,7 +287,15 @@ export class AddPostPage {
   /** Navigate to /app/posts/new and wait until footer buttons are interactive. */
   async goto() {
     await this.page.goto('/app/posts/new');
-    await expect(this.nextButton).toBeVisible();
+    await this.dismissOnboardingIfPresent();
+    await expect(this.addButton).toBeEnabled({ timeout: 10_000 });
+  }
+
+  async dismissOnboardingIfPresent() {
+    const gotItBtn = this.page.locator('#add-post-onboarding-got-it');
+    if (await gotItBtn.isVisible().catch(() => false)) {
+      await gotItBtn.click();
+    }
   }
 
   // ── File input ────────────────────────────────────────────────────────────
@@ -236,8 +304,14 @@ export class AddPostPage {
   async uploadFiles(
     files: Array<{ name: string; mimeType: string; buffer: Buffer }>,
   ) {
+    await expect(this.addButton).toBeEnabled({ timeout: 10_000 });
     await this.fileInput.setInputFiles(files);
   }
+
+
+
+
+
 
   /**
    * Upload a single valid PNG and wait until the gallery reflects at least

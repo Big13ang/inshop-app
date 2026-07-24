@@ -1,15 +1,14 @@
 'use client';
 
-import React from 'react';
-import { ImageIcon, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ImageIcon } from 'lucide-react';
 import { cva } from 'class-variance-authority';
 import { useShallow } from 'zustand/react/shallow';
 import PostSlider from '@/components/ui/PostSlider';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useMediaStore } from '../services/mediaStore';
 
-const HOISTED_REMOVE_ICON = <Trash2 className="w-4 h-4" />;
+import DeleteMediaButton from './DeleteMediaButton';
 
 interface SelectedMediaSliderProps {
   aspectClassName?: string;
@@ -36,34 +35,28 @@ export default function SelectedMediaSlider({
   aspectClassName = 'aspect-square',
   isCompact = false,
 }: SelectedMediaSliderProps) {
-  const activeIdx = useMediaStore((s) => s.activePreviewIdx);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // Select stable MediaItem references first and apply useShallow to prevent
-  // unnecessary re-renders when other items' upload progress updates.
-  const selectedItems = useMediaStore(
-    useShallow((s) =>
-      s.selectedIds
-        .map((id) => s.itemMap.get(id))
-        .filter((it): it is NonNullable<typeof it> => !!it)
+  const mediaItems = useMediaStore(
+    useShallow(s =>
+      s.mediaList
+        .filter(item => item.order !== null)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map(item => ({
+          id: item.id,
+          url: item.previewUrl!,
+        }))
     )
   );
 
-  const media = selectedItems.map((it) => ({
-    url: it.uploadedUrl ?? it.localUrl,
-    type: it.mediaKind as 'image',
-  }));
+  const mediaList = mediaItems.map(item => ({ url: item.url }));
+  const activeMediaId = mediaItems[activeIndex]?.id;
 
   function handleActiveChange(idx: number) {
-    useMediaStore.setState({ activePreviewIdx: idx });
+    setActiveIndex(idx);
   }
 
-  function handleRemove(idx: number) {
-    const { selectedIds, toggleSelected } = useMediaStore.getState();
-    const id = selectedIds[idx];
-    if (id) toggleSelected(id);
-  }
-
-  if (media.length === 0) {
+  if (mediaList.length === 0) {
     return (
       <div
         style={{ contentVisibility: 'auto' } as React.CSSProperties}
@@ -94,28 +87,21 @@ export default function SelectedMediaSlider({
     >
       <div className="w-full relative overflow-hidden bg-zinc-950">
         <PostSlider
-          media={media}
-          activeSlide={activeIdx}
+          items={mediaList}
+          activeSlide={activeIndex}
           onSlideChange={handleActiveChange}
           objectFit="contain"
         />
 
         <div className="absolute top-4 right-4 bg-zinc-950/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1.5 border border-white/10 z-[25]">
-          <span>فایل {activeIdx + 1} از {media.length}</span>
+          <span>فایل {activeIndex + 1} از {mediaList.length}</span>
         </div>
 
-         {!isCompact && media.length > 1 ? (
-          <Button
-            onClick={(e) => { e.stopPropagation(); handleRemove(activeIdx); }}
-            variant="filled"
-            shape="circle"
-            className="absolute top-4 left-4 bg-zinc-900/90 text-zinc-300 hover:text-white size-8 flex items-center justify-center hover:bg-zinc-950 transition-all border border-white/15 z-[25] p-0 min-w-0"
-            title="حذف از انتخاب شده‌ها"
-          >
-            {HOISTED_REMOVE_ICON}
-          </Button>
+        {!isCompact && mediaList.length > 1 && activeMediaId ? (
+          <DeleteMediaButton mediaId={activeMediaId} />
         ) : null}
       </div>
     </div>
   );
 }
+

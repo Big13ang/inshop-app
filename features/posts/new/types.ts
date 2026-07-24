@@ -1,22 +1,21 @@
-export interface SelectedFile {
+export type SelectedFile = {
   id: string;
   url: string;
   file: File;
-  type: 'image' | 'video';
 }
 
-export type MediaKind = 'image' | 'video';
+export type MediaKind = "image" | "video";
 
-export type MediaStatus = 'queued' | 'uploading' | 'uploaded' | 'failed' | 'cancelled';
+export type MediaStatus =
+  "queued" | "pending" | "uploading" | "uploaded" | "failed";
 
-export interface MediaItem {
+export type MediaItem = {
   id: string;
-  name: string;
-  file: File | null;
-  localUrl: string;
+  kind: MediaKind;
   status: MediaStatus;
-  progress: number;
-  mediaKind: MediaKind;
-  validated: boolean;
-  uploadedUrl?: string;
-}
+  uploadProgress: number;
+  order: null | number;
+  previewUrl: null | string;
+  file: File;
+  isValid: boolean;
+};

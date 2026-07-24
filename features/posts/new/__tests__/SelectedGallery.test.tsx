@@ -1,49 +1,29 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SelectedGallery from '../components/SelectedGallery';
 import { useMediaStore } from '../services/mediaStore';
 import { type MediaItem } from '../types';
 
-jest.mock('gsap', () => ({
-  killTweensOf: jest.fn(),
-  fromTo: jest.fn((targets, from, to) => {
-    if (to && typeof to.onComplete === 'function') {
-      to.onComplete();
-    }
-  }),
-  to: jest.fn((targets, vars) => {
-    if (vars && typeof vars.onComplete === 'function') {
-      vars.onComplete();
-    }
-  }),
-}));
-
 afterEach(() => {
-  useMediaStore.setState({
-    itemMap: new Map(),
-    selectedIds: [],
-    activePreviewIdx: 0,
-  });
+  useMediaStore.getState().reset();
 });
 
-const createMockItem = (overrides: Partial<MediaItem>): MediaItem => ({
-  id: 'item-1',
-  name: 'photo.jpg',
-  file: new File([''], 'test.jpg', { type: 'image/jpeg' }),
-  localUrl: 'blob:local-url',
+const createMockItem = (overrides?: Partial<MediaItem>): MediaItem => ({
+  id: 'id-1',
+  kind: 'image',
   status: 'uploaded',
-  progress: 100,
-  mediaKind: 'image',
-  validated: true,
+  uploadProgress: 100,
+  order: 1,
+  previewUrl: 'https://example.com/1.jpg',
+  file: new File([''], 'test.jpg', { type: 'image/jpeg' }),
+  isValid: true,
   ...overrides,
 });
 
 describe('SelectedGallery — empty state', () => {
-  it('renders instructions and empty state when itemMap is empty', () => {
-    // Current interface requires media prop, but we will soon refactor it.
-    // For now we test with the new onRetry / onRemove interface.
-    render(<SelectedGallery onRetry={jest.fn()} onRemove={jest.fn()} />);
+  it('renders instructions and empty state when mediaList is empty', () => {
+    render(<SelectedGallery />);
     expect(screen.getByText('گالری انتخابی')).toBeInTheDocument();
     expect(screen.getByText('تصویری انتخاب نشده')).toBeInTheDocument();
     expect(screen.getByText(/با دکمه «اضافه کردن»/)).toBeInTheDocument();
@@ -52,136 +32,50 @@ describe('SelectedGallery — empty state', () => {
 
 describe('SelectedGallery — with items', () => {
   it('renders thumbnails for items in the store', () => {
-    const itemMap = new Map<string, MediaItem>([
-      ['id-1', createMockItem({ id: 'id-1', status: 'uploaded', uploadedUrl: 'https://example.com/1.jpg' })],
-      ['id-2', createMockItem({ id: 'id-2', status: 'uploading', progress: 45 })],
-    ]);
-    useMediaStore.setState({ itemMap });
+    const mediaList: MediaItem[] = [
+      createMockItem({ id: 'id-1', status: 'uploaded', previewUrl: 'https://example.com/1.jpg' }),
+      createMockItem({ id: 'id-2', status: 'uploading', uploadProgress: 45, previewUrl: 'blob:local-url' }),
+    ];
+    useMediaStore.setState({ mediaList });
 
-    const { container } = render(<SelectedGallery onRetry={jest.fn()} onRemove={jest.fn()} />);
+    const { container } = render(<SelectedGallery />);
 
     const images = container.querySelectorAll('img');
     expect(images).toHaveLength(2);
     expect(images[0]).toHaveAttribute('src', 'https://example.com/1.jpg');
     expect(images[1]).toHaveAttribute('src', 'blob:local-url');
 
-    // Expect English digits for the progress number and Persian symbol for percent
     expect(screen.getByText('45٪')).toBeInTheDocument();
   });
 
   it('shows the at-limit count in red when MAX_IMAGES is reached', () => {
-    const itemMap = new Map<string, MediaItem>(
-      Array.from({ length: 10 }, (_, i) => [
-        `id-${i}`,
-        createMockItem({ id: `id-${i}` }),
-      ]),
+    const mediaList: MediaItem[] = Array.from({ length: 10 }, (_, i) =>
+      createMockItem({ id: `id-${i}`, order: i + 1 })
     );
-    useMediaStore.setState({ itemMap });
+    useMediaStore.setState({ mediaList });
 
-    render(<SelectedGallery onRetry={jest.fn()} onRemove={jest.fn()} />);
+    render(<SelectedGallery />);
 
     const counter = screen.getByText('10/10 تصویر');
     expect(counter).toHaveClass('text-red-500');
   });
 
-  it('toggles selection when clicking an uploaded item', async () => {
-    const itemMap = new Map<string, MediaItem>([
-      ['id-1', createMockItem({ id: 'id-1', status: 'uploaded' })],
-    ]);
-    useMediaStore.setState({ itemMap });
-
-    const originalToggle = useMediaStore.getState().toggleSelected;
-    const spyToggle = jest.fn();
-    useMediaStore.setState({ toggleSelected: spyToggle });
+  it('reorders items when clicking an item in the gallery', async () => {
+    const mediaList: MediaItem[] = [
+      createMockItem({ id: 'id-1', order: 1 }),
+      createMockItem({ id: 'id-2', order: 2 }),
+    ];
+    useMediaStore.setState({ mediaList });
 
     const user = userEvent.setup();
-    const { container } = render(<SelectedGallery onRetry={jest.fn()} onRemove={jest.fn()} />);
+    const { container } = render(<SelectedGallery />);
 
-    const thumbnail = container.querySelector('img')!;
-    await user.click(thumbnail);
+    const cells = container.querySelectorAll('[data-status]');
+    await user.click(cells[0]);
 
-    expect(spyToggle).toHaveBeenCalledWith('id-1');
-
-    useMediaStore.setState({ toggleSelected: originalToggle });
-  });
-
-  it('calls onRetry when retry button is clicked on failed item', async () => {
-    const itemMap = new Map<string, MediaItem>([
-      ['id-fail', createMockItem({ id: 'id-fail', status: 'failed' })],
-    ]);
-    useMediaStore.setState({ itemMap });
-
-    const onRetry = jest.fn();
-    const user = userEvent.setup();
-    render(<SelectedGallery onRetry={onRetry} onRemove={jest.fn()} />);
-
-    const retryBtn = screen.getByRole('button', { name: 'تلاش دوباره' });
-    await user.click(retryBtn);
-
-    expect(onRetry).toHaveBeenCalledWith('id-fail');
-  });
-
-  it('opens delete bottom sheet on long press and calls onRemove on confirm', () => {
-    jest.useFakeTimers();
-    const itemMap = new Map<string, MediaItem>([
-      ['id-1', createMockItem({ id: 'id-1', status: 'uploaded' })],
-    ]);
-    useMediaStore.setState({ itemMap });
-
-    const onRemove = jest.fn();
-    const { container } = render(<SelectedGallery onRetry={jest.fn()} onRemove={onRemove} />);
-
-    const thumbnail = container.querySelector('img')!;
-
-    // Start hold
-    fireEvent.mouseDown(thumbnail);
-
-    // Fast-forward timers by 600ms to trigger long press
-    act(() => {
-      jest.advanceTimersByTime(600);
-    });
-
-    // Confirm dialog is shown
-    expect(screen.getByText('حذف تصویر')).toBeInTheDocument();
-    expect(screen.getByText('آیا از حذف این تصویر اطمینان دارید؟')).toBeInTheDocument();
-
-    const confirmBtn = screen.getByRole('button', { name: 'حذف' });
-    fireEvent.click(confirmBtn);
-
-    expect(onRemove).toHaveBeenCalledWith('id-1');
-
-    jest.useRealTimers();
-  });
-
-  it('opens delete bottom sheet on long press and closes on reject', () => {
-    jest.useFakeTimers();
-    const itemMap = new Map<string, MediaItem>([
-      ['id-1', createMockItem({ id: 'id-1', status: 'uploaded' })],
-    ]);
-    useMediaStore.setState({ itemMap });
-
-    const { container } = render(<SelectedGallery onRetry={jest.fn()} onRemove={jest.fn()} />);
-
-    const thumbnail = container.querySelector('img')!;
-
-    // Start hold
-    fireEvent.mouseDown(thumbnail);
-
-    // Fast-forward timers
-    act(() => {
-      jest.advanceTimersByTime(600);
-    });
-
-    expect(screen.getByText('حذف تصویر')).toBeInTheDocument();
-
-    const rejectBtn = screen.getByRole('button', { name: 'انصراف' });
-    // First act: flush the click (setPendingDeleteId → null, isOpen → false, effect schedules 320ms timer).
-    act(() => { fireEvent.click(rejectBtn); });
-    // Second act: advance past the Dialog's exit animation timer so setShouldRender(false) is flushed.
-    act(() => { jest.advanceTimersByTime(350); });
-
-    expect(screen.queryByText('حذف تصویر')).not.toBeInTheDocument();
-
-    jest.useRealTimers();
+    // Deselecting id-1 should make id-1 order null, and id-2 order 1
+    const updated = useMediaStore.getState().mediaList;
+    expect(updated[0].order).toBeNull();
+    expect(updated[1].order).toBe(1);
   });
 });

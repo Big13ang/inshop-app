@@ -8,6 +8,7 @@ export const text = {
 
   // Footer actions
   nextButton: 'بعدی',
+  previousButton: 'مرحله قبلی',
   addButton: 'اضافه کردن',
   shareButton: 'اشتراک‌گذاری',
 
