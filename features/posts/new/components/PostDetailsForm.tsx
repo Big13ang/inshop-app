@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import SelectedMediaSlider from './SelectedMediaSlider';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ interface PostDetailsFormProps {
   caption: string;
   onCaptionChange: (text: string) => void;
   hasInputError: boolean;
+  errorMessage?: string;
   aspectClassName?: string;
 }
 
@@ -17,8 +18,10 @@ export default function PostDetailsForm({
   caption,
   onCaptionChange,
   hasInputError,
+  errorMessage,
   aspectClassName = 'aspect-square',
 }: PostDetailsFormProps) {
+
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,8 +57,9 @@ export default function PostDetailsForm({
           placeholder={text.captionPlaceholder}
           rows={5}
           isError={hasInputError}
-          errorMessage={text.captionError}
+          errorMessage={errorMessage ?? text.captionError}
         />
+
       </div>
     </div>
   );

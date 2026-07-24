@@ -10,3 +10,6 @@ export { createUuid, formatToUUID, extractMediaId } from './uuid';
 export { isMobile } from './platform';
 export { debugAuth, isAuthDebugEnabled } from './authDebug';
 export { goBackSafely } from './navigation';
+export { getMediaKind } from './media';
+export type { MediaKind } from './media';
+

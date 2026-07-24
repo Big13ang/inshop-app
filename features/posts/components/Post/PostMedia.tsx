@@ -8,11 +8,13 @@ interface PostMediaProps {
 
 export function PostMedia({ children }: PostMediaProps) {
   const { state } = usePostContext();
-  const mediaUrls = state.post.media?.map(getMediaUrl) ?? [];
+  const items = state.post.media?.map(item => ({
+    url: getMediaUrl(item),
+  })) ?? [];
 
   return (
     <div className="relative w-full overflow-hidden bg-surface-container">
-      <PostSlider images={mediaUrls} />
+      <PostSlider items={items} />
       {children}
     </div>
   );

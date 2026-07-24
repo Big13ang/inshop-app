@@ -2,31 +2,28 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
 
-import type { PostSliderProps } from './types';
+import type { PostSliderProps, PostSliderItem } from './types';
 import {
   EMPTY_ARRAY,
   DEFAULT_EASING,
   CONTAINER_CLASSES,
   emptySubscribe,
-  normalizeMediaItems,
   calculatePostMediaAspectRatio,
 } from './utils';
 import { SlideItem } from './SlideItem';
 import { BulletDots } from './BulletDots';
 
-export type { MediaItem, PostSliderProps } from './types';
-export { normalizeMediaItems } from './utils';
+export type { PostSliderProps, PostSliderItem } from './types';
 export { SlideItem } from './SlideItem';
 export { BulletDots } from './BulletDots';
 
 export default function PostSlider({
-  images = EMPTY_ARRAY,
-  media,
+  items,
   activeSlide,
   onSlideChange,
   objectFit = 'cover',
 }: PostSliderProps) {
-  const items = normalizeMediaItems(media ?? images);
+
 
   const [currentSlide, setCurrentSlide] = useState(() => activeSlide ?? 0);
   const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
@@ -104,8 +101,8 @@ export default function PostSlider({
 
   if (!isHydrated) {
     return (
-      <div 
-        className={CONTAINER_CLASSES} 
+      <div
+        className={CONTAINER_CLASSES}
         id="post-slider-container-skeleton"
         style={{ aspectRatio: containerAspectRatio }}
       >
@@ -122,7 +119,7 @@ export default function PostSlider({
       onKeyDown={handleKeyDown}
       role="region"
       aria-label="گالری تصاویر"
-      style={{ 
+      style={{
         aspectRatio: containerAspectRatio,
         transition: 'aspect-ratio 0.3s ease-in-out',
       }}

@@ -79,9 +79,10 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:4000',
-    reuseExistingServer: !CI,
+    reuseExistingServer: true,
     timeout: 120_000,
     stdout: 'ignore',
     stderr: 'pipe',
   },
 });
+
