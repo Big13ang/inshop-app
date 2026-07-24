@@ -12,7 +12,8 @@
  * Call mockUploadApi() BEFORE goto() so the route is registered before any fetches.
  */
 
-import { type Page, type Locator, expect } from '@playwright/test';
+import { type Page, type Locator, type Route, expect } from '@playwright/test';
+
 import { text } from '../../features/posts/new/constants';
 
 /** Valid 1x1 transparent PNG buffer with complete IDAT chunk so browser image decoder succeeds. */
