@@ -28,7 +28,32 @@ export interface UserProfile {
     address: string;
     createdAt: string;
     updatedAt: string;
+    /** Seller-authored shop description. Not yet returned by every backend build. */
+    bio?: string | null;
+    /** Whether the address is shown publicly on the seller profile. */
+    showAddress?: boolean | null;
   };
+  sellerProfile?: {
+    id: string;
+    userId: string;
+    username: string;
+    shopName: string;
+    bio?: string | null;
+    profilePhotoUrl?: string | null;
+    address?: string | null;
+    addressProvince?: string | null;
+    addressCity?: string | null;
+    addressShow?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+    phones?: Array<{
+      id: string;
+      phoneNumber: string;
+      label?: string | null;
+    }>;
+  };
+  /** Absolute URL of the seller's profile picture. */
+  avatarUrl?: string | null;
 }
 
 // Deprecated: use UserProfile instead

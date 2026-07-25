@@ -1,5 +1,5 @@
 import { usePostContext } from './PostContext';
-import { User } from 'lucide-react';
+import { Store } from 'lucide-react';
 
 export function PostAvatar({ fallbackAlt = 'فروشنده' }: { fallbackAlt?: string }) {
   const { state } = usePostContext();
@@ -12,7 +12,7 @@ export function PostAvatar({ fallbackAlt = 'فروشنده' }: { fallbackAlt?: s
         aria-label={sellerName || fallbackAlt}
         role="img"
       >
-        <User className="w-5 h-5" />
+        <Store className="w-5 h-5" />
       </div>
     );
   }

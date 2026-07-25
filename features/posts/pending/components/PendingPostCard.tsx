@@ -3,6 +3,9 @@
 import { Clock, AlertOctagon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Post, usePostContext } from '@/features/posts/components/Post';
+import type { BasePostData } from '@/features/posts/components/Post/types';
+import { useUser } from '@/features/profile/context/UserContext';
+import { getShopName } from '@/features/profile/utils/profileMapper';
 import { text } from '../constants';
 import RejectionOverlay from './RejectionOverlay';
 import type { PendingPost } from '../types';
@@ -45,8 +48,28 @@ function PendingStatusOverlay({ status, rejectReason }: { status: PendingPost['s
 }
 
 export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardProps) {
+  let user = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const userCtx = useUser();
+    user = userCtx.user;
+  } catch {
+    // Rendered outside UserProvider in unit tests
+  }
+
+  const postAny = post as unknown as Record<string, unknown>;
+  const basePostData: BasePostData = {
+    id: post.id,
+    description: post.description,
+    media: post.media,
+    createdAt: post.createdAt,
+    sellerName: (postAny.sellerName as string) || (user ? getShopName(user) : ''),
+    sellerAvatar: (postAny.sellerAvatar as string) || user?.sellerProfile?.profilePhotoUrl || user?.avatarUrl || '',
+    isVerified: typeof postAny.isVerified === 'boolean' ? postAny.isVerified : !!user?.isVerifiedSeller,
+  };
+
   return (
-    <Post.Provider post={post} onOpenMenu={onOpenMenu}>
+    <Post.Provider post={basePostData} onOpenMenu={onOpenMenu}>
       <Post.Root>
         <Post.Header>
           <Post.HeaderInfo>

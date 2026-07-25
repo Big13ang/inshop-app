@@ -1,11 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { http } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
 import type { UserProfile } from '@/features/profile/services/profileService';
-import type { PendingPost } from '../pending/types';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { useMediaStore } from '../new/services/mediaStore';
 
@@ -63,19 +62,6 @@ interface CursorPaginatedResult<T> {
   pagination: { nextCursor: string | null; hasNext: boolean };
 }
 
-function getUserInstagramId(user: UserProfile): string | null {
-  return user.businessData?.instagramId || null;
-}
-
-function mapBackendPost(post: BackendPost, user: UserProfile): PendingPost {
-  return {
-    ...post,
-    sellerName: getUserInstagramId(user) || user.name,
-    sellerAvatar: '',
-    isVerified: user.isVerifiedSeller,
-  };
-}
-
 export interface DeleteUploadSessionPhotoParams {
   uploadSessionId: string;
   mediaId: string;
@@ -91,22 +77,80 @@ export async function deleteUploadSessionPhoto({
   if (!res.ok) throw new Error(res.error.message);
 }
 
+async function fetchSellerPosts(user: UserProfile | null): Promise<BackendPost[]> {
+  if (!user) return [];
+  const res = await http.get<CursorPaginatedResult<BackendPost>>('/seller/posts');
+  if (!res.ok) throw new Error(res.error.message);
+
+  return res.value.data;
+}
+
+async function fetchSellerPostsPaginated(
+  user: UserProfile | null,
+  cursor?: string | null,
+  limit: number = 6
+): Promise<CursorPaginatedResult<BackendPost>> {
+  if (!user) {
+    return { data: [], pagination: { nextCursor: null, hasNext: false } };
+  }
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) {
+    params.set('cursor', cursor);
+  }
+  const endpoint = `/seller/posts?${params.toString()}`;
+  const res = await http.get<CursorPaginatedResult<BackendPost>>(endpoint);
+  if (!res.ok) throw new Error(res.error.message);
+
+  return res.value;
+}
+
 export const postsQueryService = {
   usePendingPosts() {
     const { user } = useUser();
 
-    return useQuery<PendingPost[]>({
+    return useQuery<BackendPost[]>({
       queryKey: queryKeys.posts.pending(),
-      queryFn: async () => {
-        if (!user) return [];
-        const res = await http.get<CursorPaginatedResult<BackendPost>>(
-          '/seller/posts'
-        );
-        if (!res.ok) throw new Error(res.error.message);
-
-        return res.value.data.map((post) => mapBackendPost(post, user));
-      },
+      queryFn: () => fetchSellerPosts(user),
       enabled: !!user,
+    });
+  },
+
+  /**
+   * Reads the same `/seller/posts` cache entry as `usePendingPosts` and narrows
+   * it by status, so the profile page adds no extra request.
+   */
+  useSellerPostsByStatus(status: PostStatus) {
+    const { user } = useUser();
+
+    return useQuery<BackendPost[], Error, BackendPost[]>({
+      queryKey: queryKeys.posts.pending(),
+      queryFn: () => fetchSellerPosts(user),
+      enabled: !!user,
+      select: (posts) => posts.filter((post) => post.status === status),
+    });
+  },
+
+  /**
+   * Infinite cursor query for seller posts filtered by status.
+   * Enables infinite scrolling on profile grids (default page size limit = 6).
+   */
+  useInfiniteSellerPostsByStatus(status: PostStatus, limit: number = 6) {
+    const { user } = useUser();
+
+    return useInfiniteQuery({
+      queryKey: [...queryKeys.posts.pending(), 'infinite', status, limit],
+      queryFn: ({ pageParam }) => fetchSellerPostsPaginated(user, pageParam as string | null, limit),
+      initialPageParam: null as string | null,
+      getNextPageParam: (lastPage) =>
+        lastPage.pagination?.hasNext ? lastPage.pagination.nextCursor : undefined,
+      enabled: !!user,
+      select: (data) => ({
+        pages: data.pages.map((page) => ({
+          ...page,
+          data: page.data.filter((post) => post.status === status),
+        })),
+        pageParams: data.pageParams,
+      }),
     });
   },
 

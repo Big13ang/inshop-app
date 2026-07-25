@@ -62,6 +62,27 @@ jest.mock('@tanstack/react-query', () => {
   };
 });
 
+// jsdom does not implement PointerEvent, which Base UI components (Switch, Menu,
+// Dialog) construct while handling interactions. MouseEvent covers everything
+// those handlers read.
+if (typeof window !== 'undefined' && typeof window.PointerEvent !== 'function') {
+  class MockPointerEvent extends MouseEvent {
+    readonly pointerId: number;
+    readonly pointerType: string;
+    readonly isPrimary: boolean;
+
+    constructor(type: string, params: PointerEventInit = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 0;
+      this.pointerType = params.pointerType ?? 'mouse';
+      this.isPrimary = params.isPrimary ?? true;
+    }
+  }
+
+  window.PointerEvent = MockPointerEvent as unknown as typeof PointerEvent;
+  globalThis.PointerEvent = window.PointerEvent;
+}
+
 // jsdom's window.crypto lacks SubtleCrypto (.subtle). Expose Node's webcrypto.
 if (!globalThis.crypto?.subtle) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports

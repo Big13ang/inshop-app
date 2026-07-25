@@ -67,6 +67,7 @@ Rules:
 - **Extract Functions**: Avoid defining inline functions that span more than one line (e.g., multiline callback handlers or event listeners). Always extract them into named helper functions/handlers within the component or module to improve readability and testability.
 - **No Response Transformation**: Do not transform backend API response field names or status values to custom frontend structures. Keep backend field names (e.g., `description`, `createdAt`, `rejectReason`) and status values (e.g., `'PENDING_REVIEW'`, `'REJECTED'`) as-is in frontend query services and models. Only use lightweight rendering utilities (e.g., `getMediaUrl`) to convert backend URLs/data at render time.
 - **Clean Architecture**: Use the `Result` pattern (`Result.ok`, `Result.err`) anywhere you can for cleaner, exception-free code.
+- **No Verified Badge**: Never use `<VerifiedBadge />` (or verified badge icon) unless explicitly requested by the user.
 - **Use Custom UI Components**: Always prioritize using custom UI components defined in the project over raw HTML elements or external components.
   - **Buttons**: Use `<Button>` from `@/components/ui/button` instead of native `<button>`.
   - **Inputs**: Use `<Input>` from `@/components/ui/input` instead of native `<input>`.
@@ -74,7 +75,7 @@ Rules:
   - **Dialogs**: Use `Dialog` from `@/components/ui/Dialog` instead of native `<dialog>` or custom dialog containers.
   - **Bottom Sheets**: Use `BottomSheet` from `@/components/ui/BottomSheet` for slide-up drawers/sheets.
   - **Back Button**: Use `BackButton` from `@/components/ui/BackButton` for header/page back buttons.
-  - **Verified Badges**: Use `VerifiedBadge` from `@/components/ui/VerifiedBadge` for verification markers.
+  - **Verified Badges**: Use `VerifiedBadge` from `@/components/ui/VerifiedBadge` for verification markers (only when explicitly requested by the user).
   - **Toast Notifications**: Use `toast` from `sonner` or `@/components/ui/sonner`.
 
 ---

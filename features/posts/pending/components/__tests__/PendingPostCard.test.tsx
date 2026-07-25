@@ -141,12 +141,8 @@ describe('PendingPostCard', () => {
     expect(fallback.querySelector('svg')).toBeInTheDocument();
   });
 
-
-  it('renders verification badge only when the seller is verified', () => {
-    const { rerender } = render(<PendingPostCard post={post({ isVerified: true })} onOpenMenu={jest.fn()} />);
-    expect(screen.getByLabelText('تایید شده')).toBeInTheDocument();
-
-    rerender(<PendingPostCard post={post({ isVerified: false })} onOpenMenu={jest.fn()} />);
+  it('does not render verification badge per app configuration', () => {
+    render(<PendingPostCard post={post({ isVerified: true })} onOpenMenu={jest.fn()} />);
     expect(screen.queryByLabelText('تایید شده')).not.toBeInTheDocument();
   });
 });

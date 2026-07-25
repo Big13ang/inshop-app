@@ -3,9 +3,8 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http as httpMock, HttpResponse } from 'msw';
 import { server } from '@/mocks/server';
-import { postsQueryService, POST_STATUS } from '../postsQueryService';
+import { postsQueryService, POST_STATUS, type BackendPost } from '../postsQueryService';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
-import type { PendingPost } from '../../pending/types';
 import { UserProvider } from '@/features/profile/context/UserContext';
 
 jest.mock('sonner', () => ({ toast: { error: jest.fn(), success: jest.fn() } }));
@@ -78,7 +77,7 @@ describe('postsQueryService', () => {
   });
 
   describe('usePendingPosts', () => {
-    it('fetches from /seller/posts and maps backend status to frontend status', async () => {
+    it('fetches raw backend post entities from /seller/posts without custom response mapping', async () => {
       server.use(
         httpMock.get('*/seller/posts', () => HttpResponse.json({ success: true, ...backendPosts })),
         httpMock.get('*/me', () => HttpResponse.json({ success: true, data: sellerInfo })),
@@ -94,41 +93,10 @@ describe('postsQueryService', () => {
       expect(posts).toHaveLength(3);
       expect(posts[0].status).toBe(POST_STATUS.PENDING_REVIEW);
       expect(posts[0].description).toBe('Pending caption');
-      expect(posts[0].sellerName).toBe('Test Seller');
-      expect(posts[0].isVerified).toBe(true);
+      expect(posts[0].sellerId).toBe('seller-1');
       expect(posts[1].status).toBe(POST_STATUS.APPROVED);
       expect(posts[2].status).toBe(POST_STATUS.REJECTED);
       expect(posts[2].rejectReason).toBe('Image quality too low');
-    });
-
-    it('uses the profile instagram id as the post author name when available', async () => {
-      server.use(
-        httpMock.get('*/seller/posts', () => HttpResponse.json({ success: true, ...backendPosts })),
-        httpMock.get('*/me', () => HttpResponse.json({
-          success: true,
-          data: {
-            ...sellerInfo,
-            businessData: {
-              id: 1,
-              preRegistrationId: 1,
-              shopName: 'Inshop Gallery',
-              instagramId: 'inshop.gallery',
-              guildId: 'guild-1',
-              address: 'Test address',
-              createdAt: '2026-01-01T00:00:00.000Z',
-              updatedAt: '2026-01-01T00:00:00.000Z',
-            },
-          },
-        })),
-      );
-
-      const { result } = renderHook(() => postsQueryService.usePendingPosts(), {
-        wrapper: createWrapper(queryClient),
-      });
-
-      await waitFor(() => expect(result.current.isSuccess).toBe(true));
-
-      expect(result.current.data?.[0].sellerName).toBe('inshop.gallery');
     });
   });
 
@@ -160,7 +128,7 @@ describe('postsQueryService', () => {
   });
 
   describe('useDeletePendingPost', () => {
-    const initialPosts: PendingPost[] = [
+    const initialPosts: BackendPost[] = [
       {
         id: 'a',
         sellerId: 'seller-a',
@@ -172,9 +140,6 @@ describe('postsQueryService', () => {
         rejectReason: null,
         reviewedBy: null,
         reviewedAt: null,
-        sellerName: 'Seller A',
-        sellerAvatar: '',
-        isVerified: false,
       },
       {
         id: 'b',
@@ -187,9 +152,6 @@ describe('postsQueryService', () => {
         rejectReason: 'Some reason',
         reviewedBy: 'admin-1',
         reviewedAt: '2026-01-02',
-        sellerName: 'Seller B',
-        sellerAvatar: '',
-        isVerified: true,
       },
     ];
 
@@ -212,7 +174,7 @@ describe('postsQueryService', () => {
       });
 
       await waitFor(() => {
-        const cached = queryClient.getQueryData<PendingPost[]>(queryKeys.posts.pending());
+        const cached = queryClient.getQueryData<BackendPost[]>(queryKeys.posts.pending());
         expect(cached?.map(p => p.id)).toEqual(['b']);
       });
 
@@ -240,7 +202,7 @@ describe('postsQueryService', () => {
 
       await waitFor(() => expect(result.current.isError).toBe(true));
 
-      const cached = queryClient.getQueryData<PendingPost[]>(queryKeys.posts.pending());
+      const cached = queryClient.getQueryData<BackendPost[]>(queryKeys.posts.pending());
       expect(cached?.map(p => p.id)).toEqual(['a', 'b']);
       expect(toast.error).toHaveBeenCalled();
     });

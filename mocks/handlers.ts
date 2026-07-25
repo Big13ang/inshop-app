@@ -296,14 +296,86 @@ export const handlers = [
   }),
   http.get('http://localhost:3000/me', () => {
     return HttpResponse.json({
-      success: true,
-      data: { id: 'seller-1', name: 'Test Seller', isVerifiedSeller: true },
+      id: 'seller-1',
+      name: 'Test Seller',
+      email: 'seller@phone.inshop.local',
+      isVerifiedSeller: true,
+      sellerActivatedAt: new Date().toISOString(),
+      isAdmin: false,
+      sellerProfile: {
+        id: 'sp-1',
+        userId: 'seller-1',
+        username: 'test_shop',
+        shopName: 'Test Seller',
+        bio: 'Bio text',
+        profilePhotoUrl: null,
+        address: 'Tehran',
+        addressShow: true,
+        phones: [{ id: 'p-1', phoneNumber: '09121111111' }],
+      },
     });
   }),
   http.get('/me', () => {
     return HttpResponse.json({
-      success: true,
-      data: { id: 'seller-1', name: 'Test Seller', isVerifiedSeller: true },
+      id: 'seller-1',
+      name: 'Test Seller',
+      email: 'seller@phone.inshop.local',
+      isVerifiedSeller: true,
+      sellerActivatedAt: new Date().toISOString(),
+      isAdmin: false,
+      sellerProfile: {
+        id: 'sp-1',
+        userId: 'seller-1',
+        username: 'test_shop',
+        shopName: 'Test Seller',
+        bio: 'Bio text',
+        profilePhotoUrl: null,
+        address: 'Tehran',
+        addressShow: true,
+        phones: [{ id: 'p-1', phoneNumber: '09121111111' }],
+      },
+    });
+  }),
+  http.patch('http://localhost:3000/seller-profile/me', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    return HttpResponse.json({
+      id: 'sp-1',
+      userId: 'seller-1',
+      username: 'test_shop',
+      shopName: body.shopName ?? 'Test Seller',
+      bio: body.bio ?? null,
+      profilePhotoUrl: null,
+      address: body.address ?? null,
+      addressShow: body.addressShow ?? true,
+    });
+  }),
+  http.patch('/seller-profile/me', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    return HttpResponse.json({
+      id: 'sp-1',
+      userId: 'seller-1',
+      username: 'test_shop',
+      shopName: body.shopName ?? 'Test Seller',
+      bio: body.bio ?? null,
+      profilePhotoUrl: null,
+      address: body.address ?? null,
+      addressShow: body.addressShow ?? true,
+    });
+  }),
+  http.post('http://localhost:3000/seller-profile/me/photo', () => {
+    return HttpResponse.json({
+      id: 'sp-1',
+      userId: 'seller-1',
+      username: 'test_shop',
+      profilePhotoUrl: 'http://localhost:3000/uploads/profiles/seller-1/avatar.jpg',
+    });
+  }),
+  http.post('/seller-profile/me/photo', () => {
+    return HttpResponse.json({
+      id: 'sp-1',
+      userId: 'seller-1',
+      username: 'test_shop',
+      profilePhotoUrl: '/uploads/profiles/seller-1/avatar.jpg',
     });
   }),
 ];
