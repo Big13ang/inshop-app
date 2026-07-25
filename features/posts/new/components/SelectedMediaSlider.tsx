@@ -3,16 +3,30 @@
 import React, { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { cva } from 'class-variance-authority';
-import { useShallow } from 'zustand/react/shallow';
 import PostSlider from '@/components/ui/PostSlider';
 import { cn } from '@/lib/utils';
 import { useMediaStore } from '../services/mediaStore';
+import { MediaItem } from '../types';
 
 import DeleteMediaButton from './DeleteMediaButton';
 
 interface SelectedMediaSliderProps {
   aspectClassName?: string;
   isCompact?: boolean;
+}
+
+type SelectedMediaItem = MediaItem & {
+  order: number;
+  previewUrl: string;
+};
+
+
+function isSelectedMediaItem(item: MediaItem): item is SelectedMediaItem {
+  return item.order !== null && Boolean(item.previewUrl);
+}
+
+function sortByOrder(a: SelectedMediaItem, b: SelectedMediaItem): number {
+  return a.order - b.order;
 }
 
 const sliderContainerVariants = cva(
@@ -37,20 +51,14 @@ export default function SelectedMediaSlider({
 }: SelectedMediaSliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const mediaItems = useMediaStore(
-    useShallow(s =>
-      s.mediaList
-        .filter(item => item.order !== null)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-        .map(item => ({
-          id: item.id,
-          url: item.previewUrl!,
-        }))
-    )
-  );
+  const storeMediaList = useMediaStore((s) => s.mediaList);
 
-  const mediaList = mediaItems.map(item => ({ url: item.url }));
-  const activeMediaId = mediaItems[activeIndex]?.id;
+  const selectedMediaItems = storeMediaList
+    .filter(isSelectedMediaItem)
+    .sort(sortByOrder);
+
+  const mediaList = selectedMediaItems.map((item) => ({ url: item.previewUrl }));
+  const activeMediaId = selectedMediaItems[activeIndex]?.id;
 
   function handleActiveChange(idx: number) {
     setActiveIndex(idx);

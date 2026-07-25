@@ -43,7 +43,7 @@ export function tusUpload({
     return new Promise((resolve) => {
         const upload = new tus.Upload(file, {
             endpoint,
-            chunkSize: 5 * 1024 * 1024,
+            chunkSize: 2 * 1024 * 1024,
             retryDelays: [0, 1_000, 3_000, 5_000],
             removeFingerprintOnSuccess: true,
             httpStack: new FetchHttpStack(),

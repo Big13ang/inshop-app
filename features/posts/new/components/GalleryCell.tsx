@@ -65,7 +65,7 @@ export default function GalleryCell({ id, selectionIndex, onToggle }: GalleryCel
       {/* Order badge */}
       <div className="absolute top-1.5 right-1.5 z-20">
         {isSelected ? (
-          <div className="w-5.5 h-5.5 rounded-full bg-primary text-on-primary border border-white/80 flex items-center justify-center text-[10px] font-black shadow-sm">
+          <div className="w-5.5 h-5.5 rounded-full bg-primary text-on-primary border border-white/80 flex items-center justify-center text-[10px] leading-none pt-0.5 font-black shadow-sm select-none">
             {selectionIndex + 1}
           </div>
         ) : (

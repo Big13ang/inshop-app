@@ -23,7 +23,8 @@ export const text = {
   // Caption form
   captionLabel: 'توضیحات محصول',
   captionPlaceholder: 'توضیحات محصول را در این قسمت بنویسید',
-  captionError: ERROR_MESSAGES.validation.captionRequired,
+  captionError: ERROR_MESSAGES.validation.minCaptionLength(10),
+  captionHelperText: ERROR_MESSAGES.validation.minCaptionLength(10),
 
 
   // Upload overlay

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { Dialog } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/button';
 import { storage } from '@/lib/utils';
@@ -9,16 +9,33 @@ import { storageKeys } from '@/lib/constants/storageKeys';
 const STORAGE_KEY = storageKeys.localStorage.posts.addPostOnboardingSeen;
 
 function hasSeenOnboarding(): boolean {
+  if (typeof window === 'undefined') return true;
   const result = storage.get(STORAGE_KEY);
   return result.ok && result.value === '1';
 }
 
+const subscribeOnboarding = (onStoreChange: () => void) => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', onStoreChange);
+    return () => window.removeEventListener('storage', onStoreChange);
+  }
+  return () => {};
+};
+const getSnapshotOnboarding = () => !hasSeenOnboarding();
+const getServerSnapshotOnboarding = () => false;
+
 export default function AddPostOnboardingSheet() {
-  const [isOpen, setIsOpen] = useState(() => !hasSeenOnboarding());
+  const shouldShow = useSyncExternalStore(
+    subscribeOnboarding,
+    getSnapshotOnboarding,
+    getServerSnapshotOnboarding
+  );
+  const [userDismissed, setUserDismissed] = useState(false);
+  const isOpen = shouldShow && !userDismissed;
 
   function handleClose() {
     storage.set(STORAGE_KEY, '1');
-    setIsOpen(false);
+    setUserDismissed(true);
   }
 
   return (
@@ -51,3 +68,4 @@ export default function AddPostOnboardingSheet() {
     </Dialog.Root>
   );
 }
+

@@ -57,20 +57,17 @@ describe('AddPostClientWrapper', () => {
     expect(mockGoBackSafely).toHaveBeenCalled();
   });
 
-  it('resets the draft upload session when leaving the route', () => {
-    const { client, unmount } = renderWithProviders();
+  it('resets the media store state when leaving the route', () => {
+    const { unmount } = renderWithProviders();
 
     act(() => {
-      useMediaStore.getState().setUploadSession('session-to-clear', '2026-07-21T00:00:00Z');
-    });
-    client.setQueryData(queryKeys.posts.uploadSession(), {
-      uploadSessionId: 'session-to-clear',
-      expiresAt: '2026-07-21T00:00:00Z',
+      useMediaStore.getState().setPhase('details');
+      useMediaStore.getState().setCaption('test');
     });
 
     unmount();
 
-    expect(useMediaStore.getState().uploadSessionId).toBeNull();
-    expect(client.getQueryData(queryKeys.posts.uploadSession())).toBeUndefined();
+    expect(useMediaStore.getState().phase).toBe('select');
+    expect(useMediaStore.getState().caption).toBe('');
   });
 });

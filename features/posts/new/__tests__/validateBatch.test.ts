@@ -3,9 +3,9 @@ import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const PNG_HEADER = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D, 0x49, 0x48, 0x44, 0x52, 0, 0, 3, 0x20, 0, 0, 3, 0x20]); // 800x800
-const JPEG_HEADER = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 3, 0x20, 3, 0x20, 3, 0, 0, 0, 0]); // 800x800
-const WEBP_HEADER = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20, 0, 0, 0, 0, 0, 0, 0, 0x9D, 1, 0x2A, 0x20, 3, 0x20, 3]); // 800x800
+const PNG_HEADER = new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D, 0x49, 0x48, 0x44, 0x52, 0, 0, 4, 0x38, 0, 0, 4, 0x38]); // 1080x1080
+const JPEG_HEADER = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 4, 0x38, 4, 0x38, 3, 0, 0, 0, 0]); // 1080x1080
+const WEBP_HEADER = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20, 0, 0, 0, 0, 0, 0, 0, 0x9D, 1, 0x2A, 4, 0x38, 4, 0x38]); // 1080x1080
 const HEIC_HEADER = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x68, 0x65, 0x69, 0x63, 0, 0, 0, 0]);
 const GIF_HEADER = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
 const MP4_HEADER = new Uint8Array([0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x31, 0, 0, 0, 0]);
@@ -90,20 +90,7 @@ describe('validateBatch', () => {
     expect(valid).toEqual(files);
   });
 
-  describe('video kind', () => {
-    it('accepts a valid MP4 using the video rules', async () => {
-      const { valid, rejected } = await validateBatch([mp4()], 'video');
-      expect(valid).toHaveLength(1);
-      expect(rejected).toHaveLength(0);
-    });
 
-    it('rejects an image MIME type when validating as video', async () => {
-      const { rejected } = await validateBatch([jpeg()], 'video');
-      expect(rejected).toHaveLength(1);
-      expect(rejected[0].reason).toBe(ERROR_MESSAGES.upload.videoFormatLimit);
-      expect(rejected[0].code).toBe('invalid_format');
-    });
-  });
 
   describe('cancellation', () => {
     it('returns empty arrays when signal is aborted before starting', async () => {

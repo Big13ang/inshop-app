@@ -24,3 +24,30 @@ describe('createUuid', () => {
     );
   });
 });
+
+describe('extractMediaId', () => {
+  const { extractMediaId } = require('../uuid');
+
+  it('extracts mediaId from a full URL', () => {
+    expect(
+      extractMediaId('http://localhost:3000/uploads/63effa67-0af5-4686-a3da-28f3d5dceeef'),
+    ).toBe('63effa67-0af5-4686-a3da-28f3d5dceeef');
+  });
+
+  it('handles query parameters and trailing hashes', () => {
+    expect(
+      extractMediaId('http://localhost:3000/uploads/63effa67-0af5-4686-a3da-28f3d5dceeef?v=1#section'),
+    ).toBe('63effa67-0af5-4686-a3da-28f3d5dceeef');
+  });
+
+  it('formats unhyphenated 32-char hex string into standard UUID', () => {
+    expect(
+      extractMediaId('http://localhost:3000/uploads/63effa670af54686a3da28f3d5dceeef'),
+    ).toBe('63effa67-0af5-4686-a3da-28f3d5dceeef');
+  });
+
+  it('returns fallbackId when URL is undefined or empty', () => {
+    expect(extractMediaId(undefined, 'fallback-id')).toBe('fallback-id');
+    expect(extractMediaId(null, 'fallback-id')).toBe('fallback-id');
+  });
+});

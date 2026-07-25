@@ -7,14 +7,17 @@ import { POST_STATUS } from '../../../services/postsQueryService';
 
 jest.mock('@/components/ui/PostSlider', () => ({
   __esModule: true,
-  default: ({ images }: { images: string[] }) => (
-    <div data-testid="post-slider">
-      {images.map((url) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img key={url} src={url} alt="" />
-      ))}
-    </div>
-  ),
+  default: ({ images, items }: { images?: string[]; items?: Array<{ url: string }> }) => {
+    const list = images || items?.map((i) => i.url) || [];
+    return (
+      <div data-testid="post-slider">
+        {list.map((url) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={url} src={url} alt="" />
+        ))}
+      </div>
+    );
+  },
 }));
 
 function post(overrides: Partial<PendingPost> = {}): PendingPost {

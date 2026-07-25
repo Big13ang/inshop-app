@@ -117,7 +117,7 @@ export const postsQueryService = {
           '/upload-sessions/publish',
           payload
         );
-        if (!res.ok) throw new Error(res.error.message);
+        if (!res.ok) throw new Error(res.error?.message || 'Submit post failed');
       },
       onSuccess,
       onError: () => {

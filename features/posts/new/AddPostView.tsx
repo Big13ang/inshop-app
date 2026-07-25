@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 
 import AddPostHeader from './components/AddPostHeader';
 import AddPostOnboardingSheet from './components/AddPostOnboardingSheet';
@@ -16,9 +16,20 @@ interface AddPostViewProps {
   onNavigate?: (intent: PostFlowNavigationIntent) => void;
 }
 
+const subscribeMounted = () => () => {};
+const getSnapshotMounted = () => true;
+const getServerSnapshotMounted = () => false;
+
+function useHasMounted() {
+  return useSyncExternalStore(subscribeMounted, getSnapshotMounted, getServerSnapshotMounted);
+}
+
 export default function AddPostView({ onNavigate: _onNavigate }: AddPostViewProps) {
   const imagesInputRef = useRef<HTMLInputElement>(null);
-  const { data: uploadSession, isSuccess, isLoading: isSessionLoading } = useUploadSession();
+  const isMounted = useHasMounted();
+  const { data: uploadSession, isSuccess, isPending: isSessionPending } = useUploadSession();
+  const isSessionLoading = isMounted && isSessionPending;
+  const accept = isMounted && isMobile() ? 'image/*' : 'image/jpeg,image/png,image/webp';
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files!);
@@ -30,12 +41,9 @@ export default function AddPostView({ onNavigate: _onNavigate }: AddPostViewProp
     e.target.value = '';
   };
 
-
-
-
-  const accept = isMobile()
-    ? 'image/*'
-    : 'image/jpeg,image/png,image/webp';
+  const handleTriggerPicker = () => {
+    imagesInputRef.current?.click();
+  };
 
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full bg-surface-l3 relative overflow-hidden select-none">
@@ -56,10 +64,11 @@ export default function AddPostView({ onNavigate: _onNavigate }: AddPostViewProp
 
       <AddPostFooter
         isSessionLoading={isSessionLoading}
-        onTriggerPicker={() => imagesInputRef.current?.click()}
+        onTriggerPicker={handleTriggerPicker}
       />
 
     </div>
   );
 }
+
 

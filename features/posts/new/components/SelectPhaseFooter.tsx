@@ -4,6 +4,9 @@ import Footer from '@/components/layout/Footer';
 import { ChevronRight, Plus, Loader2 } from 'lucide-react';
 import { MAX_IMAGES, text } from '../constants';
 import { useMediaStore } from '../services/mediaStore';
+import type { MediaItem } from '../types';
+
+import { toast } from 'sonner';
 
 interface SelectPhaseFooterProps {
   isSessionLoading: boolean;
@@ -11,6 +14,9 @@ interface SelectPhaseFooterProps {
 }
 
 const PENDING_STATS = new Set(['queued', 'uploading', 'pending']);
+
+const isMediaSelected = (m: MediaItem) =>
+  m.status === 'uploaded' || (m.order !== null && !!m.previewUrl);
 
 export default function SelectPhaseFooter({
   isSessionLoading,
@@ -22,9 +28,16 @@ export default function SelectPhaseFooter({
   const isPending = useMediaStore((s) =>
     s.mediaList.some((m) => PENDING_STATS.has(m.status)),
   );
+  const hasSelectedMedia = useMediaStore((s) =>
+    s.mediaList.some(isMediaSelected),
+  );
 
   const handleGoToDetails = () => {
     if (isPending) return;
+    if (!hasSelectedMedia) {
+      toast.warning(text.alertNoImages);
+      return;
+    }
     setPhase('details');
   };
 

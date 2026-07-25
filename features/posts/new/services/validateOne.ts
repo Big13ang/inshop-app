@@ -43,7 +43,12 @@ function isUnsupportedFormat(format: string): boolean {
 }
 
 async function readHeaderBuffer(file: File, bytes: number = 262144): Promise<Result<ArrayBuffer>> {
-  return Result.try(file.slice(0, bytes).arrayBuffer());
+  try {
+    const buf = await file.slice(0, bytes).arrayBuffer();
+    return Result.ok(buf);
+  } catch (err) {
+    return Result.err(err instanceof Error ? err : new Error(String(err)));
+  }
 }
 
 function validateHeaderRules(parsed: ParsedHeader): Omit<FileValidationRejection, 'file'> | null {
@@ -94,6 +99,9 @@ export function registerValidator(kind: string, validator: ValidatorFn): void {
 }
 
 export async function validateOne(file: File, kind: MediaKind = 'image'): Promise<FileValidationRejection | null> {
+  if (!file || typeof file.size !== 'number') {
+    return null;
+  }
   const validator = VALIDATORS[kind];
   if (!validator) {
     return null;

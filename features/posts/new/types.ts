@@ -11,6 +11,7 @@ export type MediaStatus =
 
 export type MediaItem = {
   id: string;
+  serverMediaId: null | string;
   kind: MediaKind;
   status: MediaStatus;
   uploadProgress: number;

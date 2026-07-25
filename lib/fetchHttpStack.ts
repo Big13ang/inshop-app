@@ -1,6 +1,6 @@
 import * as tus from 'tus-js-client';
 
-class FetchRequest implements tus.HttpRequest {
+export class FetchRequest implements tus.HttpRequest {
   private headers: Record<string, string> = {};
   private controller = new AbortController();
 
@@ -52,7 +52,7 @@ class FetchRequest implements tus.HttpRequest {
   }
 }
 
-class FetchResponse implements tus.HttpResponse {
+export class FetchResponse implements tus.HttpResponse {
   constructor(
     private res: Response,
     private body: string,

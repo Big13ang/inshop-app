@@ -22,14 +22,14 @@ describe('navigation utility', () => {
   describe('goBackSafely', () => {
     it('calls router.replace("/") if not internal', () => {
       setIsInternal(false);
-      goBackSafely(mockRouter);
+      goBackSafely(mockRouter as any);
       expect(mockRouter.replace).toHaveBeenCalledWith('/');
       expect(mockRouter.back).not.toHaveBeenCalled();
     });
 
     it('calls router.back() if internal', () => {
       setIsInternal(true);
-      goBackSafely(mockRouter);
+      goBackSafely(mockRouter as any);
       expect(mockRouter.back).toHaveBeenCalled();
       expect(mockRouter.replace).not.toHaveBeenCalled();
     });

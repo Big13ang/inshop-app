@@ -58,10 +58,12 @@ test.describe('Add New Post — details phase', () => {
     await expect(addPostPage.page.getByText('فایل 1 از 1')).toBeVisible();
   });
 
-  test('caption error is NOT shown on initial render before the user types', async ({
+  test('caption helper text is rendered in grayish text on initial render', async ({
     addPostPage,
   }) => {
     await addPostPage.advanceToDetailsPhase();
-    await expect(addPostPage.page.getByText(text.captionError)).not.toBeVisible();
+    const helperMsg = addPostPage.page.getByText(text.captionHelperText);
+    await expect(helperMsg).toBeVisible();
+    await expect(helperMsg).toHaveClass(/text-zinc-500/);
   });
 });

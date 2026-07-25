@@ -16,7 +16,7 @@ export default function DetailsPhaseFooter() {
   const setPhase = useMediaStore((s) => s.setPhase);
   const reset = useMediaStore((s) => s.reset);
 
-  const { mutateAsync: publishPost, isPending: isPublishing } =
+  const { mutate: publishPost, isPending: isPublishing } =
     postsQueryService.useSubmitPost(() => {
       toast.success(text.uploadSuccessTitle, {
         description: text.uploadSuccessDesc,
@@ -30,10 +30,19 @@ export default function DetailsPhaseFooter() {
     if (!session) return;
 
     const mediaList = useMediaStore.getState().mediaList;
-    const selectedMediaIds = mediaList
+    const selectedItems = mediaList
       .filter((i) => i.order !== null)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((i) => i.id);
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const isUploadingOrMissingServerId = selectedItems.some(
+      (i) => i.status !== 'uploaded' || !i.serverMediaId,
+    );
+    if (isUploadingOrMissingServerId) {
+      toast.warning(text.alertUploadsInProgress);
+      return;
+    }
+
+    const selectedMediaIds = selectedItems.map((i) => i.serverMediaId!);
 
     publishPost({
       mediaIds: selectedMediaIds,
@@ -52,7 +61,7 @@ export default function DetailsPhaseFooter() {
         onClick={handlePublishPost}
         disabled={shareDisabled}
         variant="primary"
-        className="w-full"
+        className="w-1/2"
       >
         {isPublishing ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -67,7 +76,7 @@ export default function DetailsPhaseFooter() {
         onClick={handleGoBackToSelect}
         disabled={isPublishing}
         variant="outline"
-        className="flex-1"
+        className="w-1/2"
       >
         <span className="leading-none">{text.previousButton}</span>
       </Footer.Button>

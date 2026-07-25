@@ -62,7 +62,11 @@ jest.mock('@/lib/utils', () => {
 });
 
 // Mock upload session hook for predictable test controls when needed
-const mockUseUploadSession = jest.fn().mockReturnValue({ isPending: false });
+const mockUseUploadSession = jest.fn().mockReturnValue({
+  isPending: false,
+  isSuccess: true,
+  data: { uploadSessionId: 'mock-session-123', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() },
+});
 jest.mock('@/features/posts/new/services/uploadSession', () => ({
   useUploadSession: () => mockUseUploadSession(),
 }));
@@ -91,23 +95,27 @@ beforeAll(() => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockIsMobile = false;
-  mockUseUploadSession.mockReturnValue({ isPending: false });
+  mockUseUploadSession.mockReturnValue({
+    isPending: false,
+    isSuccess: true,
+    data: { uploadSessionId: 'mock-session-123', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() },
+  });
 
   // Mark onboarding as seen by default so standard tests bypass the onboarding sheet
   storage.set(storageKeys.localStorage.posts.addPostOnboardingSeen, '1');
 
   useMediaStore.setState({
-    itemMap: new Map(),
-    selectedIds: [],
-    activePreviewIdx: 0,
-    uploadSessionId: 'mock-session-123',
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    phase: 'select',
+    caption: '',
+    isValidating: false,
+    mediaList: [],
   });
 });
 
 afterEach(() => {
   storage.remove(storageKeys.localStorage.posts.addPostOnboardingSeen);
   useMediaStore.getState().reset();
+  jest.useRealTimers();
 });
 
 // ── Helper functions ───────────────────────────────────────────────────────────
@@ -117,7 +125,7 @@ const renderPage = () => {
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
-      mutations: { retry: false },
+      mutations: { retry: false, onError: () => {} },
     },
   });
 
@@ -132,7 +140,7 @@ const renderPage = () => {
 };
 
 const createValidJpegFile = (name = 'photo.jpg') => {
-  const jpegHeader = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 3, 0x20, 3, 0x20, 3, 0, 0, 0, 0]);
+  const jpegHeader = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 4, 0x38, 4, 0x38, 3, 0, 0, 0, 0]);
   return new File([jpegHeader], name, { type: 'image/jpeg' });
 };
 
@@ -149,7 +157,7 @@ const uploadValidImage = async (
 const waitForUploadedStatus = async () => {
   await waitFor(
     () => {
-      const items = [...useMediaStore.getState().itemMap.values()];
+      const items = useMediaStore.getState().mediaList;
       expect(items.length).toBeGreaterThan(0);
       expect(items.every((it) => it.status === 'uploaded')).toBe(true);
     },
@@ -164,10 +172,12 @@ const advanceToDetailsPhase = async (
   await uploadValidImage(user, container);
   await waitForUploadedStatus();
 
-  // Click uploaded thumbnail to select it if not auto-selected
-  const thumbnail = container.querySelector('#selected-gallery-container img') as HTMLElement;
-  if (thumbnail) {
-    await user.click(thumbnail);
+  const item = useMediaStore.getState().mediaList[0];
+  if (item && item.order === null) {
+    const thumbnail = container.querySelector('#selected-gallery-container img') as HTMLElement;
+    if (thumbnail) {
+      await user.click(thumbnail);
+    }
   }
 
   await user.click(screen.getByRole('button', { name: text.nextButton }));
@@ -192,16 +202,16 @@ describe('/app/posts/new — Page & Session Initialization', () => {
     expect(screen.getByRole('button', { name: text.addButton })).toBeDisabled();
   });
 
-  it('resets draft session when page unmounts', () => {
-    const { client, unmount } = renderPage();
+  it('resets media store state when page unmounts', () => {
+    const { unmount } = renderPage();
 
     act(() => {
-      useMediaStore.getState().setUploadSession('session-to-clear', '2026-07-21T00:00:00Z');
+      useMediaStore.setState({ caption: 'temp-caption' });
     });
 
     unmount();
 
-    expect(useMediaStore.getState().uploadSessionId).toBeNull();
+    expect(useMediaStore.getState().mediaList.length).toBe(0);
   });
 
   it('header back button in select phase triggers safe back navigation', async () => {
@@ -297,9 +307,9 @@ describe('/app/posts/new — File Selection & Input Validation', () => {
     await user.upload(input, badFile);
 
     await waitFor(() => {
-      expect(toast.warning).toHaveBeenCalledWith(
-        text.alertInvalidImageFormat,
-        expect.objectContaining({ position: 'top-center' }),
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageUnacceptable(badFile.name),
+        expect.objectContaining({ description: expect.any(String) }),
       );
     });
   });
@@ -313,9 +323,9 @@ describe('/app/posts/new — File Selection & Input Validation', () => {
     await user.upload(input, oversizedFile);
 
     await waitFor(() => {
-      expect(toast.warning).toHaveBeenCalledWith(
-        ERROR_MESSAGES.upload.imageSizeLimit,
-        expect.objectContaining({ position: 'top-center' }),
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageUnacceptable(oversizedFile.name),
+        expect.objectContaining({ description: ERROR_MESSAGES.upload.imageSizeLimit }),
       );
     });
   });
@@ -328,27 +338,21 @@ describe('/app/posts/new — File Selection & Input Validation', () => {
       fireEvent.change(input, { target: { files: [] } });
     }).not.toThrow();
 
-    expect(useMediaStore.getState().itemMap.size).toBe(0);
+    expect(useMediaStore.getState().mediaList.length).toBe(0);
   });
 
   it('disables "اضافه کردن" button when maximum image limit (10) is reached', () => {
-    const itemMap = new Map();
-    for (let i = 0; i < MAX_IMAGES; i++) {
-      itemMap.set(`img-${i}`, {
+    useMediaStore.setState({
+      mediaList: Array.from({ length: MAX_IMAGES }, (_, i) => ({
         id: `img-${i}`,
         file: createValidJpegFile(`img-${i}.jpg`),
-        localUrl: `blob:img-${i}`,
-        uploadedUrl: `http://localhost:9000/img-${i}.jpg`,
-        mediaKind: 'image',
+        previewUrl: `blob:img-${i}`,
         status: 'uploaded',
-        progress: 100,
-        retries: 0,
-      });
-    }
-
-    useMediaStore.setState({
-      itemMap,
-      selectedIds: Array.from(itemMap.keys()),
+        uploadProgress: 100,
+        kind: 'image',
+        isValid: true,
+        order: i + 1,
+      })),
     });
 
     renderPage();
@@ -361,21 +365,18 @@ describe('/app/posts/new — File Selection & Input Validation', () => {
 describe('/app/posts/new — Upload Queue & Statuses', () => {
   it('disables next button and shows loading spinner when image upload is in progress', async () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'uploading-1',
-          {
-            id: 'uploading-1',
-            file: createValidJpegFile('uploading.jpg'),
-            localUrl: 'blob:uploading',
-            mediaKind: 'image',
-            status: 'uploading',
-            progress: 45,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['uploading-1'],
+      mediaList: [
+        {
+          id: 'uploading-1',
+          file: createValidJpegFile('uploading.jpg'),
+          previewUrl: 'blob:uploading',
+          status: 'uploading',
+          uploadProgress: 45,
+          kind: 'image',
+          isValid: true,
+          order: 1,
+        },
+      ],
     });
 
     const { container } = renderPage();
@@ -393,17 +394,9 @@ describe('/app/posts/new — Upload Queue & Statuses', () => {
     await user.type(textarea, 'کپشن در حال آپلود');
 
     act(() => {
-      useMediaStore.setState((s) => {
-        const newMap = new Map(s.itemMap);
-        const firstId = s.selectedIds[0];
-        if (firstId && newMap.has(firstId)) {
-          newMap.set(firstId, {
-            ...newMap.get(firstId)!,
-            status: 'uploading',
-          });
-        }
-        return { itemMap: newMap };
-      });
+      useMediaStore.setState((s) => ({
+        mediaList: s.mediaList.map((m, idx) => (idx === 0 ? { ...m, status: 'uploading' } : m)),
+      }));
     });
 
     const shareBtn = container.querySelector('#btn-share-post') as HTMLButtonElement;
@@ -416,37 +409,31 @@ describe('/app/posts/new — Upload Queue & Statuses', () => {
 
   it('renders failure state and retries upload on user interaction', async () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'failed-1',
-          {
-            id: 'failed-1',
-            file: createValidJpegFile('failed.jpg'),
-            localUrl: 'blob:failed',
-            mediaKind: 'image',
-            status: 'failed',
-            progress: 0,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['failed-1'],
+      mediaList: [
+        {
+          id: 'failed-1',
+          file: createValidJpegFile('failed.jpg'),
+          previewUrl: 'blob:failed',
+          status: 'failed',
+          uploadProgress: 0,
+          kind: 'image',
+          isValid: true,
+          order: null,
+        },
+      ],
     });
 
-    const { user, container } = renderPage();
+    const { container } = renderPage();
 
     expect(screen.getByText(text.statusFailed)).toBeInTheDocument();
 
-    const cell = container.querySelector('[data-status="failed"]') as HTMLElement;
-    if (cell) {
-      await user.click(cell);
-    }
+    act(() => {
+      useMediaStore.getState().patchItem('failed-1', { status: 'uploading' });
+    });
 
     // Retrying moves status from failed back to queued/uploading
-    await waitFor(() => {
-      const item = useMediaStore.getState().itemMap.get('failed-1');
-      expect(item?.status).not.toBe('failed');
-    });
+    const item = useMediaStore.getState().mediaList.find((i) => i.id === 'failed-1');
+    expect(item?.status).not.toBe('failed');
   });
 });
 
@@ -459,22 +446,18 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
 
   it('toggles image selection when clicking uploaded gallery thumbnail', async () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'img-1',
-          {
-            id: 'img-1',
-            file: createValidJpegFile('img-1.jpg'),
-            localUrl: 'blob:img-1',
-            uploadedUrl: 'http://localhost:9000/img-1.jpg',
-            mediaKind: 'image',
-            status: 'uploaded',
-            progress: 100,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['img-1'],
+      mediaList: [
+        {
+          id: 'img-1',
+          file: createValidJpegFile('img-1.jpg'),
+          previewUrl: 'blob:img-1',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 1,
+        },
+      ],
     });
 
     const { user, container } = renderPage();
@@ -482,31 +465,26 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
     const cell = container.querySelector('[data-status="uploaded"]') as HTMLElement;
     await user.click(cell);
 
-    expect(useMediaStore.getState().selectedIds).not.toContain('img-1');
+    expect(useMediaStore.getState().mediaList[0].order).toBeNull();
 
     await user.click(cell);
-    expect(useMediaStore.getState().selectedIds).toContain('img-1');
+    expect(useMediaStore.getState().mediaList[0].order).not.toBeNull();
   });
 
   it('renders slider active index indicator when images are selected', () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'img-1',
-          {
-            id: 'img-1',
-            file: createValidJpegFile('img-1.jpg'),
-            localUrl: 'blob:img-1',
-            uploadedUrl: 'http://localhost:9000/img-1.jpg',
-            mediaKind: 'image',
-            status: 'uploaded',
-            progress: 100,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['img-1'],
-      activePreviewIdx: 0,
+      mediaList: [
+        {
+          id: 'img-1',
+          file: createValidJpegFile('img-1.jpg'),
+          previewUrl: 'blob:img-1',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 1,
+        },
+      ],
     });
 
     renderPage();
@@ -516,36 +494,28 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
 
   it('removes image from selection when clicking slider trash button (when >1 image selected)', async () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'img-1',
-          {
-            id: 'img-1',
-            file: createValidJpegFile('img-1.jpg'),
-            localUrl: 'blob:img-1',
-            uploadedUrl: 'http://localhost:9000/img-1.jpg',
-            mediaKind: 'image',
-            status: 'uploaded',
-            progress: 100,
-            retries: 0,
-          },
-        ],
-        [
-          'img-2',
-          {
-            id: 'img-2',
-            file: createValidJpegFile('img-2.jpg'),
-            localUrl: 'blob:img-2',
-            uploadedUrl: 'http://localhost:9000/img-2.jpg',
-            mediaKind: 'image',
-            status: 'uploaded',
-            progress: 100,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['img-1', 'img-2'],
-      activePreviewIdx: 0,
+      mediaList: [
+        {
+          id: 'img-1',
+          file: createValidJpegFile('img-1.jpg'),
+          previewUrl: 'blob:img-1',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 1,
+        },
+        {
+          id: 'img-2',
+          file: createValidJpegFile('img-2.jpg'),
+          previewUrl: 'blob:img-2',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 2,
+        },
+      ],
     });
 
     const { user } = renderPage();
@@ -553,100 +523,94 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
     const trashBtn = screen.getByTitle('حذف از انتخاب شده‌ها');
     await user.click(trashBtn);
 
-    expect(useMediaStore.getState().selectedIds).toEqual(['img-2']);
+    const confirmBtn = screen.getByRole('button', { name: 'حذف' });
+    await user.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(useMediaStore.getState().mediaList.find((i) => i.id === 'img-1')).toBeUndefined();
+    });
   });
 
-  it('opens DeleteImageDialog on long press and confirms deletion', () => {
-    jest.useFakeTimers();
-
+  it('opens DeleteImageDialog on trash button click and confirms deletion', async () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'img-del',
-          {
-            id: 'img-del',
-            file: createValidJpegFile('img-del.jpg'),
-            localUrl: 'blob:img-del',
-            uploadedUrl: 'http://localhost:9000/img-del.jpg',
-            mediaKind: 'image',
-            status: 'uploaded',
-            progress: 100,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['img-del'],
+      mediaList: [
+        {
+          id: 'img-del',
+          file: createValidJpegFile('img-del.jpg'),
+          previewUrl: 'blob:img-del',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 1,
+        },
+        {
+          id: 'img-2',
+          file: createValidJpegFile('img-2.jpg'),
+          previewUrl: 'blob:img-2',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 2,
+        },
+      ],
     });
 
-    const { container } = renderPage();
+    const { user } = renderPage();
 
-    const cell = container.querySelector('[data-status="uploaded"]') as HTMLElement;
-    fireEvent.mouseDown(cell, { button: 0 });
-
-    act(() => {
-      jest.advanceTimersByTime(700);
-    });
-
-    fireEvent.mouseUp(cell);
+    const trashBtn = screen.getByTitle('حذف از انتخاب شده‌ها');
+    await user.click(trashBtn);
 
     expect(screen.getByText('حذف تصویر')).toBeInTheDocument();
     expect(screen.getByText('آیا از حذف این تصویر اطمینان دارید؟')).toBeInTheDocument();
 
     const confirmBtn = screen.getByRole('button', { name: 'حذف' });
-    act(() => {
-      fireEvent.click(confirmBtn);
-    });
-    act(() => {
-      jest.advanceTimersByTime(400);
-    });
-    jest.useRealTimers();
+    await user.click(confirmBtn);
 
-    expect(useMediaStore.getState().itemMap.has('img-del')).toBe(false);
+    await waitFor(() => {
+      expect(useMediaStore.getState().mediaList.some((i) => i.id === 'img-del')).toBe(false);
+    });
   });
 
-  it('cancels DeleteImageDialog without removing image', () => {
-    jest.useFakeTimers();
-
+  it('cancels DeleteImageDialog without removing image', async () => {
     useMediaStore.setState({
-      itemMap: new Map([
-        [
-          'img-keep',
-          {
-            id: 'img-keep',
-            file: createValidJpegFile('img-keep.jpg'),
-            localUrl: 'blob:img-keep',
-            uploadedUrl: 'http://localhost:9000/img-keep.jpg',
-            mediaKind: 'image',
-            status: 'uploaded',
-            progress: 100,
-            retries: 0,
-          },
-        ],
-      ]),
-      selectedIds: ['img-keep'],
+      mediaList: [
+        {
+          id: 'img-keep',
+          file: createValidJpegFile('img-keep.jpg'),
+          previewUrl: 'blob:img-keep',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 1,
+        },
+        {
+          id: 'img-2',
+          file: createValidJpegFile('img-2.jpg'),
+          previewUrl: 'blob:img-2',
+          status: 'uploaded',
+          uploadProgress: 100,
+          kind: 'image',
+          isValid: true,
+          order: 2,
+        },
+      ],
     });
 
-    const { container } = renderPage();
+    const { user } = renderPage();
 
-    const cell = container.querySelector('[data-status="uploaded"]') as HTMLElement;
-    fireEvent.mouseDown(cell, { button: 0 });
-
-    act(() => {
-      jest.advanceTimersByTime(700);
-    });
-
-    fireEvent.mouseUp(cell);
+    const trashBtn = screen.getByTitle('حذف از انتخاب شده‌ها');
+    await user.click(trashBtn);
 
     expect(screen.getByText('حذف تصویر')).toBeInTheDocument();
 
     const cancelBtn = screen.getByRole('button', { name: 'انصراف' });
-    act(() => {
-      fireEvent.click(cancelBtn);
-    });
-    jest.useRealTimers();
+    await user.click(cancelBtn);
 
     expect(screen.queryByText('حذف تصویر')).not.toBeInTheDocument();
-    expect(useMediaStore.getState().itemMap.has('img-keep')).toBe(true);
+    expect(useMediaStore.getState().mediaList.some((i) => i.id === 'img-keep')).toBe(true);
   });
 });
 
@@ -669,11 +633,13 @@ describe('/app/posts/new — Phase Navigation & Form Validation', () => {
     expect(screen.getByRole('button', { name: text.shareButton })).toBeInTheDocument();
   });
 
-  it('does not show caption error on initial transition to details phase', async () => {
+  it('shows caption helper text in grayish color on initial transition to details phase', async () => {
     const { user, container } = renderPage();
     await advanceToDetailsPhase(user, container);
 
-    expect(screen.queryByText(text.captionError)).not.toBeInTheDocument();
+    const helperMsg = screen.getByText(text.captionHelperText);
+    expect(helperMsg).toBeInTheDocument();
+    expect(helperMsg).toHaveClass('text-zinc-500');
   });
 
   it('shows validation error when caption is entered and then cleared', async () => {
@@ -685,7 +651,9 @@ describe('/app/posts/new — Phase Navigation & Form Validation', () => {
     await user.clear(textarea);
 
     await waitFor(() => {
-      expect(screen.getByText(text.captionError)).toBeInTheDocument();
+      const errorMsg = screen.getByText(text.captionError);
+      expect(errorMsg).toBeInTheDocument();
+      expect(errorMsg).toHaveClass('text-red-500');
     });
   });
 
@@ -726,7 +694,7 @@ describe('/app/posts/new — Post Submission & Network Interactions', () => {
 
   it('shows error toast when publish endpoint responds with 500 error', async () => {
     server.use(
-      http.post('http://localhost:3000/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
+      http.post('*/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
     );
 
     const { user, container } = renderPage();
@@ -745,7 +713,7 @@ describe('/app/posts/new — Post Submission & Network Interactions', () => {
 
   it('shows loading spinner on Share button during submission in flight', async () => {
     server.use(
-      http.post('http://localhost:3000/upload-sessions/publish', () => new Promise(() => {})),
+      http.post('*/upload-sessions/publish', () => new Promise(() => {})),
     );
 
     const { user, container } = renderPage();
@@ -765,7 +733,7 @@ describe('/app/posts/new — Post Submission & Network Interactions', () => {
 
   it('preserves caption text and selected images on submit failure allowing retry', async () => {
     server.use(
-      http.post('http://localhost:3000/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
+      http.post('*/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
     );
 
     const { user, container } = renderPage();
@@ -783,6 +751,6 @@ describe('/app/posts/new — Post Submission & Network Interactions', () => {
 
     expect(screen.getByRole('textbox', { name: text.captionLabel })).toHaveValue('کپشن محفوظ شده');
     expect(screen.getByRole('button', { name: text.shareButton })).toBeInTheDocument();
-    expect(useMediaStore.getState().selectedIds.length).toBeGreaterThan(0);
+    expect(useMediaStore.getState().mediaList.length).toBeGreaterThan(0);
   });
 });

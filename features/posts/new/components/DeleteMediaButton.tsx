@@ -34,10 +34,14 @@ export default function DeleteMediaButton({ mediaId }: DeleteMediaButtonProps) {
   function handleConfirmDelete() {
     if (!session?.uploadSessionId) return;
 
-    deletePhotoMutation({
-      mediaId,
-      uploadSessionId: session.uploadSessionId,
-    },
+    const mediaItem = useMediaStore.getState().mediaList.find((i) => i.id === mediaId);
+    if (!mediaItem?.serverMediaId) return;
+
+    deletePhotoMutation(
+      {
+        mediaId: mediaItem.serverMediaId,
+        uploadSessionId: session.uploadSessionId,
+      },
       {
         onSettled: () => setIsDialogOpen(false),
         onSuccess: () => useMediaStore.getState().removeItem(mediaId),

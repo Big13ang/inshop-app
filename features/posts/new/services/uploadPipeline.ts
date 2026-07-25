@@ -6,15 +6,16 @@ import { useMediaStore } from "./mediaStore";
 import { validateOne } from "./validateOne";
 import { tusUpload } from "@/lib/tus-client";
 import { ERROR_MESSAGES } from "@/lib/constants/errors";
-import { Result } from "@/lib/utils";
+import { Result, extractMediaId } from "@/lib/utils";
 
 import { MAX_IMAGES } from "../constants";
 
 const limit = pLimit(3);
 
-const buildMediaItem = (file: File): MediaItem => {
+export const buildMediaItem = (file: File): MediaItem => {
     return {
         id: crypto.randomUUID(),
+        serverMediaId: null,
         kind: getMediaKind(file),
         status: 'pending',
         uploadProgress: 0,
@@ -121,8 +122,8 @@ type UploadMediaWithTusArguments = {
 const uploadMediaWithTus = async ({
     onError,
     mediaItem,
-    onSuccess,
     onProgress,
+    onSuccess,
     uploadSessionId,
 }: UploadMediaWithTusArguments) => {
     return await tusUpload({
@@ -130,21 +131,30 @@ const uploadMediaWithTus = async ({
         id: mediaItem.id,
         file: mediaItem.file,
         onError,
-        onSuccess,
         onProgress,
+        onSuccess,
     })
 }
 
-const handleMeidaUploadError = (media: MediaItem, error: Error) => {
+const handleMediaUploadSuccess = (media: MediaItem, url?: string) => {
+    const serverMediaId = extractMediaId(url);
+    useMediaStore.getState().patchItem(media.id, {
+        status: 'uploaded',
+        serverMediaId: serverMediaId ?? null,
+    });
+};
+
+const handleMediaUploadError = (media: MediaItem, error: unknown) => {
     useMediaStore.getState().patchItem(media.id, {
         status: 'failed',
     });
 
-    let description = error.message;
-    if (error.message.includes('resolution') || error.message.includes('1080')) {
+    const errObj = error instanceof Error ? error : new Error(typeof error === 'string' ? error : 'Upload failed');
+    let description = errObj.message;
+    if (errObj.message.includes('resolution') || errObj.message.includes('1080')) {
         description = ERROR_MESSAGES.upload.resolutionTooSmall;
     } else {
-        const cleanMsg = error.message.replace(/^tus:\s*/i, '');
+        const cleanMsg = errObj.message.replace(/^tus:\s*/i, '');
         if (cleanMsg && cleanMsg.length < 150) {
             description = cleanMsg;
         }
@@ -155,12 +165,6 @@ const handleMeidaUploadError = (media: MediaItem, error: Error) => {
     });
 };
 
-const handleMeidaUploadSuccess = (media: MediaItem, url: string) => {
-    useMediaStore.getState().patchItem(media.id, {
-        previewUrl: url,
-        status: 'uploaded',
-    });
-};
 
 const handleMediaUploadProgress = (media: MediaItem, percentage: number) => {
     useMediaStore.getState().patchItem(media.id, {
@@ -174,19 +178,15 @@ const uploadNextMedia = async (media: MediaItem, uploadSessionId: string) => {
         uploadMediaWithTus({
             mediaItem: media,
             uploadSessionId,
-            onError: (error) => handleMeidaUploadError(media, error),
-            onSuccess: (url) => handleMeidaUploadSuccess(media, url),
+            onError: (error) => handleMediaUploadError(media, error),
             onProgress: (percentage) => handleMediaUploadProgress(media, percentage),
+            onSuccess: (url) => handleMediaUploadSuccess(media, url),
         })
     );
 
-    Result.match(result, {
-        ok: () => { },
-        err: (error) => {
-            const err = error instanceof Error ? error : new Error(String(error));
-            handleMeidaUploadError(media, err);
-        },
-    });
+    if (!result.ok) {
+        handleMediaUploadError(media, result.error);
+    }
 };
 
 export const startUploadPipeline = async (files: File[], uploadSessionId: string) => {
