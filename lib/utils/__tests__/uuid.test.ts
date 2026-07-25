@@ -1,4 +1,4 @@
-import { createUuid } from '../uuid';
+import { createUuid, extractMediaId } from '../uuid';
 
 describe('createUuid', () => {
   it('uses crypto.randomUUID when available', () => {
@@ -26,8 +26,6 @@ describe('createUuid', () => {
 });
 
 describe('extractMediaId', () => {
-  const { extractMediaId } = require('../uuid');
-
   it('extracts mediaId from a full URL', () => {
     expect(
       extractMediaId('http://localhost:3000/uploads/63effa67-0af5-4686-a3da-28f3d5dceeef'),

@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
 
-import type { PostSliderProps, PostSliderItem } from './types';
+import type { PostSliderProps } from './types';
 import {
-  EMPTY_ARRAY,
   DEFAULT_EASING,
   CONTAINER_CLASSES,
   emptySubscribe,

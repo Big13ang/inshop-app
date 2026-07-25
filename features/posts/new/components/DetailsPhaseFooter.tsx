@@ -61,7 +61,7 @@ export default function DetailsPhaseFooter() {
         onClick={handlePublishPost}
         disabled={shareDisabled}
         variant="primary"
-        className="w-1/2"
+        className="flex-1"
       >
         {isPublishing ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -76,7 +76,7 @@ export default function DetailsPhaseFooter() {
         onClick={handleGoBackToSelect}
         disabled={isPublishing}
         variant="outline"
-        className="w-1/2"
+        className="flex-1"
       >
         <span className="leading-none">{text.previousButton}</span>
       </Footer.Button>

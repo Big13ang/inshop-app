@@ -37,7 +37,6 @@ export default function GalleryCell({ id, selectionIndex, onToggle }: GalleryCel
       )}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '0 120px' } as CSSProperties}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       {item.previewUrl ? (
         <img
           src={item.previewUrl}

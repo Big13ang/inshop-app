@@ -12,7 +12,7 @@
  * Call mockUploadApi() BEFORE goto() so the route is registered before any fetches.
  */
 
-import { type Page, type Locator, type Route, expect } from '@playwright/test';
+import { type Page, type Locator, type Route as PlaywrightRoute, expect } from '@playwright/test';
 
 import { text } from '../../features/posts/new/constants';
 
@@ -89,7 +89,7 @@ export class AddPostPage {
   async mockUploadApi() {
     this.uploadOffsets.clear();
 
-    const handleCorsOptions = (route: any) => {
+    const handleCorsOptions = (route: PlaywrightRoute) => {
       return route.fulfill({
         status: 204,
         headers: {

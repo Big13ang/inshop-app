@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import gsap from 'gsap';
 import NewPostPage from '../page';
 import { Toaster } from '@/components/ui/sonner';
 import { text, MAX_IMAGES } from '@/features/posts/new/constants';
@@ -423,7 +422,7 @@ describe('/app/posts/new — Upload Queue & Statuses', () => {
       ],
     });
 
-    const { container } = renderPage();
+    renderPage();
 
     expect(screen.getByText(text.statusFailed)).toBeInTheDocument();
 
@@ -504,6 +503,7 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
           kind: 'image',
           isValid: true,
           order: 1,
+          serverMediaId: 'server-img-1',
         },
         {
           id: 'img-2',
@@ -514,6 +514,7 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
           kind: 'image',
           isValid: true,
           order: 2,
+          serverMediaId: 'server-img-2',
         },
       ],
     });
@@ -543,6 +544,7 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
           kind: 'image',
           isValid: true,
           order: 1,
+          serverMediaId: 'server-img-del',
         },
         {
           id: 'img-2',
@@ -553,6 +555,7 @@ describe('/app/posts/new — Selected Gallery & Media Slider', () => {
           kind: 'image',
           isValid: true,
           order: 2,
+          serverMediaId: 'server-img-2',
         },
       ],
     });
