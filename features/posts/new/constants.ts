@@ -6,6 +6,10 @@ export const text = {
   // Header
   headerTitle: 'پست جدید',
 
+  // Select media phase
+  sellerPanelBadge: 'پنل فروشندگان',
+  sellerPanelDesc: 'تصاویر محصول خود را ثبت کنید.',
+
   // Footer actions
   nextButton: 'بعدی',
   previousButton: 'مرحله قبلی',
