@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
-import type { MediaItem } from './types';
+import type { PostSliderItem } from './types';
 import { slideContainer } from './utils';
 
 export function SlideItem({
@@ -9,7 +9,7 @@ export function SlideItem({
   objectFit,
   onImageLoad,
 }: {
-  item: MediaItem;
+  item: PostSliderItem;
   idx: number;
   objectFit: 'cover' | 'contain';
   onImageLoad?: (url: string, ratio: number) => void;

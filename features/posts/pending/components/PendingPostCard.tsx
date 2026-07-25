@@ -64,7 +64,9 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
         </Post.Header>
 
         <Post.Media>
-          <PendingStatusOverlay status={post.status} rejectReason={post.rejectReason} />
+          <PendingStatusOverlay
+            status={post.status}
+            rejectReason={post.rejectReason} />
         </Post.Media>
 
         <Post.Body>

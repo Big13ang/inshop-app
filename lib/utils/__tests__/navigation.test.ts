@@ -1,3 +1,4 @@
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { goBackSafely, getIsInternal, setIsInternal } from '../navigation';
 
 describe('navigation utility', () => {
@@ -22,14 +23,14 @@ describe('navigation utility', () => {
   describe('goBackSafely', () => {
     it('calls router.replace("/") if not internal', () => {
       setIsInternal(false);
-      goBackSafely(mockRouter);
+      goBackSafely(mockRouter as unknown as AppRouterInstance);
       expect(mockRouter.replace).toHaveBeenCalledWith('/');
       expect(mockRouter.back).not.toHaveBeenCalled();
     });
 
     it('calls router.back() if internal', () => {
       setIsInternal(true);
-      goBackSafely(mockRouter);
+      goBackSafely(mockRouter as unknown as AppRouterInstance);
       expect(mockRouter.back).toHaveBeenCalled();
       expect(mockRouter.replace).not.toHaveBeenCalled();
     });

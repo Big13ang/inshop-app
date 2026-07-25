@@ -1,21 +1,21 @@
-import { buildMediaItem } from '../services/buildMediaItem';
+import { buildMediaItem } from '../services/uploadPipeline';
 
 const jpg = (name = 'photo.jpg') => new File(['x'], name, { type: 'image/jpeg' });
 
 beforeEach(() => {
   global.URL.createObjectURL = jest.fn(() => 'blob:local-url');
-  global.crypto.randomUUID = jest.fn(() => 'test-uuid' as `${string}-${string}-${string}-${string}-${string}`);
+  Object.defineProperty(global.crypto, 'randomUUID', {
+    value: jest.fn(() => 'test-uuid'),
+    writable: true,
+    configurable: true,
+  });
 });
 
 describe('buildMediaItem', () => {
-  it('sets status to queued and progress to 0', () => {
+  it('sets status to pending and uploadProgress to 0', () => {
     const result = buildMediaItem(jpg());
-    expect(result.status).toBe('queued');
-    expect(result.progress).toBe(0);
-  });
-
-  it('preserves the file name', () => {
-    expect(buildMediaItem(jpg('sunset.jpg')).name).toBe('sunset.jpg');
+    expect(result.status).toBe('pending');
+    expect(result.uploadProgress).toBe(0);
   });
 
   it('preserves the File reference', () => {
@@ -23,23 +23,16 @@ describe('buildMediaItem', () => {
     expect(buildMediaItem(file).file).toBe(file);
   });
 
-  it('calls URL.createObjectURL and stores the result as localUrl', () => {
-    const file = jpg();
-    const result = buildMediaItem(file);
-    expect(URL.createObjectURL).toHaveBeenCalledWith(file);
-    expect(result.localUrl).toBe('blob:local-url');
+  it('defaults kind to image', () => {
+    expect(buildMediaItem(jpg()).kind).toBe('image');
   });
 
-  it('defaults mediaKind to image', () => {
-    expect(buildMediaItem(jpg()).mediaKind).toBe('image');
-  });
-
-  it('accepts video mediaKind', () => {
+  it('accepts video media kind', () => {
     const video = new File(['x'], 'clip.mp4', { type: 'video/mp4' });
-    expect(buildMediaItem(video, 'video').mediaKind).toBe('video');
+    expect(buildMediaItem(video).kind).toBe('video');
   });
 
-  it('generates a unique id via createUuid', () => {
+  it('generates a unique id via randomUUID', () => {
     const result = buildMediaItem(jpg());
     expect(crypto.randomUUID).toHaveBeenCalled();
     expect(result.id).toBe('test-uuid');
@@ -49,12 +42,12 @@ describe('buildMediaItem', () => {
     const result = buildMediaItem(jpg());
     expect(result).toMatchObject({
       id: expect.any(String),
-      name: expect.any(String),
+      serverMediaId: null,
       file: expect.any(File),
-      localUrl: expect.any(String),
-      status: 'queued',
-      progress: 0,
-      mediaKind: 'image',
+      status: 'pending',
+      uploadProgress: 0,
+      kind: 'image',
+      isValid: false,
     });
   });
 });

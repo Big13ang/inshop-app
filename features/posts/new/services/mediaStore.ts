@@ -1,195 +1,87 @@
 import { create, type StoreApi } from 'zustand';
-import { type MediaItem, type MediaStatus } from '../types';
+import { MediaItem } from '../types';
 
-// ── State shape ───────────────────────────────────────────────────────────────
+export type MediaStoreState = {
+  phase: 'select' | "details";
+  setPhase: (phase: 'select' | 'details') => void;
+  caption: string;
+  setCaption: (caption: string) => void;
+  isValidating: boolean;
+  setIsValidating: (isValidating: boolean) => void;
+  mediaList: MediaItem[];
+  setMediaList: (mediaArr: MediaItem[]) => void;
+  patchItem: (id: string, patch: Partial<MediaItem>) => void;
+  removeItem: (id: string) => void;
+  reset: () => void;
+};
 
-export interface MediaStoreState {
-  /** O(1) lookup by ID. Insertion order is preserved by Map. */
-  itemMap: Map<string, MediaItem>;
-  /** Ordered IDs of *uploaded* items added to the post. */
-  selectedIds: string[];
-  activePreviewIdx: number;
-  uploadSessionId: string | null;
-  expiresAt: string | null;
-
-  // ── Public actions ──────────────────────────────────────────────────────────
-  /** Appends items — never replaces existing ones. */
-  addItems(items: MediaItem[]): void;
-  /** Removes the item and revokes its blob URL. */
-  removeItem(id: string): void;
-  /** Toggles selection — only works when item.status === 'uploaded'. */
-  toggleSelected(id: string): void;
-  setUploadSession(id: string, expiresAt: string): void;
-  reset(): void;
-
-  // ── Internal actions (called by upload callbacks) ───────────────────────────
-  _setStatus(id: string, status: MediaStatus): void;
-  _setProgress(id: string, pct: number): void;
-  /** Called on upload success — sets URL, nulls file ref, marks uploaded. */
-  _setUploaded(id: string, uploadedUrl: string): void;
-}
-
-// ── Helper functions for immutable updates and side effects ──────────────────
-
-function clampPreviewIdx(idx: number, selectedCount: number): number {
-  return Math.min(idx, Math.max(0, selectedCount - 1));
-}
-
-/**
- * Updates a MediaItem in a Map, returning a new Map.
- * Returns null if the item doesn't exist.
- */
-function updateItemInMap(
-  map: Map<string, MediaItem>,
-  id: string,
-  updater: (item: MediaItem) => Partial<MediaItem>,
-): Map<string, MediaItem> | null {
-  const item = map.get(id);
-  if (!item) return null;
-  const next = new Map(map);
-  next.set(id, { ...item, ...updater(item) });
-  return next;
-}
-
-// ── Store factory (enables test isolation) ────────────────────────────────────
+const DEFAULT_VALUES: Pick<MediaStoreState, 'phase' | 'mediaList' | 'caption' | 'isValidating'> = {
+  phase: 'select',
+  caption: '',
+  mediaList: [],
+  isValidating: false,
+};
 
 function buildStore(
-  set: StoreApi<MediaStoreState>['setState'],
-  get: StoreApi<MediaStoreState>['getState'],
+  _set: StoreApi<MediaStoreState>['setState'],
+  _get: StoreApi<MediaStoreState>['getState'],
 ): MediaStoreState {
   return {
-    itemMap: new Map(),
-    selectedIds: [],
-    activePreviewIdx: 0,
-    uploadSessionId: null,
-    expiresAt: null,
-
-    addItems(items) {
-      if (process.env.NODE_ENV !== 'production') {
-        for (const item of items) {
-          if (!item.validated) {
-            console.warn(`[mediaStore] item "${item.name}" was added without validation`);
-          }
-        }
-      }
-      set((s) => {
-        const next = new Map(s.itemMap);
-        for (const item of items) {
-          next.set(item.id, item);
-        }
-        return { itemMap: next };
-      });
+    ...DEFAULT_VALUES,
+    setPhase: (phase: 'select' | 'details') => {
+      _set({ phase });
     },
-
-    removeItem(id) {
-      // Perform URL revocation side effect outside state updater
-      const item = get().itemMap.get(id);
-      if (item?.localUrl) {
-        try {
-          URL.revokeObjectURL(item.localUrl);
-        } catch {
-          // ignore
-        }
-      }
-
-      set((s) => {
-        const next = new Map(s.itemMap);
-        next.delete(id);
-        const selectedIds = s.selectedIds.filter((sid) => sid !== id);
+    setCaption: (caption: string) => {
+      _set({ caption });
+    },
+    setIsValidating: (isValidating: boolean) => {
+      _set({ isValidating });
+    },
+    setMediaList: (mediaArr: MediaItem[]) => {
+      _set({ mediaList: mediaArr });
+    },
+    patchItem: (id: string, patch: Partial<MediaItem>) => {
+      _set((state) => {
         return {
-          itemMap: next,
-          selectedIds,
-          activePreviewIdx: clampPreviewIdx(s.activePreviewIdx, selectedIds.length),
+          mediaList: state.mediaList.map((item) =>
+            item.id === id ? { ...item, ...patch } : item
+          ),
         };
       });
     },
+    removeItem: (id: string) => {
+      const { mediaList } = _get();
+      const item = mediaList.find((it) => it.id === id);
 
-    toggleSelected(id) {
-      set((s) => {
-        const item = s.itemMap.get(id);
-        if (!item || item.status !== 'uploaded') return {};
-
-        const alreadySelected = s.selectedIds.includes(id);
-        const selectedIds = alreadySelected
-          ? s.selectedIds.filter((sid) => sid !== id)
-          : [...s.selectedIds, id];
-
-        return {
-          selectedIds,
-          activePreviewIdx: clampPreviewIdx(s.activePreviewIdx, selectedIds.length),
-        };
-      });
-    },
-
-    _setStatus(id, status) {
-      set((s) => {
-        const nextMap = updateItemInMap(s.itemMap, id, () => ({ status }));
-        if (!nextMap) return {};
-
-        const selectedIds = status !== 'uploaded'
-          ? s.selectedIds.filter((sid) => sid !== id)
-          : s.selectedIds;
-
-        return {
-          itemMap: nextMap,
-          selectedIds,
-          activePreviewIdx: clampPreviewIdx(s.activePreviewIdx, selectedIds.length),
-        };
-      });
-    },
-
-    _setProgress(id, pct) {
-      set((s) => {
-        const nextMap = updateItemInMap(s.itemMap, id, () => ({ progress: pct }));
-        if (!nextMap) return {};
-        return { itemMap: nextMap };
-      });
-    },
-
-    _setUploaded(id, uploadedUrl) {
-      set((s) => {
-        const nextMap = updateItemInMap(s.itemMap, id, () => ({
-          uploadedUrl,
-          status: 'uploaded',
-          progress: 100,
-          file: null, // unblock GC — File blob is no longer needed
-        }));
-        if (!nextMap) return {};
-        return { itemMap: nextMap };
-      });
-    },
-
-    setUploadSession(id, expiresAt) {
-      set({ uploadSessionId: id, expiresAt });
-    },
-
-    reset() {
-      // Revoke all local URLs outside state updater
-      for (const item of get().itemMap.values()) {
-        if (item.localUrl) {
-          try {
-            URL.revokeObjectURL(item.localUrl);
-          } catch {
-            // ignore
-          }
-        }
+      if (item && item.previewUrl) {
+        URL.revokeObjectURL(item.previewUrl);
       }
 
-      set({
-        itemMap: new Map(),
-        selectedIds: [],
-        activePreviewIdx: 0,
-        uploadSessionId: null,
-        expiresAt: null,
+      _set((state) => {
+        return {
+          mediaList: state.mediaList.filter((item) => item.id !== id),
+        };
       });
     },
+    reset: () => {
+      const { mediaList } = _get();
+      _set(DEFAULT_VALUES);
+
+      mediaList.forEach(
+        (item) => item.previewUrl && URL.revokeObjectURL(item.previewUrl)
+      );
+    }
   };
 }
 
-/** Isolated store for tests — each call returns a fresh instance. */
 export function createMediaStore(): StoreApi<MediaStoreState> {
-  return create<MediaStoreState>()((set, get) => buildStore(set, get));
+  return create<MediaStoreState>()(
+    (set, get) => buildStore(set, get)
+  );
 }
 
-/** Module-level singleton for production use. */
-export const useMediaStore = create<MediaStoreState>()((set, get) => buildStore(set, get));
+export const useMediaStore = create<MediaStoreState>()(
+  (set, get) => buildStore(set, get)
+);
+
+

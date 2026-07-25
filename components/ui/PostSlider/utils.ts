@@ -1,5 +1,4 @@
 import { cva } from 'class-variance-authority';
-import type { MediaItem } from './types';
 
 export const emptySubscribe = () => () => { };
 export const EMPTY_ARRAY: string[] = [];
@@ -52,20 +51,6 @@ export const bulletDot = cva(
     },
   }
 );
-
-export function normalizeMediaItems(
-  rawList: (string | Partial<MediaItem>)[]
-): MediaItem[] {
-  const result: MediaItem[] = [];
-  for (const entry of rawList) {
-    if (typeof entry === 'string') {
-      result.push({ url: entry, type: 'image' });
-    } else if (entry?.url) {
-      result.push({ url: entry.url, type: entry.type ?? 'image' });
-    }
-  }
-  return result;
-}
 
 /**
  * Rules for post image/slider aspect ratios (width/height):

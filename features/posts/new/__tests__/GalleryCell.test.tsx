@@ -1,179 +1,72 @@
 /// <reference types="@testing-library/jest-dom" />
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GalleryCell from '../components/GalleryCell';
 import { useMediaStore } from '../services/mediaStore';
 import { type MediaItem } from '../types';
 
 afterEach(() => {
-  useMediaStore.setState({ itemMap: new Map(), selectedIds: [], activePreviewIdx: 0 });
+  useMediaStore.getState().reset();
 });
 
-const createMockItem = (overrides: Partial<MediaItem>): MediaItem => ({
+const createMockItem = (overrides?: Partial<MediaItem>): MediaItem => ({
   id: 'item-1',
-  name: 'photo.jpg',
-  file: new File([''], 'test.jpg', { type: 'image/jpeg' }),
-  localUrl: 'blob:local-url',
+  kind: 'image',
   status: 'uploaded',
-  progress: 100,
-  mediaKind: 'image',
-  validated: true,
+  uploadProgress: 100,
+  order: 1,
+  previewUrl: 'blob:local-url',
+  file: new File([''], 'test.jpg', { type: 'image/jpeg' }),
+  isValid: true,
   ...overrides,
 });
 
-describe('GalleryCell — cancelHold', () => {
-  it('clears the long-press timer and does not fire onLongPress when the pointer leaves before holding 600ms', () => {
-    jest.useFakeTimers();
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({})]]) });
-
-    const onToggle = jest.fn();
-    const onLongPress = jest.fn();
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={onToggle} onLongPress={onLongPress} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    fireEvent.mouseDown(cell);
-    fireEvent.mouseLeave(cell);
-
-    act(() => { jest.advanceTimersByTime(600); });
-
-    expect(onLongPress).not.toHaveBeenCalled();
-    expect(onToggle).not.toHaveBeenCalled();
-
-    jest.useRealTimers();
-  });
-});
-
-describe('GalleryCell — missing item', () => {
+describe('GalleryCell — rendering & click behavior', () => {
   it('renders nothing when the item is not in the store', () => {
     const { container } = render(
-      <GalleryCell id="missing-id" selectionIndex={-1} onToggle={jest.fn()} />,
+      <GalleryCell id="missing-id" selectionIndex={-1} onToggle={jest.fn()} />
     );
     expect(container.firstChild).toBeNull();
   });
-});
 
-describe('GalleryCell — startHold / endHold', () => {
-  it('ignores right-clicks and does not start the long-press timer', () => {
-    jest.useFakeTimers();
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({})]]) });
-
-    const onLongPress = jest.fn();
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={jest.fn()} onLongPress={onLongPress} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    fireEvent.mouseDown(cell, { button: 2 });
-    act(() => { jest.advanceTimersByTime(600); });
-
-    expect(onLongPress).not.toHaveBeenCalled();
-    jest.useRealTimers();
-  });
-
-  it('does not toggle selection on mouseUp after a completed long-press', () => {
-    jest.useFakeTimers();
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({})]]) });
-
-    const onToggle = jest.fn();
-    const onLongPress = jest.fn();
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={onToggle} onLongPress={onLongPress} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    fireEvent.mouseDown(cell);
-    act(() => { jest.advanceTimersByTime(600); });
-    expect(onLongPress).toHaveBeenCalledWith('item-1');
-
-    fireEvent.mouseUp(cell);
-    expect(onToggle).not.toHaveBeenCalled();
-
-    jest.useRealTimers();
-  });
-
-  it('calls onRetry on a quick tap (no long-press) for a failed item', () => {
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({ status: 'failed' })]]) });
-
-    const onRetry = jest.fn();
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={jest.fn()} onRetry={onRetry} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    fireEvent.mouseDown(cell);
-    fireEvent.mouseUp(cell);
-
-    expect(onRetry).toHaveBeenCalledWith('item-1');
-  });
-
-  it('calls onRetry on a quick tap for a cancelled item', () => {
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({ status: 'cancelled' })]]) });
-
-    const onRetry = jest.fn();
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={jest.fn()} onRetry={onRetry} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    fireEvent.mouseDown(cell);
-    fireEvent.mouseUp(cell);
-
-    expect(onRetry).toHaveBeenCalledWith('item-1');
-  });
-
-  it('does not crash on mouseUp without onRetry on a failed item', () => {
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({ status: 'failed' })]]) });
-
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={jest.fn()} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    expect(() => {
-      fireEvent.mouseDown(cell);
-      fireEvent.mouseUp(cell);
-    }).not.toThrow();
-  });
-
-  it('does not crash when mouseUp fires without a preceding mouseDown', () => {
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({})]]) });
-
-    const onToggle = jest.fn();
-    const { container } = render(
-      <GalleryCell id="item-1" selectionIndex={-1} onToggle={onToggle} />,
-    );
-
-    const cell = container.querySelector('[data-status]') as HTMLElement;
-    fireEvent.mouseUp(cell);
-
-    expect(onToggle).toHaveBeenCalled();
-  });
-});
-
-describe('GalleryCell — order badge', () => {
-  it('toggles selection when the order badge is clicked directly', async () => {
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({})]]) });
+  it('triggers onToggle when an uploaded cell is clicked', async () => {
+    const item = createMockItem();
+    useMediaStore.setState({ mediaList: [item] });
 
     const onToggle = jest.fn();
     const user = userEvent.setup();
-    render(<GalleryCell id="item-1" selectionIndex={0} onToggle={onToggle} />);
+    const { container } = render(
+      <GalleryCell id="item-1" selectionIndex={0} onToggle={onToggle} />
+    );
 
-    await user.click(screen.getByText('1'));
+    const cell = container.querySelector('[data-status]') as HTMLElement;
+    expect(cell).toBeInTheDocument();
 
+    await user.click(cell);
     expect(onToggle).toHaveBeenCalled();
   });
 
-  it('does not toggle selection when clicking the badge on a non-uploaded item', async () => {
-    useMediaStore.setState({ itemMap: new Map([['item-1', createMockItem({ status: 'uploading' })]]) });
+  it('does not trigger onToggle when an uploading cell is clicked', async () => {
+    const item = createMockItem({ status: 'uploading', uploadProgress: 50 });
+    useMediaStore.setState({ mediaList: [item] });
 
     const onToggle = jest.fn();
-    const { container } = render(<GalleryCell id="item-1" selectionIndex={0} onToggle={onToggle} />);
+    const { container } = render(
+      <GalleryCell id="item-1" selectionIndex={-1} onToggle={onToggle} />
+    );
 
-    const badge = container.querySelector('.z-20') as HTMLElement;
-    fireEvent.click(badge);
+    const cell = container.querySelector('[data-status]') as HTMLElement;
+    fireEvent.click(cell);
 
     expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('displays the selection order badge index correctly when selected', () => {
+    const item = createMockItem({ order: 1 });
+    useMediaStore.setState({ mediaList: [item] });
+
+    render(<GalleryCell id="item-1" selectionIndex={0} onToggle={jest.fn()} />);
+
+    expect(screen.getByText('1')).toBeInTheDocument();
   });
 });

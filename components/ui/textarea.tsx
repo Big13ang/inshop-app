@@ -30,6 +30,7 @@ export interface TextareaProps
   VariantProps<typeof textareaVariants> {
   isError?: boolean;
   errorMessage?: string;
+  helperText?: string;
   ref?: React.Ref<HTMLTextAreaElement>;
 }
 
@@ -39,6 +40,7 @@ function Textarea({
   textareaSize = "default",
   isError = false,
   errorMessage,
+  helperText,
   ref,
   ...props
 }: TextareaProps) {
@@ -57,6 +59,8 @@ function Textarea({
       <div className="px-1 text-[11px] min-h-[16px] transition-all duration-300">
         {isError && errorMessage ? (
           <span className="text-red-500 font-medium">{errorMessage}</span>
+        ) : helperText ? (
+          <span className="text-zinc-500">{helperText}</span>
         ) : null}
       </div>
     </div>

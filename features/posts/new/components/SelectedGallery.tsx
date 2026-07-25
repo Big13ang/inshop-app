@@ -1,27 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { useMediaStore } from '../services/mediaStore';
-import { useShallow } from 'zustand/react/shallow';
-import DeleteImageDialog from './DeleteImageDialog';
+import { reorderItems } from '../utils/reorderItems';
 import GalleryCell from './GalleryCell';
 import { MAX_IMAGES } from '../constants';
 
-
-interface SelectedGalleryProps {
-  onRetry: (id: string) => void;
-  onRemove: (id: string) => void;
+function getSelectionIndex(order: number | null): number {
+  const UNSELECTED_INDEX = -1;
+  return order !== null ? order - 1 : UNSELECTED_INDEX;
 }
 
-export default function SelectedGallery({ onRetry, onRemove }: SelectedGalleryProps) {
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+export default function SelectedGallery() {
+  const mediaList = useMediaStore((s) => s.mediaList);
+  const setMediaList = useMediaStore((s) => s.setMediaList);
+  const isAtLimit = mediaList.length >= MAX_IMAGES;
 
-  const ids = useMediaStore(useShallow((s) => Array.from(s.itemMap.keys())));
-  const selectedIds = useMediaStore((s) => s.selectedIds);
-  const isAtLimit = ids.length >= MAX_IMAGES;
+  const handleToggleSelection = (id: string) => {
+    const updated = reorderItems(mediaList, id);
+    setMediaList(updated);
+  };
 
-  if (ids.length === 0) {
+  if (mediaList.length === 0) {
     return (
       <div className="flex flex-col select-none mt-6 pb-6" id="selected-gallery-container">
         <div className="px-4 mb-3">
@@ -47,30 +47,25 @@ export default function SelectedGallery({ onRetry, onRemove }: SelectedGalleryPr
       <div className="px-4 mb-3 flex justify-between items-center">
         <span className="text-[10px] font-medium text-zinc-400">آپلود شده را لمس کنید تا انتخاب شود</span>
         <span className={`text-[10px] font-medium ${isAtLimit ? 'text-red-500' : 'text-zinc-500'}`}>
-          {ids.length}/{MAX_IMAGES} تصویر
+          {mediaList.length}/{MAX_IMAGES} تصویر
         </span>
       </div>
       <div className="grid grid-cols-3 gap-2 px-4 pb-6" dir="ltr">
-        {ids.map((id) => (
-          <GalleryCell
-            key={id}
-            id={id}
-            selectionIndex={selectedIds.indexOf(id)}
-            onToggle={() => useMediaStore.getState().toggleSelected(id)}
-            onLongPress={(targetId) => setPendingDeleteId(targetId)}
-            onRetry={onRetry}
-          />
-        ))}
-      </div>
+        {mediaList.map((item) => {
+          const selectionIndex = getSelectionIndex(item.order);
 
-      <DeleteImageDialog
-        isOpen={pendingDeleteId !== null}
-        onClose={() => setPendingDeleteId(null)}
-        onConfirm={() => {
-          onRemove(pendingDeleteId!);
-          setPendingDeleteId(null);
-        }}
-      />
+          return (
+            <GalleryCell
+              key={item.id}
+              id={item.id}
+              selectionIndex={selectionIndex}
+              onToggle={() => handleToggleSelection(item.id)}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+

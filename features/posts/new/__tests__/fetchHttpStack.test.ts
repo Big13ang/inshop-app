@@ -1,4 +1,4 @@
-import { FetchHttpStack, FetchRequest } from '../services/chunkStrategy';
+import { FetchHttpStack, FetchRequest } from '@/lib/fetchHttpStack';
 
 // ── FetchRequest/FetchHttpStack ──────────────────────────────────────────────
 //

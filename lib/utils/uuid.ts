@@ -62,16 +62,14 @@ export function formatToUUID(hex: string): string {
 /**
  * Extracts the server media ID from an uploaded URL and formats it to UUID.
  * Falls back to `fallbackId` when `uploadedUrl` is absent.
- *
- * Consolidates the duplicated extraction logic that previously existed in
- * useMediaUpload.removeItem and usePostFlow.handleNext.
  */
 export function extractMediaId(
   uploadedUrl: string | null | undefined,
-  fallbackId: string,
-): string {
-  const raw = uploadedUrl
-    ? uploadedUrl.substring(uploadedUrl.lastIndexOf('/') + 1)
-    : fallbackId;
-  return formatToUUID(raw);
+  fallbackId?: string,
+): string | undefined {
+  if (!uploadedUrl) return fallbackId;
+  const cleanUrl = uploadedUrl.split('?')[0].split('#')[0];
+  const segments = cleanUrl.split('/').filter(Boolean);
+  const raw = segments[segments.length - 1];
+  return raw ? formatToUUID(raw) : fallbackId;
 }

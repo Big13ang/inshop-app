@@ -12,11 +12,12 @@ import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { server } from '../../../../mocks/server';
 
 jest.mock('../services/uploadSession', () => ({
-  useUploadSession: () => ({ isPending: false }),
+  useUploadSession: () => ({
+    isSuccess: true,
+    data: { uploadSessionId: 'mock-session-123' },
+    isPending: false,
+  }),
 }));
-
-// Pre-set session so uploads can start immediately.
-useMediaStore.setState({ uploadSessionId: 'mock-session-123' });
 
 // ── Global browser API stubs ──────────────────────────────────────────────────
 
@@ -41,21 +42,12 @@ beforeAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  useMediaStore.setState({
-    uploadSessionId: 'mock-session-123',
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-  });
+  useMediaStore.getState().reset();
 });
 
 // Reset the media store between tests so state doesn't bleed.
 afterEach(() => {
-  useMediaStore.setState({
-    itemMap: new Map(),
-    selectedIds: [],
-    activePreviewIdx: 0,
-    uploadSessionId: null,
-    expiresAt: null,
-  });
+  useMediaStore.getState().reset();
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -63,7 +55,12 @@ afterEach(() => {
 const setup = () => {
   const user = userEvent.setup();
   const onNavigate = jest.fn();
-  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false, onError: () => {} },
+    },
+  });
   const { container } = render(
     <QueryClientProvider client={client}>
       <Toaster />
@@ -77,7 +74,7 @@ const addImageFile = async (
   user: ReturnType<typeof userEvent.setup>,
   container: HTMLElement,
 ) => {
-  const jpegHeader = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 3, 0x20, 3, 0x20, 3, 0, 0, 0, 0]);
+  const jpegHeader = new Uint8Array([0xFF, 0xD8, 0xFF, 0xC0, 0, 0x0B, 8, 4, 0x38, 4, 0x38, 3, 0, 0, 0, 0]);
   const file = new File([jpegHeader], 'photo.jpg', { type: 'image/jpeg' });
   const input = container.querySelector('input[multiple]') as HTMLInputElement;
   await user.upload(input, file);
@@ -107,9 +104,9 @@ describe('AddPostView — selection phase', () => {
     const input = container.querySelector('input[multiple]') as HTMLInputElement;
     await user.upload(input, badFile);
     await waitFor(() => {
-      expect(toast.warning).toHaveBeenCalledWith(
-        text.alertInvalidImageFormat,
-        expect.objectContaining({ position: 'top-center' }),
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageUnacceptable(badFile.name),
+        expect.objectContaining({ description: expect.any(String) }),
       );
     });
   });
@@ -121,9 +118,9 @@ describe('AddPostView — selection phase', () => {
     const input = container.querySelector('input[multiple]') as HTMLInputElement;
     await userEvent.setup().upload(input, bigFile);
     await waitFor(() => {
-      expect(toast.warning).toHaveBeenCalledWith(
-        ERROR_MESSAGES.upload.imageSizeLimit,
-        expect.objectContaining({ position: 'top-center' }),
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageUnacceptable(bigFile.name),
+        expect.objectContaining({ description: ERROR_MESSAGES.upload.imageSizeLimit }),
       );
     });
   });
@@ -136,7 +133,7 @@ describe('AddPostView — selection phase', () => {
       fireEvent.change(input, { target: { files: [] } });
     }).not.toThrow();
 
-    expect(useMediaStore.getState().itemMap.size).toBe(0);
+    expect(useMediaStore.getState().mediaList.length).toBe(0);
   });
 
   it('clicking the add button opens the native file picker', async () => {
@@ -163,14 +160,10 @@ describe('AddPostView — details phase', () => {
     // The finalize endpoint is mocked by MSW so the item reaches 'uploaded' status.
     await screen.findByText(/1\/10 تصویر/, undefined, { timeout: 5000 });
     await waitFor(() => {
-      const items = [...useMediaStore.getState().itemMap.values()];
+      const items = useMediaStore.getState().mediaList;
       expect(items.length).toBeGreaterThan(0);
       expect(items.every((it) => it.status === 'uploaded')).toBe(true);
     }, { timeout: 5000 });
-
-    // Click the uploaded thumbnail through the real GalleryCell onClick path.
-    const thumbnail = container.querySelector('#selected-gallery-container img') as HTMLElement;
-    await user.click(thumbnail);
 
     await user.click(screen.getByRole('button', { name: text.nextButton }));
     await screen.findByRole('textbox', { name: text.captionLabel });
@@ -182,10 +175,12 @@ describe('AddPostView — details phase', () => {
     expect(screen.getByRole('textbox', { name: text.captionLabel })).toBeInTheDocument();
   });
 
-  it('does NOT show caption error on initial render before the user has typed', async () => {
+  it('shows caption helper text in grayish color on initial render before the user has typed', async () => {
     const { user, container } = setup();
     await advanceToDetails(user, container);
-    expect(screen.queryByText(text.captionError)).not.toBeInTheDocument();
+    const helperMsg = screen.getByText(text.captionHelperText);
+    expect(helperMsg).toBeInTheDocument();
+    expect(helperMsg).toHaveClass('text-zinc-500');
   });
 
   it('shows validation error when caption is cleared', async () => {
@@ -197,7 +192,9 @@ describe('AddPostView — details phase', () => {
     await user.clear(textarea);
 
     await waitFor(() => {
-      expect(screen.getByText(text.captionError)).toBeInTheDocument();
+      const errorMsg = screen.getByText(text.captionError);
+      expect(errorMsg).toBeInTheDocument();
+      expect(errorMsg).toHaveClass('text-red-500');
     });
   });
 
@@ -218,7 +215,7 @@ describe('AddPostView — details phase', () => {
 
   it('shows error toast when POST /upload-sessions/publish fails', async () => {
     server.use(
-      http.post('http://localhost:3000/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
+      http.post('*/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
     );
     const { user, container } = setup();
     await advanceToDetails(user, container);
@@ -233,7 +230,7 @@ describe('AddPostView — details phase', () => {
 
   it('Share button is disabled and shows a spinner while the mutation is in flight', async () => {
     server.use(
-      http.post('http://localhost:3000/upload-sessions/publish', () => new Promise(() => { })), // never resolves
+      http.post('*/upload-sessions/publish', () => new Promise(() => { })), // never resolves
     );
     const { user, container } = setup();
     await advanceToDetails(user, container);
@@ -251,7 +248,7 @@ describe('AddPostView — details phase', () => {
 
   it('preserves caption text and selected images after a failed submission', async () => {
     server.use(
-      http.post('http://localhost:3000/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
+      http.post('*/upload-sessions/publish', () => new HttpResponse(null, { status: 500 })),
     );
     const { user, container } = setup();
     await advanceToDetails(user, container);
@@ -268,6 +265,6 @@ describe('AddPostView — details phase', () => {
     // Still on details phase — share button is still present
     expect(screen.getByRole('button', { name: text.shareButton })).toBeInTheDocument();
     // Selected images preserved — selectedIds is non-empty
-    expect(useMediaStore.getState().selectedIds.length).toBeGreaterThan(0);
+    expect(useMediaStore.getState().mediaList.length).toBeGreaterThan(0);
   });
 });

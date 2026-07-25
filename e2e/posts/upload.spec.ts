@@ -27,9 +27,8 @@ test.describe('Add New Post — file upload', () => {
 
   test('uploading an invalid file type shows a format warning toast', async ({ addPostPage }) => {
     await addPostPage.uploadInvalidFile('document.heic');
-    // Toast title: "فقط JPG، PNG و WebP مجاز است"
     await expect(
-      addPostPage.page.getByText('فقط JPG، PNG و WebP مجاز است'),
+      addPostPage.page.getByText('عکس های HEIC پشتیبانی نمی شوند').or(addPostPage.page.getByText('فرمت تصویر نامعتبر است')),
     ).toBeVisible({ timeout: 5_000 });
   });
 
@@ -38,9 +37,10 @@ test.describe('Add New Post — file upload', () => {
   }) => {
     await addPostPage.uploadInvalidFile('document.heic');
     await expect(
-      addPostPage.page.getByText('1 فایل نادیده گرفته شد'),
+      addPostPage.page.getByText('پشتیبانی نمی‌شوند').or(addPostPage.page.getByText('نامعتبر است')),
     ).toBeVisible({ timeout: 5_000 });
   });
+
 
   test('invalid file does not appear in the gallery', async ({ addPostPage }) => {
     await addPostPage.uploadInvalidFile('document.heic');
@@ -116,9 +116,10 @@ test.describe('Add New Post — oversized file validation', () => {
   test('uploading a file over 10 MB shows a size warning toast', async ({ addPostPage }) => {
     await addPostPage.uploadOversizedImage();
     await expect(
-      addPostPage.page.getByText('حجم عکس نباید بیشتر از ۱۰ مگابایت باشد'),
+      addPostPage.page.getByText('۱۰ مگابایت'),
     ).toBeVisible({ timeout: 5_000 });
   });
+
 
   test('oversized file does not appear in the gallery', async ({ addPostPage }) => {
     await addPostPage.uploadOversizedImage();

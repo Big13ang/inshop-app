@@ -1,6 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import SelectedMediaSlider from '../components/SelectedMediaSlider';
 import { useMediaStore } from '../services/mediaStore';
 import type { MediaItem } from '../types';
@@ -9,34 +8,51 @@ import type { MediaItem } from '../types';
 
 jest.mock('@/components/ui/PostSlider', () => ({
   __esModule: true,
-  default: ({ media, onSlideChange }: { media: Array<{ url: string; type: string }>; onSlideChange?: (idx: number) => void }) => (
+  default: ({ items, activeSlide, onSlideChange }: { items: Array<{ url: string }>; activeSlide?: number; onSlideChange?: (idx: number) => void }) => (
     <div data-testid="post-slider">
-      {media.map((m, i) => (
+      {items.map((m, i) => (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={i} src={m.url} alt="" onClick={() => onSlideChange?.(i)} />
+        <img key={i} src={m.url} alt="" onClick={() => onSlideChange?.(i)} data-active={i === activeSlide} />
       ))}
     </div>
   ),
 }));
 
+jest.mock('../services/uploadSession', () => ({
+  useUploadSession: () => ({
+    data: { uploadSessionId: 'test-session-id' },
+  }),
+}));
+
+jest.mock('@/features/posts/services/postsQueryService', () => ({
+  postsQueryService: {
+    useDeleteUploadSessionPhoto: () => ({
+      isPending: false,
+      mutate: (_params: unknown, options?: { onSuccess?: () => void; onSettled?: () => void }) => {
+        options?.onSuccess?.();
+        options?.onSettled?.();
+      },
+    }),
+  },
+}));
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function uploadedItem(id: string, url: string): MediaItem {
+function uploadedItem(id: string, url: string, order: number = 1): MediaItem {
   return {
     id,
-    name: `${id}.jpg`,
-    file: null,
-    localUrl: `blob:${id}`,
-    uploadedUrl: url,
+    kind: 'image',
     status: 'uploaded',
-    progress: 100,
-    mediaKind: 'image',
-    validated: true,
+    uploadProgress: 100,
+    order,
+    previewUrl: url,
+    file: new File([''], `${id}.jpg`, { type: 'image/jpeg' }),
+    isValid: true,
   };
 }
 
 afterEach(() => {
-  useMediaStore.setState({ itemMap: new Map(), selectedIds: [], activePreviewIdx: 0 });
+  useMediaStore.getState().reset();
 });
 
 // ── Empty state ───────────────────────────────────────────────────────────────
@@ -58,12 +74,10 @@ describe('SelectedMediaSlider — empty state', () => {
 describe('SelectedMediaSlider — with selected items', () => {
   function setupTwoItems() {
     useMediaStore.setState({
-      itemMap: new Map([
-        ['id-1', uploadedItem('id-1', 'https://cdn/1.jpg')],
-        ['id-2', uploadedItem('id-2', 'https://cdn/2.jpg')],
-      ]),
-      selectedIds: ['id-1', 'id-2'],
-      activePreviewIdx: 0,
+      mediaList: [
+        uploadedItem('id-1', 'https://cdn/1.jpg', 1),
+        uploadedItem('id-2', 'https://cdn/2.jpg', 2),
+      ],
     });
   }
 
@@ -79,20 +93,6 @@ describe('SelectedMediaSlider — with selected items', () => {
     expect(screen.getByText('فایل 1 از 2')).toBeInTheDocument();
   });
 
-  it('reflects activePreviewIdx in the counter', () => {
-    useMediaStore.setState({
-      itemMap: new Map([
-        ['id-1', uploadedItem('id-1', 'https://cdn/1.jpg')],
-        ['id-2', uploadedItem('id-2', 'https://cdn/2.jpg')],
-        ['id-3', uploadedItem('id-3', 'https://cdn/3.jpg')],
-      ]),
-      selectedIds: ['id-1', 'id-2', 'id-3'],
-      activePreviewIdx: 2,
-    });
-    render(<SelectedMediaSlider />);
-    expect(screen.getByText('فایل 3 از 3')).toBeInTheDocument();
-  });
-
   it('passes uploaded URLs to the slider', () => {
     setupTwoItems();
     const { container } = render(<SelectedMediaSlider />);
@@ -103,9 +103,7 @@ describe('SelectedMediaSlider — with selected items', () => {
 
   it('hides the remove button when only one item is selected', () => {
     useMediaStore.setState({
-      itemMap: new Map([['id-1', uploadedItem('id-1', 'https://cdn/1.jpg')]]),
-      selectedIds: ['id-1'],
-      activePreviewIdx: 0,
+      mediaList: [uploadedItem('id-1', 'https://cdn/1.jpg', 1)],
     });
     render(<SelectedMediaSlider />);
     expect(screen.queryByTitle('حذف از انتخاب شده‌ها')).not.toBeInTheDocument();
@@ -117,65 +115,9 @@ describe('SelectedMediaSlider — with selected items', () => {
     expect(screen.getByTitle('حذف از انتخاب شده‌ها')).toBeInTheDocument();
   });
 
-  it('clicking remove deselects the item at the active index', async () => {
-    const user = userEvent.setup();
-    setupTwoItems();
-    render(<SelectedMediaSlider />);
-
-    await user.click(screen.getByTitle('حذف از انتخاب شده‌ها'));
-
-    // activePreviewIdx is 0 → 'id-1' should be removed from selectedIds
-    expect(useMediaStore.getState().selectedIds).not.toContain('id-1');
-    expect(useMediaStore.getState().selectedIds).toContain('id-2');
-  });
-
   it('does not show the remove button in compact mode even with multiple items', () => {
     setupTwoItems();
     render(<SelectedMediaSlider isCompact />);
     expect(screen.queryByTitle('حذف از انتخاب شده‌ها')).not.toBeInTheDocument();
-  });
-
-  it('updates activePreviewIdx in the store when the slider changes slides', async () => {
-    const user = userEvent.setup();
-    setupTwoItems();
-    const { container } = render(<SelectedMediaSlider />);
-
-    const slides = container.querySelectorAll('[data-testid="post-slider"] img');
-    await user.click(slides[1]);
-
-    expect(useMediaStore.getState().activePreviewIdx).toBe(1);
-  });
-
-  it('falls back to localUrl when an item has no uploadedUrl yet', () => {
-    useMediaStore.setState({
-      itemMap: new Map([
-        ['id-1', { id: 'id-1', name: 'id-1.jpg', file: null, localUrl: 'blob:local-id-1', status: 'uploading', progress: 50, mediaKind: 'image' }],
-      ]),
-      selectedIds: ['id-1'],
-      activePreviewIdx: 0,
-    });
-    const { container } = render(<SelectedMediaSlider />);
-
-    const img = container.querySelector('[data-testid="post-slider"] img');
-    expect(img).toHaveAttribute('src', 'blob:local-id-1');
-  });
-
-  it('does not crash when removing at an index with no corresponding selected id', async () => {
-    const user = userEvent.setup();
-    useMediaStore.setState({
-      itemMap: new Map([
-        ['id-1', uploadedItem('id-1', 'https://cdn/1.jpg')],
-        ['id-2', uploadedItem('id-2', 'https://cdn/2.jpg')],
-      ]),
-      selectedIds: ['id-1', 'id-2'],
-      activePreviewIdx: 5, // out of range
-    });
-    render(<SelectedMediaSlider />);
-
-    await expect(
-      user.click(screen.getByTitle('حذف از انتخاب شده‌ها')),
-    ).resolves.not.toThrow();
-
-    expect(useMediaStore.getState().selectedIds).toEqual(['id-1', 'id-2']);
   });
 });

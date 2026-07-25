@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import SelectedMediaSlider from './SelectedMediaSlider';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ interface PostDetailsFormProps {
   caption: string;
   onCaptionChange: (text: string) => void;
   hasInputError: boolean;
+  errorMessage?: string;
   aspectClassName?: string;
 }
 
@@ -17,8 +18,10 @@ export default function PostDetailsForm({
   caption,
   onCaptionChange,
   hasInputError,
+  errorMessage,
   aspectClassName = 'aspect-square',
 }: PostDetailsFormProps) {
+  const [isDirty, setIsDirty] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +34,17 @@ export default function PostDetailsForm({
     });
     return () => ctx.revert();
   }, []);
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setIsDirty(true);
+    onCaptionChange(e.target.value);
+  };
+
+  const handleTextareaBlur = () => {
+    setIsDirty(true);
+  };
+
+  const isErrorVisible = isDirty && hasInputError;
 
   return (
     <div
@@ -50,11 +64,13 @@ export default function PostDetailsForm({
         <Textarea
           id="caption-textarea-input"
           value={caption}
-          onChange={(e) => onCaptionChange(e.target.value)}
+          onChange={handleTextareaChange}
+          onBlur={handleTextareaBlur}
           placeholder={text.captionPlaceholder}
           rows={5}
-          isError={hasInputError}
-          errorMessage={text.captionError}
+          isError={isErrorVisible}
+          errorMessage={errorMessage ?? text.captionError}
+          helperText={text.captionHelperText}
         />
       </div>
     </div>

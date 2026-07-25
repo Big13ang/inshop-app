@@ -33,18 +33,18 @@ describe('PostSlider - Stability and Flashing Prevention Tests', () => {
   });
 
   it('keeps options initial parameter constant across renders to prevent Keen-Slider internal resets', () => {
-    const images = ['img1.jpg', 'img2.jpg'];
+    const items = [{ url: 'img1.jpg' }, { url: 'img2.jpg' }];
 
     // 1. Render initially with activeSlide = 0
     const { rerender } = render(
-      <PostSlider images={images} activeSlide={0} />
+      <PostSlider items={items} activeSlide={0} />
     );
 
     expect(mockOptionsCalls).toHaveLength(1);
     expect(mockOptionsCalls[0].initial).toBe(0);
 
     // 2. Re-render with activeSlide = 1 (simulating slide navigation)
-    rerender(<PostSlider images={images} activeSlide={1} />);
+    rerender(<PostSlider items={items} activeSlide={1} />);
 
     // Since we stabilized 'initial' using useState, the options passed to useKeenSlider should not change
     expect(mockOptionsCalls).toHaveLength(2);
@@ -52,15 +52,15 @@ describe('PostSlider - Stability and Flashing Prevention Tests', () => {
   });
 
   it('does NOT call instance.update() when only activeSlide changes', () => {
-    const images = ['img1.jpg', 'img2.jpg'];
+    const items = [{ url: 'img1.jpg' }, { url: 'img2.jpg' }];
     const { rerender } = render(
-      <PostSlider images={images} activeSlide={0} />
+      <PostSlider items={items} activeSlide={0} />
     );
 
     mockUpdate.mockClear();
 
     // Change activeSlide (navigate to slide 1)
-    rerender(<PostSlider images={images} activeSlide={1} />);
+    rerender(<PostSlider items={items} activeSlide={1} />);
 
     // instance.update() should NOT have been called because media/images didn't change
     expect(mockUpdate).not.toHaveBeenCalled();
@@ -69,16 +69,16 @@ describe('PostSlider - Stability and Flashing Prevention Tests', () => {
   });
 
   it('calls instance.update(undefined, activeSlide) when media items actually change to preserve slide index', () => {
-    const initialImages = ['img1.jpg', 'img2.jpg'];
+    const initialItems = [{ url: 'img1.jpg' }, { url: 'img2.jpg' }];
     const { rerender } = render(
-      <PostSlider images={initialImages} activeSlide={1} />
+      <PostSlider items={initialItems} activeSlide={1} />
     );
 
     mockUpdate.mockClear();
 
     // Add a new image (simulate changes in upload list)
-    const newImages = ['img1.jpg', 'img2.jpg', 'img3.jpg'];
-    rerender(<PostSlider images={newImages} activeSlide={1} />);
+    const newItems = [{ url: 'img1.jpg' }, { url: 'img2.jpg' }, { url: 'img3.jpg' }];
+    rerender(<PostSlider items={newItems} activeSlide={1} />);
 
     // instance.update should be called since URLs list changed
     expect(mockUpdate).toHaveBeenCalledTimes(1);

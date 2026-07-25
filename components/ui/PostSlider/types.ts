@@ -1,11 +1,10 @@
-export interface MediaItem {
+export interface PostSliderItem {
   url: string;
-  type: 'image';
+  alt?: string;
 }
 
 export interface PostSliderProps {
-  images?: string[];
-  media?: MediaItem[];
+  items: PostSliderItem[];
   activeSlide?: number;
   onSlideChange?: (index: number) => void;
   objectFit?: 'cover' | 'contain';

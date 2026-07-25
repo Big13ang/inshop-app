@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { http } from '@/lib/utils';
-import { queryKeys } from '@/lib/query-keys';
-import { useMediaStore } from './mediaStore';
+import { queryKeys } from "@/lib/query-keys";
+import { http } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 export interface UploadSessionData {
   uploadSessionId: string;
@@ -16,24 +14,10 @@ async function fetchUploadSession(): Promise<UploadSessionData> {
   return res.value;
 }
 
-function syncUploadSession(data: UploadSessionData | undefined) {
-  if (!data) return;
-
-  useMediaStore
-    .getState()
-    .setUploadSession(data.uploadSessionId, data.expiresAt);
-}
-
 export function useUploadSession() {
-  const uploadSessionId = useMediaStore((s) => s.uploadSessionId);
-  const query = useQuery({
+  return useQuery({
     queryKey: queryKeys.posts.uploadSession(),
     queryFn: fetchUploadSession,
-    enabled: !uploadSessionId,
     staleTime: Infinity,
   });
-
-  useEffect(() => syncUploadSession(query.data), [query.data]);
-
-  return query;
 }
