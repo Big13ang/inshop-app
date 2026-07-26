@@ -9,7 +9,7 @@ export function HeaderRoot({ children, className, ...props }: HeaderRootProps) {
     return (
         <header
             className={cn(
-                'bg-surface-l3 border-b border-primary/5 h-16 box-content pt-safe flex items-center justify-between px-4 sticky top-0 z-50 shrink-0 w-full select-none relative',
+                'bg-surface-l3 border-b border-primary/5 h-16 flex items-center justify-between px-4 sticky top-0 z-50 shrink-0 w-full select-none relative',
                 className,
             )}
             {...props}

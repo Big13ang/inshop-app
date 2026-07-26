@@ -81,8 +81,8 @@ export function FooterNavRoot({
             role="navigation"
             aria-label="Bottom Navigation"
             className={cn(
-                'absolute bottom-0 left-0 right-0 z-50 h-16 box-content w-full',
-                'flex flex-row items-center justify-around px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
+                'absolute bottom-0 left-0 right-0 z-50 h-16 w-full',
+                'flex flex-row items-center justify-around px-4',
                 'border-t border-primary/5 bg-surface-l3/95 backdrop-blur-md',
                 'select-none',
                 className,
@@ -114,7 +114,7 @@ export function FooterRoot({ children, className, ...props }: FooterRootProps) {
             className={cn(
                 'absolute bottom-0 left-0 right-0 w-full z-50',
                 'bg-white border-t border-zinc-100',
-                'p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shrink-0',
+                'p-4 shrink-0',
                 className,
             )}
             {...props}
@@ -134,7 +134,7 @@ export function FooterNav({ children, className, ...props }: FooterNavProps) {
             className={cn(
                 'absolute bottom-0 left-0 right-0 w-full z-50',
                 'bg-white border-t border-zinc-100',
-                'p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shrink-0',
+                'p-4 shrink-0',
                 className,
             )}
             {...props}

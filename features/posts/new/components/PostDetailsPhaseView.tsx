@@ -14,7 +14,7 @@ export const PostDetailsPhaseView = () => {
     };
 
     return (
-        <div className="flex-1 overflow-y-auto flex flex-col pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+        <div className="flex-1 overflow-y-auto flex flex-col pb-24">
             <PostDetailsForm
                 caption={caption}
                 onCaptionChange={handleCaptionChange}

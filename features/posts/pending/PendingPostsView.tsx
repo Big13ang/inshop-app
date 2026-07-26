@@ -28,7 +28,7 @@ export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
         <Header.Right />
       </Header.Root>
 
-      <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
+      <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="border-b border-primary/5 bg-surface-container-low px-4 py-3 text-right">
           <p className="text-[11px] leading-5 text-zinc-500">{text.noticeText}</p>
         </div>
