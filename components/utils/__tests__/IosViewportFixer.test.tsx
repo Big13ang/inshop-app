@@ -1,0 +1,29 @@
+import { render } from '@testing-library/react';
+import IosViewportFixer from '../IosViewportFixer';
+
+describe('IosViewportFixer', () => {
+  it('renders null and registers focusout listener', () => {
+    const scrollToSpy = jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
+    const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+
+    const { unmount } = render(<IosViewportFixer />);
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith('focusout', expect.any(Function));
+
+    const focusOutEvent = new FocusEvent('focusout', { bubbles: true });
+    const input = document.createElement('input');
+    Object.defineProperty(focusOutEvent, 'target', { value: input, enumerable: true });
+
+    window.dispatchEvent(focusOutEvent);
+
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
+
+    unmount();
+    expect(removeEventListenerSpy).toHaveBeenCalledWith('focusout', expect.any(Function));
+
+    scrollToSpy.mockRestore();
+    addEventListenerSpy.mockRestore();
+    removeEventListenerSpy.mockRestore();
+  });
+});
