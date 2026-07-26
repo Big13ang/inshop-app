@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 
 function resetIosViewportScroll(e: FocusEvent) {
   const target = e.target as HTMLElement | null;
+  const relatedTarget = e.relatedTarget as HTMLElement | null;
+
   if (
     target &&
     (target.tagName === 'INPUT' ||
@@ -11,6 +13,16 @@ function resetIosViewportScroll(e: FocusEvent) {
       target.tagName === 'SELECT' ||
       target.isContentEditable)
   ) {
+    if (
+      relatedTarget &&
+      (relatedTarget.tagName === 'INPUT' ||
+        relatedTarget.tagName === 'TEXTAREA' ||
+        relatedTarget.tagName === 'SELECT' ||
+        relatedTarget.isContentEditable)
+    ) {
+      return;
+    }
+
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.body.scrollTop = 0;
   }

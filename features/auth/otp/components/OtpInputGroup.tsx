@@ -35,6 +35,7 @@ export default function OtpInputGroup({
           autoFocus={i === 0}
           maxLength={1}
           value={slots[i]}
+          onFocus={(e) => e.target.select()}
           onChange={(e) => onChange(i, e.target.value)}
           onKeyDown={(e) => onKeyDown(i, e)}
           onPaste={onPaste}

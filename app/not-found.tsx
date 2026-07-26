@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
-    <main className="relative flex-1 flex flex-col justify-between h-full px-6 py-12 select-none overflow-hidden bg-background text-foreground">
+    <main className="relative flex-1 flex flex-col justify-between h-full px-6 pt-[calc(3rem+env(safe-area-inset-top,0px))] pb-[calc(3rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden bg-background text-foreground">
       {/* Top spacing to push content down */}
       <div className="h-12" />
 

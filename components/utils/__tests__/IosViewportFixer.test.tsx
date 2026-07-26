@@ -19,6 +19,18 @@ describe('IosViewportFixer', () => {
 
     expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
 
+    scrollToSpy.mockClear();
+
+    // Verify focusout moving focus to another input does NOT trigger scroll reset
+    const focusOutEventToInput = new FocusEvent('focusout', { bubbles: true });
+    const nextInput = document.createElement('input');
+    Object.defineProperty(focusOutEventToInput, 'target', { value: input, enumerable: true });
+    Object.defineProperty(focusOutEventToInput, 'relatedTarget', { value: nextInput, enumerable: true });
+
+    window.dispatchEvent(focusOutEventToInput);
+
+    expect(scrollToSpy).not.toHaveBeenCalled();
+
     unmount();
     expect(removeEventListenerSpy).toHaveBeenCalledWith('focusout', expect.any(Function));
 

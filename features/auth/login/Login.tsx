@@ -30,7 +30,7 @@ export default function Login({ onSubmit }: LoginProps) {
     };
 
     return (
-        <main className="flex-1 flex flex-col justify-between h-full px-6 py-8 bg-surface-l2">
+        <main className="flex-1 flex flex-col justify-between h-full px-6 pt-[calc(2rem+env(safe-area-inset-top,0px))] pb-[calc(2rem+env(safe-area-inset-bottom,0px))] bg-surface-l2">
             <AppLogo />
 
             <form

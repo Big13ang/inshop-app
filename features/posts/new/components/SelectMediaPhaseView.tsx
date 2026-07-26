@@ -7,7 +7,7 @@ export const SelectMediaPhaseView = () => {
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
             <SellerPanelBanner />
             <SelectedMediaSlider aspectClassName="aspect-square" />
-            <div className="flex-1 min-h-0 overflow-y-auto pb-20">
+            <div className="flex-1 min-h-0 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom,0px))]">
                 <SelectedGallery />
             </div>
         </div>
