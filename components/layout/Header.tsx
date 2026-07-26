@@ -9,7 +9,7 @@ export function HeaderRoot({ children, className, ...props }: HeaderRootProps) {
     return (
         <header
             className={cn(
-                'bg-surface-l3 border-b border-primary/5 h-16 box-content pt-[env(safe-area-inset-top,0px)] flex items-center justify-between px-4 sticky top-0 z-50 shrink-0 w-full select-none relative',
+                'bg-surface-l3 border-b border-primary/5 h-16 box-content pt-safe flex items-center justify-between px-4 sticky top-0 z-50 shrink-0 w-full select-none relative',
                 className,
             )}
             {...props}
@@ -27,7 +27,7 @@ export function HeaderTitle({ children, className, ...props }: HeaderTitleProps)
     return (
         <span
             className={cn(
-                'font-bold text-sm text-primary absolute left-1/2 -translate-x-1/2 pointer-events-none',
+                'font-bold text-sm text-primary absolute bottom-0 left-1/2 -translate-x-1/2 h-16 flex items-center justify-center pointer-events-none',
                 className,
             )}
             {...props}

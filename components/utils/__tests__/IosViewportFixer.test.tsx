@@ -2,10 +2,19 @@ import { render } from '@testing-library/react';
 import IosViewportFixer from '../IosViewportFixer';
 
 describe('IosViewportFixer', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('renders null and registers focusout listener', () => {
     const scrollToSpy = jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
     const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+    Object.defineProperty(window, 'scrollY', { value: 10, configurable: true });
 
     const { unmount } = render(<IosViewportFixer />);
 
@@ -16,6 +25,7 @@ describe('IosViewportFixer', () => {
     Object.defineProperty(focusOutEvent, 'target', { value: input, enumerable: true });
 
     window.dispatchEvent(focusOutEvent);
+    jest.advanceTimersByTime(100);
 
     expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
 
@@ -28,6 +38,7 @@ describe('IosViewportFixer', () => {
     Object.defineProperty(focusOutEventToInput, 'relatedTarget', { value: nextInput, enumerable: true });
 
     window.dispatchEvent(focusOutEventToInput);
+    jest.advanceTimersByTime(100);
 
     expect(scrollToSpy).not.toHaveBeenCalled();
 
