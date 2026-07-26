@@ -29,6 +29,12 @@ function sortByOrder(a: SelectedMediaItem, b: SelectedMediaItem): number {
   return a.order - b.order;
 }
 
+/** Clamp index safely between 0 and maxIndex */
+function getSafeIndex(requestedIndex: number, totalLength: number): number {
+  if (totalLength <= 0) return 0;
+  return Math.min(Math.max(0, requestedIndex), totalLength - 1);
+}
+
 const sliderContainerVariants = cva(
   'w-full bg-zinc-950 relative overflow-hidden shrink-0',
   {
@@ -58,7 +64,8 @@ export default function SelectedMediaSlider({
     .sort(sortByOrder);
 
   const mediaList = selectedMediaItems.map((item) => ({ url: item.previewUrl }));
-  const activeMediaId = selectedMediaItems[activeIndex]?.id;
+  const safeActiveIndex = getSafeIndex(activeIndex, mediaList.length);
+  const activeMediaId = selectedMediaItems[safeActiveIndex]?.id;
 
   function handleActiveChange(idx: number) {
     setActiveIndex(idx);
@@ -96,13 +103,13 @@ export default function SelectedMediaSlider({
       <div className="w-full relative overflow-hidden bg-zinc-950">
         <PostSlider
           items={mediaList}
-          activeSlide={activeIndex}
+          activeSlide={safeActiveIndex}
           onSlideChange={handleActiveChange}
           objectFit="contain"
         />
 
         <div className="absolute top-4 right-4 bg-zinc-950/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1.5 border border-white/10 z-[25]">
-          <span>فایل {activeIndex + 1} از {mediaList.length}</span>
+          <span>فایل {safeActiveIndex + 1} از {mediaList.length}</span>
         </div>
 
         {!isCompact && mediaList.length > 1 && activeMediaId ? (

@@ -28,12 +28,11 @@ export default function PostSlider({
   const isHydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const handleImageLoad = (url: string, ratio: number) => {
-    setAspectRatios((prev) => {
-      if (prev[url] === ratio) return prev;
-      return { ...prev, [url]: ratio };
-    });
+    setAspectRatios((prev) => (prev[url] === ratio ? prev : { ...prev, [url]: ratio }));
+    requestAnimationFrame(() => instanceRef.current?.update());
   };
 
   const onSlideChangeRef = useRef(onSlideChange);
@@ -50,6 +49,9 @@ export default function PostSlider({
       duration: 350,
       easing: DEFAULT_EASING,
     },
+    created(slider) {
+      slider.update();
+    },
     slideChanged(slider) {
       const active = slider.track.details.rel;
       setCurrentSlide(active);
@@ -57,6 +59,17 @@ export default function PostSlider({
     },
   });
 
+  // Keep slider layout updated when container resizes
+  useEffect(() => {
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      instanceRef.current?.update();
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [instanceRef]);
+
+  // Update slider track when item URLs change
   const prevUrlsRef = useRef<string[]>([]);
   useEffect(() => {
     const currentUrls = items.map((it) => it.url);
@@ -70,6 +83,7 @@ export default function PostSlider({
     }
   }, [items, activeSlide, instanceRef]);
 
+  // Sync active slide prop with slider track
   useEffect(() => {
     if (instanceRef.current && typeof activeSlide === 'number') {
       const current = instanceRef.current.track?.details?.rel;
@@ -112,6 +126,7 @@ export default function PostSlider({
 
   return (
     <div
+      ref={containerRef}
       className={CONTAINER_CLASSES}
       id="post-slider-container"
       tabIndex={0}
