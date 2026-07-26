@@ -72,17 +72,25 @@ describe('mediaStore', () => {
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
   });
 
+  it('sets uploadSessionId', () => {
+    const store = createMediaStore();
+    store.getState().setUploadSessionId('sess-123');
+    expect(store.getState().uploadSessionId).toBe('sess-123');
+  });
+
   it('resets store to default values and revokes object URLs', () => {
     const store = createMediaStore();
     store.getState().setMediaList([item({ id: '1', previewUrl: 'blob:1' }), item({ id: '2', previewUrl: 'blob:2' })]);
     store.getState().setCaption('Some text');
     store.getState().setPhase('details');
+    store.getState().setUploadSessionId('sess-123');
 
     store.getState().reset();
 
     expect(store.getState().phase).toBe('select');
     expect(store.getState().caption).toBe('');
     expect(store.getState().mediaList).toEqual([]);
+    expect(store.getState().uploadSessionId).toBeNull();
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:1');
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:2');
   });

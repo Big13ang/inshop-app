@@ -12,14 +12,20 @@ export type MediaStoreState = {
   setMediaList: (mediaArr: MediaItem[]) => void;
   patchItem: (id: string, patch: Partial<MediaItem>) => void;
   removeItem: (id: string) => void;
+  uploadSessionId: string | null;
+  setUploadSessionId: (uploadSessionId: string | null) => void;
   reset: () => void;
 };
 
-const DEFAULT_VALUES: Pick<MediaStoreState, 'phase' | 'mediaList' | 'caption' | 'isValidating'> = {
+const DEFAULT_VALUES: Pick<
+  MediaStoreState,
+  'phase' | 'mediaList' | 'caption' | 'isValidating' | 'uploadSessionId'
+> = {
   phase: 'select',
   caption: '',
   mediaList: [],
   isValidating: false,
+  uploadSessionId: null,
 };
 
 function buildStore(
@@ -39,6 +45,9 @@ function buildStore(
     },
     setMediaList: (mediaArr: MediaItem[]) => {
       _set({ mediaList: mediaArr });
+    },
+    setUploadSessionId: (uploadSessionId: string | null) => {
+      _set({ uploadSessionId });
     },
     patchItem: (id: string, patch: Partial<MediaItem>) => {
       _set((state) => {

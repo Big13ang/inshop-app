@@ -82,7 +82,7 @@ export function FooterNavRoot({
             aria-label="Bottom Navigation"
             className={cn(
                 'absolute bottom-0 left-0 right-0 z-50 h-16 w-full',
-                'flex flex-row items-center justify-around px-4 pb-safe',
+                'flex flex-row items-center justify-around px-4',
                 'border-t border-primary/5 bg-surface-l3/95 backdrop-blur-md',
                 'select-none',
                 className,

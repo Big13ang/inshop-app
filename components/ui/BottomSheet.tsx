@@ -66,6 +66,9 @@ function Root({ isOpen, onClose, children }: RootProps) {
 
   if (!isMounted || !shouldRender) return null;
 
+  // Spans the visible strip (so the keyboard lifts the panel instead of hiding
+  // it) and stays full-bleed within it so the backdrop covers the safe areas;
+  // the panel is inset by padding to clear the island / home indicator.
   return createPortal(
     <BottomSheetContext value={{ onClose, backdropRef, panelRef }}>
       <div
@@ -75,7 +78,7 @@ function Root({ isOpen, onClose, children }: RootProps) {
         aria-labelledby="bottom-sheet-title"
         tabIndex={-1}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
-        className="fixed inset-0 z-50 flex flex-col justify-end p-4 pb-6 overflow-hidden focus:outline-none"
+        className="fixed left-0 right-0 top-[var(--app-offset-top)] h-[var(--app-height)] z-50 flex flex-col justify-end overflow-hidden focus:outline-none pt-[calc(1rem+var(--safe-top))] pb-[calc(1.5rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]"
       >
         {children}
       </div>
@@ -166,7 +169,7 @@ function Panel({ children, maxWidth = 'md', dir = 'rtl', dragToDismiss = true, c
       onMouseLeave={dragHandlers.onMouseLeave}
       onClick={(e) => e.stopPropagation()}
       className={cn(
-        'relative w-full mx-auto bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col max-h-[92vh] select-none will-change-transform',
+        'relative w-full mx-auto bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col max-h-full select-none will-change-transform',
         dragToDismiss && 'cursor-grab active:cursor-grabbing',
         maxWidthClass[maxWidth],
         className

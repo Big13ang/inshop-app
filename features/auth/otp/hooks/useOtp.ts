@@ -19,7 +19,11 @@ export function useOtp(onComplete: (code: string) => void) {
 
   const focusAt = (index: number) => {
     const clamped = Math.max(0, Math.min(index, OTP_LENGTH - 1));
-    inputRefs.current[clamped]?.focus();
+    const el = inputRefs.current[clamped];
+    if (el) {
+      el.focus();
+      el.select?.();
+    }
   };
 
   const updateSlots = (next: string[]) => {
