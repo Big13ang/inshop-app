@@ -20,7 +20,7 @@ export const buildMediaItem = (file: File): MediaItem => {
         status: 'pending',
         uploadProgress: 0,
         order: null,
-        previewUrl: null,
+        previewUrl: URL.createObjectURL(file),
         isValid: false,
         file,
     }
@@ -86,7 +86,6 @@ const validateMediaItems = async (mediaItems: MediaItem[]) => {
                 isValid: true,
                 order: validCount,
                 status: 'queued' as const,
-                previewUrl: URL.createObjectURL(item.file),
             } as MediaItem;
 
             store.patchItem(item.id, updateValidItem);
