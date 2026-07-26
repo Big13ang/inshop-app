@@ -26,18 +26,38 @@ beforeEach(() => {
 });
 
 describe('useUploadSession', () => {
-  it('returns cached query data when present', async () => {
-    queryClient.setQueryData(queryKeys.posts.uploadSession(), {
-      uploadSessionId: 'cached-session',
-      expiresAt: '2026-07-21T00:00:00Z',
+  it('fetches a new session on mount', async () => {
+    (http.post as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      value: { uploadSessionId: 'new-session-id', expiresAt: '2026-07-26T00:00:00Z' },
     });
 
     const { result } = renderHook(() => useUploadSession(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.data?.uploadSessionId).toBe('cached-session');
+      expect(result.current.data?.uploadSessionId).toBe('new-session-id');
     });
 
-    expect(http.post).not.toHaveBeenCalled();
+    expect(http.post).toHaveBeenCalledWith('/upload-sessions');
+  });
+
+  it('always refetches a new session on mount even if query data exists', async () => {
+    queryClient.setQueryData(queryKeys.posts.uploadSession(), {
+      uploadSessionId: 'cached-session',
+      expiresAt: '2026-07-21T00:00:00Z',
+    });
+
+    (http.post as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      value: { uploadSessionId: 'fresh-session-id', expiresAt: '2026-07-26T00:00:00Z' },
+    });
+
+    const { result } = renderHook(() => useUploadSession(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.data?.uploadSessionId).toBe('fresh-session-id');
+    });
+
+    expect(http.post).toHaveBeenCalledWith('/upload-sessions');
   });
 });

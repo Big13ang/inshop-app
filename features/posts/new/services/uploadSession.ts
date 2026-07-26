@@ -18,6 +18,8 @@ export function useUploadSession() {
   return useQuery({
     queryKey: queryKeys.posts.uploadSession(),
     queryFn: fetchUploadSession,
-    staleTime: Infinity,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
   });
 }
