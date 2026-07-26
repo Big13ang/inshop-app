@@ -1,9 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
 import { getServerProfile } from "@/features/profile/services/profileServerService";
 import { Suspense } from "react";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "inShop | اینشاپ ",
@@ -35,11 +43,11 @@ export default function RootLayout({
     <html
       lang="FA-IR"
       dir="rtl"
-      className="h-dvh"
+      className="h-dvh overflow-x-hidden w-full max-w-full"
     >
-      <body className="h-dvh flex flex-col overflow-hidden md:items-center">
-        <div className="h-dvh w-full md:max-w-app md:shadow-app-shell">
-          <div className="flex flex-col h-full w-full overflow-hidden md:bg-background">
+      <body className="h-dvh flex flex-col overflow-x-hidden overflow-y-hidden w-full max-w-full md:items-center">
+        <div className="h-dvh w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden">
+          <div className="flex flex-col h-full w-full overflow-x-hidden overflow-y-hidden md:bg-background">
             <Suspense fallback={<div className="h-full w-full bg-background" />}>
               <ProvidersWithProfile>
                 {children}
