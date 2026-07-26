@@ -12,6 +12,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
@@ -27,7 +28,9 @@ export const metadata: Metadata = {
   manifest: "/favicon/site.webmanifest",
   appleWebApp: {
     title: "inShop",
-  },
+    capable: true,
+    statusBarStyle: "default",
+  },you 
 };
 
 async function ProvidersWithProfile({ children }: { children: React.ReactNode }) {
