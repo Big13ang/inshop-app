@@ -91,7 +91,7 @@ export default function SplashScreen({
     >
       <div
         className={cn(
-          'relative w-full h-full md:max-w-app md:h-dvh flex items-center justify-center bg-black overflow-hidden transition-transform duration-400 ease-out',
+          'relative w-full h-full md:max-w-app md:h-[var(--app-height)] flex items-center justify-center bg-black overflow-hidden transition-transform duration-400 ease-out',
           isVisible ? 'scale-100' : 'scale-105'
         )}
       >

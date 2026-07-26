@@ -211,7 +211,9 @@ function DialogContent({
         onMouseUp={dragHandlers.onMouseUp}
         onMouseLeave={dragHandlers.onMouseLeave}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[100] mx-auto w-full rounded-t-[28px] border-t border-zinc-200 bg-white pb-10 text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] md:max-w-[var(--container-app)]',
+          // Anchored to the visible strip's bottom edge, so the keyboard pushes the
+          // drawer up instead of covering it.
+          'fixed bottom-[var(--app-offset-bottom)] left-0 right-0 z-[100] mx-auto w-full rounded-t-[28px] border-t border-zinc-200 bg-white pb-[calc(2.5rem+var(--safe-bottom))] text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] md:max-w-[var(--container-app)]',
           dragToDismiss && 'cursor-grab active:cursor-grabbing',
           className
         )}
@@ -225,7 +227,7 @@ function DialogContent({
   }
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="pointer-events-none fixed left-0 right-0 top-[var(--app-offset-top)] h-[var(--app-height)] z-[100] flex items-center justify-center pt-[calc(1rem+var(--safe-top))] pb-[calc(1rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
       <div
         ref={setContentRef}
         className={cn('pointer-events-auto w-full max-w-sm rounded-3xl border border-zinc-200 bg-white p-6 opacity-0 shadow-xl', className)}

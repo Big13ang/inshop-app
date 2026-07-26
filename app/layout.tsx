@@ -47,11 +47,11 @@ export default function RootLayout({
     <html
       lang="FA-IR"
       dir="rtl"
-      className="h-dvh overflow-x-hidden w-full max-w-full"
+      className="overflow-hidden w-full max-w-full"
     >
-      <body className="h-dvh flex flex-col overflow-x-hidden overflow-y-hidden w-full max-w-full md:items-center bg-background">
-        <div className="h-dvh w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] pr-[env(safe-area-inset-right,0px)] pl-[env(safe-area-inset-left,0px)] box-border">
-          <div className="flex flex-col h-full w-full overflow-x-hidden overflow-y-hidden md:bg-background">
+      <body className="flex flex-col overflow-hidden w-full max-w-full md:items-center bg-background">
+        <div className="safe-area h-full w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden">
+          <div className="app-shell flex flex-col h-full w-full overflow-x-hidden overflow-y-hidden md:bg-background">
             <Suspense fallback={<div className="h-full w-full bg-background" />}>
               <ProvidersWithProfile>
                 {children}

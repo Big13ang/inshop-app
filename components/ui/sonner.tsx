@@ -3,12 +3,25 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
+/* Toasts are portalled to <body>, outside the safe-area padded app shell, so
+   they carry their own inset — otherwise a top-center toast lands under the
+   dynamic island and a bottom one under Safari's nav bar. The --app-offset-*
+   terms keep them on the visible strip while the keyboard is open. */
+const safeAreaOffset = {
+  top: 'calc(1rem + var(--safe-top) + var(--app-offset-top))',
+  bottom: 'calc(1rem + var(--safe-bottom) + var(--app-offset-bottom))',
+  left: 'calc(1rem + var(--safe-left))',
+  right: 'calc(1rem + var(--safe-right))',
+}
+
 const Toaster = ({ duration = 8000, ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="dark"
       className="toaster group"
       duration={duration}
+      offset={safeAreaOffset}
+      mobileOffset={safeAreaOffset}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,

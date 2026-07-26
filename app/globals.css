@@ -7,6 +7,26 @@
   --foreground: #171717;
   --font-vazirmatn: 'Vazirmatn', sans-serif;
   --font-playfair-display: 'Playfair Display', serif;
+
+  /* ── Safe Area Insets ─────────────────────────────────
+     Single source of truth for iOS notch / dynamic island /
+     home indicator. Never call env() directly outside here. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Real visible height between Safari's toolbars — and, while typing, above the
+     on-screen keyboard. Overridden in px by IosViewportFixer; dvh is the fallback. */
+  --app-height: 100dvh;
+
+  /* How far the visible strip is pushed down inside the layout viewport. Only
+     non-zero while the iOS keyboard is open. Also set by IosViewportFixer. */
+  --app-offset-top: 0px;
+
+  /* Space below the visible strip: Safari's bottom toolbar plus the keyboard.
+     Bottom-anchor fixed overlays with this so they rest on the keyboard. */
+  --app-offset-bottom: 0px;
 }
 
 @theme {
@@ -139,6 +159,19 @@
   }
 }
 
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The document itself must never scroll. On iOS Safari a scrollable document
+   lets the window shift under the dynamic island / bottom toolbar (and stay
+   shifted after a keyboard dismiss). Pinning the body kills that whole class
+   of bug; all scrolling happens in the app shell's inner containers.
+
+   `top` tracks the visual viewport: a fixed element is placed against the layout
+   viewport, which stays full-height when the keyboard opens, so without this
+   offset the app would sit under the keyboard while blank space shows above it. */
 body {
   background: var(--background);
   color: var(--foreground);
@@ -146,7 +179,14 @@ body {
   -webkit-tap-highlight-color: transparent;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  position: fixed;
+  top: var(--app-offset-top);
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: var(--app-height);
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 @media (min-width: 768px) {
@@ -159,18 +199,52 @@ body {
   width: 100%;
 }
 
-/* ── Safe Area Inset Utilities ── */
+/* ── Safe Area Inset Utilities ──
+   `.safe-area` is the app-wide primitive: it insets content away from the
+   notch/dynamic island, the home indicator and the landscape rounded corners.
+   Apply it to the app shell and to any `position: fixed` overlay that is
+   portalled into <body> (dialogs, sheets, splash) — those sit outside the
+   shell, so they must inset themselves. */
+.safe-area {
+  padding-top: var(--safe-top);
+  padding-right: var(--safe-right);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  box-sizing: border-box;
+}
+
+/* Same, but only the axis you need. */
+.safe-area-y {
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  box-sizing: border-box;
+}
+.safe-area-x {
+  padding-right: var(--safe-right);
+  padding-left: var(--safe-left);
+  box-sizing: border-box;
+}
+
 .pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-top);
 }
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safe-bottom);
 }
 .mt-safe {
-  margin-top: env(safe-area-inset-top, 0px);
+  margin-top: var(--safe-top);
 }
 .mb-safe {
-  margin-bottom: env(safe-area-inset-bottom, 0px);
+  margin-bottom: var(--safe-bottom);
+}
+
+/* Safety net for the on-screen keyboard: the shell shrinks to the strip above
+   the keys, so a page that owns no scroll container of its own would otherwise
+   clip whatever no longer fits. IosViewportFixer sets data-keyboard while a
+   field is focused; the shell stays unscrollable the rest of the time. */
+html[data-keyboard='open'] .app-shell {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Scrollbar hiding utility */
