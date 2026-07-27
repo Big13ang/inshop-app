@@ -1,209 +1,63 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import MainFooter from '@/components/layout/MainFooter';
-import { postsQueryService, POST_STATUS, type BackendMedia } from '@/features/posts/services/postsQueryService';
-import { hasSellerProfile, profileService } from '../services/profileService';
-import { PROFILE_ROUTES, text } from '../constants';
+import { postsQueryService, POST_STATUS } from '@/features/posts/services/postsQueryService';
+import { profileService } from '../services/profileService';
 
-import { getMediaUrl } from '@/features/posts/utils/media';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileBioSection from './components/ProfileBioSection';
 import ProfileGridFeed from './components/ProfileGridFeed';
-import ProfileDetailFeed from './components/ProfileDetailFeed';
-import PostSettingsDrawer from './components/PostSettingsDrawer';
+import { useRouter } from 'next/navigation';
+import { PROFILE_ROUTES } from '../constants';
+import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
 
 export default function ProfileView() {
   const router = useRouter();
-  const { data: me, isLoading: isMeLoading } = profileService.useMe();
-  const meHasSellerProfile = hasSellerProfile(me);
-  const { data: user, isLoading: isProfileLoading } = profileService.useUserProfile({
-    enabled: meHasSellerProfile,
-  });
-  const sellerProfile = user?.sellerProfile;
-  const hasProfile = hasSellerProfile(user);
+  const { data: me } = profileService.useSuspenseMe();
 
-  useEffect(() => {
-    if (!isMeLoading && me && !meHasSellerProfile) {
-      toast.info('لطفا ابتدا اطلاعات پروفایل خود را تکمیل کنید');
-      router.replace(PROFILE_ROUTES.edit);
-    }
-  }, [isMeLoading, me, meHasSellerProfile, router]);
+  const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me.sellerProfile !== null });
+
+  const hasUserProfle = me.sellerProfile !== null;
+
+  if (!hasUserProfle) return router.push(PROFILE_ROUTES.edit);
 
   const {
-    data: approvedInfiniteData,
-    fetchNextPage,
     hasNextPage,
+    fetchNextPage,
     isFetchingNextPage,
+    data: approvedInfiniteData,
   } = postsQueryService.useInfiniteSellerPostsByStatus(POST_STATUS.APPROVED);
+
+  const { data: pendingPosts = [] } = postsQueryService.useSellerPostsByStatus(
+    POST_STATUS.PENDING_REVIEW
+  );
 
   const approvedPosts = approvedInfiniteData
     ? approvedInfiniteData.pages.flatMap((page) => page.data)
     : [];
 
-  const { data: pendingPosts = [] } = postsQueryService.useSellerPostsByStatus(
-    POST_STATUS.PENDING_REVIEW,
-  );
-  const { data: rejectedPosts = [] } = postsQueryService.useSellerPostsByStatus(
-    POST_STATUS.REJECTED,
-  );
-
-  const deletePostMutation = postsQueryService.useDeletePendingPost();
-
-  const [clickedPostId, setClickedPostId] = useState<string | null>(null);
-  const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
-  const [bookmarkedSet, setBookmarkedSet] = useState<Set<string>>(new Set());
-
-  const shopName = user?.shopName || sellerProfile?.shopName || text.overview.fallbackShopName;
-  const handle = user?.username || sellerProfile?.username || text.overview.fallbackHandle;
-  const phoneNumber = user?.phones?.[0]?.phoneNumber || sellerProfile?.phones?.[0]?.phoneNumber || '';
-  const address = (user?.address || sellerProfile?.address || '').trim();
-  const showAddress = Boolean(address) && (user?.addressShow ?? sellerProfile?.addressShow ?? true) !== false;
-  const bio = user?.bio || sellerProfile?.bio || '';
-  const avatar = user?.profilePhotoUrl || sellerProfile?.profilePhotoUrl || user?.avatarUrl || '';
-
-  const formattedPosts = approvedPosts.map((p) => ({
-    id: String(p.id),
-    shopName,
-    sellerName: shopName,
-    sellerAvatar: avatar,
-    caption: p.description || '',
-    images: p.media ? p.media.map((m) => getMediaUrl(m)).filter(Boolean) : [],
-    media: p.media?.filter((m): m is BackendMedia & { url: string } => m.url !== null),
-    isBookmarked: bookmarkedSet.has(String(p.id)),
-    isVerified: !!user?.isVerifiedSeller,
-  }));
-
-  const handleEdit = () => {
-    router.push(PROFILE_ROUTES.edit);
-  };
-
-  const handleAddPost = () => {
-    router.push(PROFILE_ROUTES.newPost);
-  };
-
-  const handleNavigatePending = () => {
-    router.push(PROFILE_ROUTES.pendingPosts);
-  };
-
-  const handleCall = () => {
-    if (phoneNumber) {
-      window.location.href = `tel:${phoneNumber}`;
-      return;
-    }
-    toast.error(text.overview.callUnavailable);
-  };
-
-  const handleShare = async () => {
-    const storeUrl = `https://inshop.ir/store/${handle}`;
-    try {
-      await navigator.clipboard.writeText(storeUrl);
-      toast.success(text.overview.shareCopied);
-    } catch {
-      toast.error(text.overview.shareFailed);
-    }
-  };
-
-  const handleBookmarkToggle = (id: string) => {
-    setBookmarkedSet((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const handleHeaderBack = () => {
-    if (clickedPostId) {
-      setClickedPostId(null);
-    } else {
-      router.back();
-    }
-  };
-
-  const activeMenuPost = formattedPosts.find((p) => p.id === activeMenuPostId) || null;
-
-  const shopProfileData = {
-    name: shopName,
-    avatar,
-    handleId: handle,
-    bio,
-    address,
-    showAddress,
-    phone: phoneNumber,
-    isVerified: !!user?.isVerifiedSeller,
-  };
-
-  if (isMeLoading || (meHasSellerProfile && isProfileLoading)) {
-    return null;
-  }
-
-  if (!meHasSellerProfile || !hasProfile) {
-    return null;
-  }
+  if (isLoading) return <ProfileOverviewSkeleton />
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
-      {/* Header */}
-      <ProfileHeader
-        handleId={handle}
-        hasClickedPost={!!clickedPostId}
-        onBack={handleHeaderBack}
-        isVerified={!!user?.isVerifiedSeller}
-      />
+      <ProfileHeader username={userProfile?.username} />
 
-      {/* Main Content */}
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
-        {!clickedPostId ? (
-          <div className="flex flex-col w-full">
-            <ProfileBioSection
-              shopProfile={shopProfileData}
-              publishedCount={approvedPosts.length}
-              pendingCount={pendingPosts.length}
-              rejectedCount={rejectedPosts.length}
-              onCall={handleCall}
-              onShare={handleShare}
-              onEditProfile={handleEdit}
-              onNavigatePending={handleNavigatePending}
-            />
-            <ProfileGridFeed
-              posts={formattedPosts}
-              onPostClick={setClickedPostId}
-              onAddPost={handleAddPost}
-              onLoadMore={fetchNextPage}
-              hasNextPage={hasNextPage}
-              isFetchingNextPage={isFetchingNextPage}
-            />
-          </div>
-        ) : (
-          <ProfileDetailFeed
-            posts={formattedPosts}
-            clickedPostId={clickedPostId}
-            onClose={() => setClickedPostId(null)}
-            onCall={handleCall}
-            onShare={(id) => {
-              navigator.clipboard.writeText(`https://inshop.ir/post/${id}`).then(() => {
-                toast.success('لینک پست کپی شد! 📋');
-              });
-            }}
-            onBookmark={handleBookmarkToggle}
-            onOpenMenu={setActiveMenuPostId}
+        <div className="flex flex-col w-full">
+          <ProfileBioSection
+            sellerProfile={userProfile}
+            publishedCount={approvedPosts.length}
+            pendingCount={pendingPosts.length}
           />
-        )}
-      </main>
 
-      {/* Post Settings Drawer */}
-      <PostSettingsDrawer
-        post={activeMenuPost}
-        onClose={() => setActiveMenuPostId(null)}
-        onBookmarkToggle={handleBookmarkToggle}
-        onDeletePost={(id) => deletePostMutation.mutate(id)}
-      />
+          <ProfileGridFeed
+            posts={approvedPosts}
+            onLoadMore={fetchNextPage}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+        </div>
+      </main>
 
       <MainFooter />
     </div>

@@ -1,25 +1,16 @@
 'use client';
 
-import { hasSellerProfile, profileService } from '../services/profileService';
-import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
+import { profileService } from '../services/profileService';
 import EditProfileView from './EditProfileView';
 
 export default function EditProfileClientWrapper() {
-  const { data: me, isLoading: isMeLoading } = profileService.useMe();
-  const meHasSellerProfile = hasSellerProfile(me);
-  const { data: userProfile, isLoading: isProfileLoading } = profileService.useUserProfile({
-    enabled: meHasSellerProfile,
+  const { data: me } = profileService.useMe();
+  const hasSellerProfile = me?.sellerProfile !== null;
+  const { data: userProfile } = profileService.useUserProfile({
+    enabled: hasSellerProfile,
   });
 
-  if (isMeLoading || (meHasSellerProfile && isProfileLoading)) {
-    return <ProfileEditSkeleton />;
-  }
+  const user = hasSellerProfile ? userProfile : me;
 
-  const user = meHasSellerProfile ? userProfile : me;
-
-  if (!user) {
-    return <ProfileEditSkeleton />;
-  }
-
-  return <EditProfileView key={user.userId ?? user.id} user={user} />;
+  return <EditProfileView user={user} />;
 }

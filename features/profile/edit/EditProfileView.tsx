@@ -2,7 +2,6 @@
 
 import { FormProvider, useWatch } from 'react-hook-form';
 import Header from '@/components/layout/Header';
-import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
 import type { UserProfile } from '../services/profileService';
 import AvatarField from './components/AvatarField';
 import ShopSection from './components/ShopSection';
@@ -20,8 +19,6 @@ interface EditProfileViewProps {
 
 export default function EditProfileView({ user: initialUser }: EditProfileViewProps = {}) {
   const {
-    user,
-    isLoading,
     form,
     isSaving,
     shopNameForAvatar,
@@ -31,10 +28,6 @@ export default function EditProfileView({ user: initialUser }: EditProfileViewPr
     handleCancel,
     handleSubmit,
   } = useEditProfileForm({ initialUser });
-
-  if (isLoading || !user) {
-    return <ProfileEditSkeleton />;
-  }
 
   return (
     <ViewContent
