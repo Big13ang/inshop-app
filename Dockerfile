@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies based on package-lock.json and .npmrc
 COPY package.json package-lock.json* .npmrc* ./
-RUN --mount=type=cache,target=/root/.npm npm ci --verbose
+RUN --mount=type=cache,target=/root/.npm npm ci --ignore-scripts --verbose
 
 # Rebuild the source code only when needed
 FROM base AS builder
