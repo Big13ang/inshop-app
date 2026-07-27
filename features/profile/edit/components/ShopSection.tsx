@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Check, LoaderCircle, Store } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,9 @@ export default function ShopSection() {
   } = useFormContext<ProfileFormValues>();
 
   const usernameValue = useWatch({ control, name: 'username' });
-  const initialUsernameRef = useRef<string | null>(null);
+  const [initialUsername] = useState(() => getValues('username') || '');
 
-  if (initialUsernameRef.current === null) {
-    initialUsernameRef.current = getValues('username') || '';
-  }
-
-  const isChanged = (usernameValue || '').trim() !== initialUsernameRef.current.trim();
+  const isChanged = (usernameValue || '').trim() !== initialUsername.trim();
 
   const { data: checkResult, isFetching: isCheckingUsername } =
     profileService.useCheckUsername(usernameValue || '', { enabled: isChanged });

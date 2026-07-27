@@ -23,7 +23,6 @@ export default function MainFooterNav() {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { data: meData } = profileService.useMe();
 
-    const isSeller = meData?.isVerifiedSeller || !!meData?.sellerProfile;
     const rawPhoto = meData?.sellerProfile?.profilePhotoUrl || meData?.profilePhotoUrl || meData?.avatarUrl;
     const profilePhotoUrl = rawPhoto ? getMediaUrl({ url: rawPhoto }) : '';
 

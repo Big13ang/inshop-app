@@ -49,7 +49,6 @@ function PendingStatusOverlay({ status, rejectReason }: { status: PendingPost['s
 export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardProps) {
   let user = null;
   try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const userCtx = useUser();
     user = userCtx.user;
   } catch {

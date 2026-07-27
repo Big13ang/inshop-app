@@ -78,7 +78,7 @@ export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
     ...(dto.shopPhoneNumber ? { shopPhoneNumber: dto.shopPhoneNumber } : {}),
   };
 
-  let res = await http.patch('/user/profile', payload);
+  const res = await http.patch('/user/profile', payload);
 
   Result.unwrap(res);
 

@@ -16,7 +16,7 @@ interface ProfileDetailFeedProps {
 export default function ProfileDetailFeed({
   posts,
   clickedPostId,
-  onClose,
+  onClose: _onClose,
   onCall,
   onShare,
   onBookmark,
