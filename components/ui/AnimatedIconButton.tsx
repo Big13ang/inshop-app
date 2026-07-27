@@ -124,7 +124,7 @@ export default function AnimatedIconButton({
       onPointerCancel={() => animateButton(MOTION.normalScale)}
       disabled={disabled}
       className={cn(
-        'relative h-11 w-11 cursor-pointer select-none border-none bg-transparent p-0 text-primary outline-none transition-opacity duration-200 transform-gpu [will-change:transform] hover:bg-transparent',
+        'relative h-11 w-11 cursor-pointer hover:cursor-pointer [&_*]:cursor-pointer select-none border-none bg-transparent p-0 text-primary outline-none transition-opacity duration-200 transform-gpu [will-change:transform] hover:bg-transparent',
         'disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20',
         className
       )}

@@ -23,6 +23,12 @@ jest.mock('@/lib/auth-client', () => ({
   },
 }));
 
+jest.mock('@/features/profile/services/profileService', () => ({
+  profileService: {
+    useMe: jest.fn().mockReturnValue({ data: null }),
+  },
+}));
+
 describe('MainFooterNav', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -31,26 +37,26 @@ describe('MainFooterNav', () => {
 
   it('renders all navigation tabs', () => {
     render(<MainFooterNav />);
-    
-    expect(screen.getByLabelText('صف انتظار')).toBeInTheDocument();
+
+    expect(screen.getByLabelText('پروفایل')).toBeInTheDocument();
     expect(screen.getByLabelText('پست جدید')).toBeInTheDocument();
     expect(screen.getByLabelText('خروج')).toBeInTheDocument();
   });
 
-  it('navigates to pending posts when clicking pending posts tab', async () => {
+  it('navigates to profile when clicking profile tab', async () => {
     const user = userEvent.setup();
     mockPathname = '/app/posts/new';
     render(<MainFooterNav />);
 
-    const pendingTab = screen.getByLabelText('صف انتظار');
-    await user.click(pendingTab);
+    const profileTab = screen.getByLabelText('پروفایل');
+    await user.click(profileTab);
 
-    expect(mockPush).toHaveBeenCalledWith('/app/posts/pending');
+    expect(mockPush).toHaveBeenCalledWith('/app/profile');
   });
 
   it('navigates to new post when clicking new post tab', async () => {
     const user = userEvent.setup();
-    mockPathname = '/app/posts/pending';
+    mockPathname = '/app/profile';
     render(<MainFooterNav />);
 
     const newPostTab = screen.getByLabelText('پست جدید');
@@ -77,11 +83,11 @@ describe('MainFooterNav', () => {
 
   it('does not navigate if clicking the already active tab', async () => {
     const user = userEvent.setup();
-    mockPathname = '/app/posts/pending';
+    mockPathname = '/app/profile';
     render(<MainFooterNav />);
 
-    const pendingTab = screen.getByLabelText('صف انتظار');
-    await user.click(pendingTab);
+    const profileTab = screen.getByLabelText('پروفایل');
+    await user.click(profileTab);
 
     expect(mockPush).not.toHaveBeenCalled();
   });
@@ -117,7 +123,7 @@ describe('MainFooterNav', () => {
     render(<MainFooterNav />);
 
     const logoutTab = screen.getByLabelText('خروج');
-    const pendingTab = screen.getByLabelText('صف انتظار');
+    const profileTab = screen.getByLabelText('پروفایل');
     const newPostTab = screen.getByLabelText('پست جدید');
 
     // First click
@@ -125,7 +131,7 @@ describe('MainFooterNav', () => {
 
     // Verify that all tabs are disabled while logging out
     expect(logoutTab).toBeDisabled();
-    expect(pendingTab).toBeDisabled();
+    expect(profileTab).toBeDisabled();
     expect(newPostTab).toBeDisabled();
 
     // Verify that the loader spinner is rendered inside the logout button

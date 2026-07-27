@@ -37,7 +37,7 @@ export function FooterTab({
                     <Icon
                         data-testid="tab-icon"
                         className={cn(
-                            'size-7',
+                            'size-8',
                             isActive ? 'text-primary' : 'text-secondary',
                         )}
                         strokeWidth={isActive ? 2.5 : 2}

@@ -20,9 +20,15 @@ function MenuRoot({ isOpen, onClose, children }: MenuRootProps) {
   );
 }
 
-function MenuTitle({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+interface MenuTitleProps {
+  children: React.ReactNode;
+  right?: React.ReactNode;
+  className?: string;
+}
+
+function MenuTitle({ children, right, className }: MenuTitleProps) {
   return (
-    <div className="mb-4 flex items-center justify-between border-b border-zinc-100 px-5 pb-4 select-none" dir="rtl">
+    <div className={cn('mb-4 flex items-center justify-between border-b border-zinc-100 px-5 pb-4 select-none', className)} dir="rtl">
       <span className="text-[13px] font-bold text-zinc-500">{children}</span>
       {right ? <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold text-zinc-500">{right}</span> : null}
     </div>
