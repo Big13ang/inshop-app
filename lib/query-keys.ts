@@ -13,6 +13,10 @@ export const queryKeys = {
   },
   profile: {
     me: ['profile', 'me'] as const,
+    checkUsername: (username: string) => ['profile', 'check-username', username] as const,
+  },
+  user: {
+    profile: ['user', 'profile'] as const,
   },
 } as const;
 
@@ -35,6 +39,12 @@ export const queryCacheFactory = {
   profile: {
     invalidateMe: (queryClient: QueryClient) => {
       return queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
+    },
+  },
+
+  user: {
+    invalidateProfile: (queryClient: QueryClient) => {
+      return queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
     },
   },
 };

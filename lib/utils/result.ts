@@ -19,4 +19,8 @@ export const Result = {
   match<T, E, R>(result: Result<T, E>, cases: { ok: (value: T) => R; err: (error: E) => R }): R {
     return result.ok ? cases.ok(result.value) : cases.err(result.error);
   },
+  unwrap<T>(result: Result<T, { message: string }>): T {
+    if (!result.ok) throw new Error(result.error.message);
+    return result.value;
+  },
 };

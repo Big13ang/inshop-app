@@ -3,6 +3,17 @@ import mockReact from 'react';
 import { server } from './mocks/server';
 import { resetPendingPostsFixture } from './mocks/handlers';
 
+jest.mock(
+  'react-intersection-observer',
+  () => ({
+    useInView: () => ({
+      ref: jest.fn(),
+      inView: false,
+    }),
+  }),
+  { virtual: true }
+);
+
 jest.mock('sonner', () => ({
   Toaster: () => null,
   toast: {

@@ -362,6 +362,71 @@ export const handlers = [
       addressShow: body.addressShow ?? true,
     });
   }),
+  http.get('http://localhost:3000/user/profile/check-username/:username', ({ params }) => {
+    const isTaken = params.username === 'taken';
+    return HttpResponse.json({
+      username: params.username,
+      available: !isTaken,
+      ...(isTaken ? { reason: 'USERNAME_TAKEN' } : {}),
+    });
+  }),
+  http.get('/user/profile/check-username/:username', ({ params }) => {
+    const isTaken = params.username === 'taken';
+    return HttpResponse.json({
+      username: params.username,
+      available: !isTaken,
+      ...(isTaken ? { reason: 'USERNAME_TAKEN' } : {}),
+    });
+  }),
+  http.get('http://localhost:3000/seller-profile/check-username/:username', ({ params }) => {
+    const isTaken = params.username === 'taken';
+    return HttpResponse.json({
+      username: params.username,
+      available: !isTaken,
+      ...(isTaken ? { reason: 'USERNAME_TAKEN' } : {}),
+    });
+  }),
+  http.get('/seller-profile/check-username/:username', ({ params }) => {
+    const isTaken = params.username === 'taken';
+    return HttpResponse.json({
+      username: params.username,
+      available: !isTaken,
+      ...(isTaken ? { reason: 'USERNAME_TAKEN' } : {}),
+    });
+  }),
+  http.post('/user/profile', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    return HttpResponse.json({
+      id: 'sp-1',
+      userId: 'seller-1',
+      username: body.username ?? 'test_shop',
+      shopName: body.shopName ?? 'Test Seller',
+      bio: body.bio ?? null,
+      profilePhotoUrl: null,
+      address: body.address ?? null,
+      addressShow: body.addressShow ?? true,
+      phones: [{ id: 'p-1', phoneNumber: (body.shopPhoneNumber as string) || '09121111111' }],
+    });
+  }),
+  http.patch('/user/profile', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    return HttpResponse.json({
+      id: 'sp-1',
+      userId: 'seller-1',
+      username: body.username ?? 'test_shop',
+      shopName: body.shopName ?? 'Test Seller',
+      bio: body.bio ?? null,
+      profilePhotoUrl: null,
+      address: body.address ?? null,
+      addressShow: body.addressShow ?? true,
+      phones: [{ id: 'p-1', phoneNumber: (body.shopPhoneNumber as string) || '09121111111' }],
+    });
+  }),
+  http.post('/user/profile/photo', () => {
+    return HttpResponse.json({
+      profilePhotoUrl: '/uploads/profiles/seller-1/avatar.jpg',
+    });
+  }),
   http.post('http://localhost:3000/seller-profile/me/photo', () => {
     return HttpResponse.json({
       id: 'sp-1',
