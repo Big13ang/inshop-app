@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import MainFooter from '@/components/layout/MainFooter';
-import { postsQueryService, POST_STATUS } from '@/features/posts/services/postsQueryService';
+import { postsQueryService, POST_STATUS, type BackendMedia } from '@/features/posts/services/postsQueryService';
 import { hasSellerProfile, profileService } from '../services/profileService';
 import { PROFILE_ROUTES, text } from '../constants';
 
@@ -71,7 +71,7 @@ export default function ProfileView() {
     sellerAvatar: avatar,
     caption: p.description || '',
     images: p.media ? p.media.map((m) => getMediaUrl(m)).filter(Boolean) : [],
-    media: p.media,
+    media: p.media?.filter((m): m is BackendMedia & { url: string } => m.url !== null),
     isBookmarked: bookmarkedSet.has(String(p.id)),
     isVerified: !!user?.isVerifiedSeller,
   }));

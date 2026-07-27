@@ -33,7 +33,7 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
   const resetKey = [
     user?.userId ?? user?.id ?? 'new',
     user?.sellerProfile?.id ?? '',
-    user?.updatedAt ?? user?.sellerProfile?.updatedAt ?? '',
+    user?.profile?.updatedAt ?? user?.sellerProfile?.updatedAt ?? '',
   ].join(':');
   const lastResetKeyRef = useRef<string | null>(null);
 

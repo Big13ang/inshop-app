@@ -152,9 +152,6 @@ export const handlers = [
       {
         id,
         sellerId: 'seller-1',
-        sellerName: 'گالری طلای مدرن',
-        sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
-        isVerified: true,
         description: (body.description as string) ?? '',
         media: Array.isArray(body.mediaIds)
           ? (body.mediaIds as string[]).map((mid, idx) => ({
@@ -191,9 +188,6 @@ export const handlers = [
       {
         id,
         sellerId: 'seller-1',
-        sellerName: 'گالری طلای مدرن',
-        sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
-        isVerified: true,
         description: (body.description as string) ?? '',
         media: Array.isArray(body.mediaIds)
           ? (body.mediaIds as string[]).map((mid, idx) => ({
@@ -232,9 +226,6 @@ export const handlers = [
       {
         id,
         sellerId: 'seller-1',
-        sellerName: 'گالری طلای مدرن',
-        sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
-        isVerified: true,
         description: (body.caption as string) ?? '',
         media: Array.isArray(body.mediaUrls)
           ? (body.mediaUrls as string[]).map((url, idx) => ({

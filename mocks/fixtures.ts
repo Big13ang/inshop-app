@@ -7,9 +7,6 @@ export function createPendingPostsFixture(): PendingPost[] {
     {
       id: 'pending-1',
       sellerId: 'seller-1',
-      sellerName: 'گالری طلای مدرن',
-      sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
-      isVerified: true,
       description: 'دستبند النگویی فوق العاده مدرن با طراحی مینیمال.',
       media: [
         {
@@ -38,9 +35,6 @@ export function createPendingPostsFixture(): PendingPost[] {
     {
       id: 'rejected-1',
       sellerId: 'seller-1',
-      sellerName: 'گالری طلای مدرن',
-      sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
-      isVerified: true,
       description: 'انگشتر جواهر طرح رز کلاسیک همراه با نگین برلیان.',
       media: [
         {
@@ -69,9 +63,6 @@ export function createPendingPostsFixture(): PendingPost[] {
     {
       id: 'rejected-2',
       sellerId: 'seller-1',
-      sellerName: 'گالری طلای مدرن',
-      sellerAvatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
-      isVerified: true,
       description: 'گوشواره زنجیری مدرن با طراحی مروارید طبیعی پرورشی.',
       media: [
         {

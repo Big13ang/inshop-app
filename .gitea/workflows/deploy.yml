@@ -30,6 +30,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure npm client for container build
+        env:
+          NPM_USER: "${{ secrets.NPM_USER }}"
+          NPM_PASS: "${{ secrets.NPM_PASS }}"
+        run: |
+          set -euo pipefail
+          test -f .npmrc
+          if [ -z "${NPM_USER:-}" ] || [ -z "${NPM_PASS:-}" ]; then
+            echo "::error:: NPM_USER or NPM_PASS secret is missing in Gitea repository secrets!"
+            echo "Please set NPM_USER and NPM_PASS in Gitea repository secrets (Repo Settings -> Actions -> Secrets)."
+            exit 1
+          fi
+          npm_registry="$(npm config get registry --userconfig .npmrc)"
+          test -n "$npm_registry"
+          npm_host="$(node -e "console.log(new URL(process.argv[1]).host)" "$npm_registry")"
+          npm_auth="$(printf '%s:%s' "$NPM_USER" "$NPM_PASS" | base64 | tr -d '\n')"
+          cp .npmrc .npmrc.ci
+          {
+            echo "//$npm_host/:_auth=$npm_auth"
+            echo "ignore-scripts=true"
+          } >> .npmrc.ci
+          echo "Configured npm auth for $npm_host."
+
       - name: Diagnostic DNS and Registry Network Check
         run: |
           echo "=========================================================="
@@ -54,6 +77,7 @@ jobs:
         run: |
           echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
           docker build \
+            --secret id=npmrc,src=.npmrc.ci \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
             --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
