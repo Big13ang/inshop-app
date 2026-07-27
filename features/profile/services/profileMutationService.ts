@@ -1,71 +1,132 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
+import { http, Result } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
-import { optimisticUpdate } from '@/lib/optimistic';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { text } from '../constants';
-import type { UserProfile } from './profileService';
-import { applyToUserProfile, type UpdateProfilePayload } from '../utils/profileMapper';
 
-export const PROFILE_UPDATE_ENDPOINT = '/seller-profile/me';
+export interface CreateProfileDto {
+  username: string;
+  shopName: string;
+  bio?: string;
+  address?: string;
+  addressShow?: boolean;
+  shopPhoneNumber: string;
+  avatarUrl?: string | null;
+}
 
-export async function updateProfile(payload: UpdateProfilePayload): Promise<void> {
-  const patchDto = {
-    shopName: payload.shopName,
-    bio: payload.bio,
-    address: payload.address,
-    addressShow: payload.addressShow,
-    ...(payload.addressProvince ? { addressProvince: payload.addressProvince } : {}),
-    ...(payload.addressCity ? { addressCity: payload.addressCity } : {}),
-  };
+export interface UpdateProfileDto {
+  username?: string;
+  shopName?: string;
+  bio?: string;
+  address?: string;
+  addressShow?: boolean;
+  shopPhoneNumber?: string;
+  avatarUrl?: string | null;
+}
 
-  const res = await http.patch(PROFILE_UPDATE_ENDPOINT, patchDto);
-  if (!res.ok) throw new Error(res.error.message);
+async function uploadProfilePhoto(avatarDataUrl: string): Promise<void> {
+  if (!avatarDataUrl.startsWith('data:')) return;
+  try {
+    const fetchRes = await fetch(avatarDataUrl);
+    const blob = await fetchRes.blob();
+    const formData = new FormData();
+    formData.append('photo', blob, 'avatar.jpg');
 
-  if (payload.avatarUrl && payload.avatarUrl.startsWith('data:')) {
-    try {
-      const fetchRes = await fetch(payload.avatarUrl);
-      const blob = await fetchRes.blob();
-      const formData = new FormData();
-      formData.append('photo', blob, 'avatar.jpg');
-
-      const photoRes = await http.post('/seller-profile/me/photo', formData);
-      if (!photoRes.ok) {
-        console.warn('Avatar photo upload warning:', photoRes.error.message);
+    const photoRes = await http.post('/user/profile/photo', formData);
+    if (!photoRes.ok) {
+      // Fallback to legacy endpoint if /user/profile/photo is not available
+      const legacyPhotoRes = await http.post('/seller-profile/me/photo', formData);
+      if (!legacyPhotoRes.ok) {
+        console.warn('Avatar photo upload warning:', legacyPhotoRes.error.message);
       }
-    } catch (err) {
-      console.warn('Failed to upload avatar photo:', err);
     }
+  } catch (err) {
+    console.warn('Failed to upload avatar photo:', err);
   }
 }
 
-function applyPayloadToCache(
-  payload: UpdateProfilePayload,
-  current: UserProfile | undefined,
-): UserProfile {
-  if (!current) return current as unknown as UserProfile;
-  return applyToUserProfile(current, payload);
+export async function createProfile(dto: CreateProfileDto): Promise<void> {
+  const payload = {
+    username: dto.username,
+    shopName: dto.shopName,
+    bio: dto.bio,
+    address: dto.address,
+    addressShow: dto.addressShow,
+    shopPhoneNumber: dto.shopPhoneNumber,
+  };
+
+  let res = await http.post('/user/profile', payload);
+  if (!res.ok) {
+    // Fallback to legacy endpoint
+    res = await http.post('/seller-profile/me', payload);
+  }
+  Result.unwrap(res);
+
+  if (dto.avatarUrl) {
+    await uploadProfilePhoto(dto.avatarUrl);
+  }
+}
+
+export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
+  const payload = {
+    ...(dto.username ? { username: dto.username } : {}),
+    ...(dto.shopName ? { shopName: dto.shopName } : {}),
+    ...(dto.bio !== undefined ? { bio: dto.bio } : {}),
+    ...(dto.address !== undefined ? { address: dto.address } : {}),
+    ...(dto.addressShow !== undefined ? { addressShow: dto.addressShow } : {}),
+    ...(dto.shopPhoneNumber ? { shopPhoneNumber: dto.shopPhoneNumber } : {}),
+  };
+
+  let res = await http.patch('/user/profile', payload);
+
+  Result.unwrap(res);
+
+  if (dto.avatarUrl) {
+    await uploadProfilePhoto(dto.avatarUrl);
+  }
 }
 
 export const profileMutationService = {
+  useCreateProfile(onSaved?: () => void) {
+    const queryClient = useQueryClient();
+
+    const handleSuccess = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+      toast.success(text.edit.saveSuccess);
+      onSaved?.();
+    };
+
+    const handleError = () => {
+      toast.error(ERROR_MESSAGES.profile.updateFailed);
+    };
+
+    return useMutation({
+      mutationFn: createProfile,
+      onSuccess: handleSuccess,
+      onError: handleError,
+    });
+  },
+
   useUpdateProfile(onSaved?: () => void) {
     const queryClient = useQueryClient();
 
+    const handleSuccess = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+      toast.success(text.edit.saveSuccess);
+      onSaved?.();
+    };
+
+    const handleError = () => {
+      toast.error(ERROR_MESSAGES.profile.updateFailed);
+    };
+
     return useMutation({
       mutationFn: updateProfile,
-      ...optimisticUpdate<UserProfile, UpdateProfilePayload>({
-        queryClient,
-        queryKey: queryKeys.profile.me,
-        updateFn: applyPayloadToCache,
-        onSuccess: () => {
-          toast.success(text.edit.saveSuccess);
-          onSaved?.();
-        },
-        onError: () => {
-          toast.error(ERROR_MESSAGES.profile.updateFailed);
-        },
-      }),
+      onSuccess: handleSuccess,
+      onError: handleError,
     });
   },
 };

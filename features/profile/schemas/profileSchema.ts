@@ -48,12 +48,12 @@ const phoneSchema = z
 export const profileFormSchema = z
   .object({
     shopName: shopNameSchema,
-    handle: handleSchema,
+    username: handleSchema,
     bio: bioSchema,
     address: addressSchema,
     showAddress: z.boolean(),
     phoneNumber: phoneSchema,
-    avatar: z.string(),
+    profilePhotoUrl: z.string(),
   })
   .refine((values) => !values.showAddress || values.address.length > 0, {
     message: ERROR_MESSAGES.profile.addressRequiredWhenVisible,

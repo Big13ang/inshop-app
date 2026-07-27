@@ -5,12 +5,12 @@ import { PROFILE_LIMITS } from '../constants';
 function values(overrides: Partial<ProfileFormValues> = {}): ProfileFormValues {
   return {
     shopName: 'گالری طلای مدرن',
-    handle: 'modern_gold',
+    username: 'modern_gold',
     bio: 'فروش انواع طلا و جواهر',
     address: 'تهران، خیابان پاسداران',
     showAddress: true,
     phoneNumber: '09171234567',
-    avatar: '',
+    profilePhotoUrl: '',
     ...overrides,
   };
 }
@@ -46,19 +46,19 @@ describe('profileFormSchema', () => {
     });
   });
 
-  describe('handle', () => {
-    it('allows an empty handle because it is optional', () => {
-      expect(firstErrorFor(values({ handle: '' }), 'handle')).toBeUndefined();
+  describe('username', () => {
+    it('allows an empty username because it is optional', () => {
+      expect(firstErrorFor(values({ username: '' }), 'username')).toBeUndefined();
     });
 
     it('rejects non-latin characters', () => {
-      expect(firstErrorFor(values({ handle: 'فروشگاه' }), 'handle')).toBe(
+      expect(firstErrorFor(values({ username: 'فروشگاه' }), 'username')).toBe(
         ERROR_MESSAGES.profile.handleInvalid,
       );
     });
 
-    it('rejects a handle shorter than the minimum', () => {
-      expect(firstErrorFor(values({ handle: 'ab' }), 'handle')).toBe(
+    it('rejects a username shorter than the minimum', () => {
+      expect(firstErrorFor(values({ username: 'ab' }), 'username')).toBe(
         ERROR_MESSAGES.profile.handleTooShort(PROFILE_LIMITS.handle.min),
       );
     });
