@@ -1,8 +1,12 @@
 import { cookies } from 'next/headers';
 import { http, Result } from '@/lib/utils';
-import { AUTH_COOKIE_KEYS } from '@/proxy';
 import type { UserProfile } from './profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
+
+export const AUTH_COOKIE_KEYS = [
+  'better-auth.session_token',
+  '__Secure-better-auth.session_token',
+] as const;
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
