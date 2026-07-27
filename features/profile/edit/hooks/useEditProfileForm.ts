@@ -63,7 +63,6 @@ function getProfilePayload(values: ProfileFormValues) {
     address: values.address.trim(),
     addressShow: values.showAddress,
     shopPhoneNumber: values.phoneNumber.trim(),
-    avatarUrl: values.profilePhotoUrl || null,
   };
 }
 
@@ -85,6 +84,7 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
 
   const updateMutation = profileMutationService.useUpdateProfile(navigateToOverview);
   const createMutation = profileMutationService.useCreateProfile(navigateToOverview);
+  const uploadPhotoMutation = profileMutationService.useUploadProfilePhoto();
 
   const form = useForm<EditProfileFormFields>({
     resolver: zodResolver(profileFormSchema),
@@ -100,8 +100,9 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
     form.reset(getFormValues(user));
   }, [form, resetKey, user]);
 
-  const handleAvatarChange = (dataUrl: string) => {
-    form.setValue('profilePhotoUrl', dataUrl, { shouldDirty: true });
+  const handleAvatarChange = (file: File, previewUrl: string) => {
+    form.setValue('profilePhotoUrl', previewUrl);
+    uploadPhotoMutation.mutate(file);
   };
 
   const handleCancel = () => {
@@ -152,6 +153,7 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
     isCreateMode,
     form,
     isSaving: updateMutation.isPending || createMutation.isPending,
+    isAvatarUploading: uploadPhotoMutation.isPending,
     shopNameForAvatar: defaultValues.shopName || text.overview.fallbackShopName,
     headerTitle: isCreateMode ? CREATE_PROFILE_TITLE : text.edit.headerTitle,
     submitText: isCreateMode ? CREATE_PROFILE_SUBMIT_TEXT : text.edit.saveAction,

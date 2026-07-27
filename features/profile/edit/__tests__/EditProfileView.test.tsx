@@ -22,12 +22,15 @@ jest.mock('next/navigation', () => ({
 
 const mockUpdateMutate = jest.fn();
 const mockCreateMutate = jest.fn();
+const mockUploadPhotoMutate = jest.fn();
 let mockIsPending = false;
+let mockIsUploadPending = false;
 
 jest.mock('../../services/profileMutationService', () => ({
   profileMutationService: {
     useUpdateProfile: () => ({ mutate: mockUpdateMutate, isPending: mockIsPending }),
     useCreateProfile: () => ({ mutate: mockCreateMutate, isPending: mockIsPending }),
+    useUploadProfilePhoto: () => ({ mutate: mockUploadPhotoMutate, isPending: mockIsUploadPending }),
   },
 }));
 
@@ -85,9 +88,11 @@ function renderView(user = makeUser()) {
 beforeEach(() => {
   mockUpdateMutate.mockClear();
   mockCreateMutate.mockClear();
+  mockUploadPhotoMutate.mockClear();
   mockPush.mockClear();
   mockReplace.mockClear();
   mockIsPending = false;
+  mockIsUploadPending = false;
 });
 
 describe('EditProfileView', () => {
@@ -203,6 +208,18 @@ describe('EditProfileView', () => {
     await user.type(phone, '۰۹۱۲۳۴۵۶۷۸۹');
 
     expect(phone).toHaveValue('09123456789');
+  });
+
+  it('uploads profile image immediately after selecting an avatar', async () => {
+    const user = userEvent.setup();
+    renderView();
+
+    const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
+    await user.upload(screen.getByTestId('avatar-file-input'), file);
+
+    await waitFor(() => expect(mockUploadPhotoMutate).toHaveBeenCalledTimes(1));
+    expect(mockUploadPhotoMutate).toHaveBeenCalledWith(file);
+    expect(mockUpdateMutate).not.toHaveBeenCalled();
   });
 
   it('skips request and returns to overview when nothing changed in edit mode', async () => {

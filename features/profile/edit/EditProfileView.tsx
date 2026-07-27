@@ -21,6 +21,7 @@ export default function EditProfileView({ user: initialUser }: EditProfileViewPr
   const {
     form,
     isSaving,
+    isAvatarUploading,
     shopNameForAvatar,
     headerTitle,
     submitText,
@@ -33,6 +34,7 @@ export default function EditProfileView({ user: initialUser }: EditProfileViewPr
     <ViewContent
       form={form}
       isSaving={isSaving}
+      isAvatarUploading={isAvatarUploading}
       shopNameForAvatar={shopNameForAvatar}
       headerTitle={headerTitle}
       submitText={submitText}
@@ -46,10 +48,11 @@ export default function EditProfileView({ user: initialUser }: EditProfileViewPr
 interface ViewContentProps {
   form: ReturnType<typeof useEditProfileForm>['form'];
   isSaving: boolean;
+  isAvatarUploading: boolean;
   shopNameForAvatar: string;
   headerTitle: string;
   submitText: string;
-  onAvatarChange: (dataUrl: string) => void;
+  onAvatarChange: (file: File, previewUrl: string) => void;
   onCancel: () => void;
   onSubmit: ReturnType<typeof useEditProfileForm>['handleSubmit'];
 }
@@ -57,6 +60,7 @@ interface ViewContentProps {
 function ViewContent({
   form,
   isSaving,
+  isAvatarUploading,
   shopNameForAvatar,
   headerTitle,
   submitText,
@@ -80,6 +84,7 @@ function ViewContent({
             <AvatarField
               value={avatarValue}
               alt={shopNameForAvatar}
+              isUploading={isAvatarUploading}
               onChange={onAvatarChange}
             />
             <ShopSection />

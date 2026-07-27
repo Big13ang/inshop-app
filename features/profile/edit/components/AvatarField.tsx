@@ -1,22 +1,25 @@
 'use client';
 
 import { useRef } from 'react';
-import { Camera, Store } from 'lucide-react';
+import { Camera, LoaderCircle, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { AVATAR_ACCEPTED_TYPES, text } from '../../constants';
-import { toAvatarPreview } from '../../utils/avatar';
+import { readFileAsDataUrl, validateAvatarFile } from '../../utils/avatar';
 
 interface AvatarFieldProps {
   value: string;
   alt: string;
-  onChange: (dataUrl: string) => void;
+  isUploading?: boolean;
+  onChange: (file: File, previewUrl: string) => void;
 }
 
-export default function AvatarField({ value, alt, onChange }: AvatarFieldProps) {
+export default function AvatarField({ value, alt, isUploading = false, onChange }: AvatarFieldProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openFilePicker = () => {
+    if (isUploading) return;
+
     fileInputRef.current?.click();
   };
 
@@ -26,14 +29,19 @@ export default function AvatarField({ value, alt, onChange }: AvatarFieldProps) 
     event.target.value = '';
     if (!file) return;
 
-    const preview = await toAvatarPreview(file);
+    const validation = validateAvatarFile(file);
+    if (!validation.ok) {
+      toast.error(validation.error);
+      return;
+    }
+
+    const preview = await readFileAsDataUrl(validation.value);
     if (!preview.ok) {
       toast.error(preview.error);
       return;
     }
 
-    onChange(preview.value);
-    toast.success(text.edit.avatarSelected);
+    onChange(validation.value, preview.value);
   };
 
   return (
@@ -62,10 +70,15 @@ export default function AvatarField({ value, alt, onChange }: AvatarFieldProps) 
           size="icon-lg"
           shape="circle"
           onClick={openFilePicker}
+          disabled={isUploading}
           aria-label={text.edit.avatarUploadAction}
           className="absolute bottom-0 left-0 border-2 border-surface-l3 shadow-float"
         >
-          <Camera className="size-4" aria-hidden="true" />
+          {isUploading ? (
+            <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Camera className="size-4" aria-hidden="true" />
+          )}
         </Button>
       </div>
 
