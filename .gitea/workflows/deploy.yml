@@ -49,7 +49,6 @@ jobs:
           cp .npmrc .npmrc.ci
           {
             echo "//$npm_host/:_auth=$npm_auth"
-            echo "//$npm_host/:always-auth=true"
             echo "ignore-scripts=true"
           } >> .npmrc.ci
           echo "Configured npm auth for $npm_host."
@@ -57,15 +56,18 @@ jobs:
       - name: Diagnostic DNS and Registry Network Check
         run: |
           echo "=========================================================="
-          echo "Checking host/container DNS resolution for ${{ vars.REGISTRY_HOST }}..."
+          echo "Checking host/container DNS resolution for ${{ vars.REGISTRY_HOST }} and npm.inshop.social..."
           echo "--- Local /etc/hosts ---"
           cat /etc/hosts
           echo "--- Local Resolution (getent) ---"
           getent hosts "${{ vars.REGISTRY_HOST }}" || echo "getent hosts: unresolved"
+          getent hosts "npm.inshop.social" || echo "getent hosts npm.inshop.social: unresolved"
           echo "--- Host DNS Resolution (nslookup) ---"
           nslookup "${{ vars.REGISTRY_HOST }}" || echo "nslookup: failed"
+          nslookup "npm.inshop.social" || echo "nslookup npm.inshop.social: failed"
           echo "--- HTTP Connectivity (curl with timeout) ---"
-          curl --connect-timeout 2 --max-time 3 -Is "http://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl: connection failed or timed out"
+          curl --connect-timeout 2 --max-time 3 -Is "http://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl docker: connection failed or timed out"
+          curl --connect-timeout 2 --max-time 3 -Is "https://npm.inshop.social/" || echo "curl npm: connection failed or timed out"
           echo "=========================================================="
 
       - name: Log in to the internal registry
@@ -90,8 +92,11 @@ jobs:
           npm_registry="$(npm config get registry --userconfig .npmrc.ci)"
           echo "npm registry URL: ${npm_registry}"
           echo "Attempting authentication ping..."
-          npm ping --userconfig .npmrc.ci
-          echo "Successfully authenticated with npm registry ${npm_registry}."
+          if npm ping --userconfig .npmrc.ci; then
+            echo "Successfully authenticated with npm registry ${npm_registry}."
+          else
+            echo "::warning:: Internal npm registry ping failed (host/network unresolvable on runner). Docker build fallback will handle public dependencies."
+          fi
           echo "=========================================================="
 
       - name: Build image (Next.js standalone)

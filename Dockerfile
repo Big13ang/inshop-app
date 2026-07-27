@@ -22,19 +22,21 @@ RUN --mount=type=cache,target=/root/.npm \
       fi; \
       if [ -n "$NPM_AUTH" ]; then \
         echo "//npm.inshop.social/:_auth=$NPM_AUTH" >> .npmrc; \
-        echo "//npm.inshop.social/:always-auth=true" >> .npmrc; \
       elif [ -n "$NPM_TOKEN" ]; then \
         echo "//npm.inshop.social/:_authToken=$NPM_TOKEN" >> .npmrc; \
       elif [ -n "$NPM_USER" ] && [ -n "$NPM_PASS" ]; then \
         npm_auth=$(printf "%s:%s" "$NPM_USER" "$NPM_PASS" | base64 | tr -d "\n"); \
         echo "//npm.inshop.social/:_auth=$npm_auth" >> .npmrc; \
-        echo "//npm.inshop.social/:always-auth=true" >> .npmrc; \
       fi; \
       if ! grep -qE "_auth=|_authToken=" .npmrc 2>/dev/null || grep -q "_auth=Og==" .npmrc 2>/dev/null; then \
         echo "Warning: No valid npm authentication credentials provided for private registry. Falling back to public npm registry."; \
         echo "registry=https://registry.npmjs.org/" > .npmrc; \
       fi; \
-      npm ci --verbose'
+      if ! npm ci --verbose; then \
+        echo "Warning: npm ci failed with configured registry. Retrying with public npm registry..."; \
+        echo "registry=https://registry.npmjs.org/" > .npmrc; \
+        npm ci --verbose; \
+      fi'
 
 # Rebuild the source code only when needed
 FROM base AS builder
