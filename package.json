@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "check": "tsgo --noEmit",
     "dev": "next dev -H 0.0.0.0 -p 4000",
     "build": "next build",
     "start": "next start",
