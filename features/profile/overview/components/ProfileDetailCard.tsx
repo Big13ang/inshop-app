@@ -108,19 +108,21 @@ export default function ProfileDetailCard({
 
         <div className="flex items-center gap-2">
           <AnimatedIconButton
-            id={`detail-share-${post.id}`}
+            id={`btn-share-${post.id}`}
+            aria-label="Share post"
             onClick={handleShareClick}
           >
-            <Share2 className="w-6 h-6 text-primary" strokeWidth={2} />
+            <Share2 className="w-7 h-7 text-primary" strokeWidth={2} />
           </AnimatedIconButton>
 
           <AnimatedIconButton
-            id={`detail-bookmark-${post.id}`}
+            id={`btn-bookmark-${post.id}`}
+            aria-label="Bookmark post"
             onClick={handleBookmarkClick}
             isActive={isBookmarked}
           >
             <Bookmark
-              className="w-6 h-6 text-primary transition-colors duration-200"
+              className="w-7 h-7 text-primary transition-colors duration-200"
               strokeWidth={2}
               fill={isBookmarked ? 'currentColor' : 'none'}
             />

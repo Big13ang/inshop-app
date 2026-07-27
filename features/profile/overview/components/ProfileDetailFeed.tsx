@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import ProfileDetailCard, { DetailCardPost } from './ProfileDetailCard';
 
 interface ProfileDetailFeedProps {
@@ -22,7 +23,15 @@ export default function ProfileDetailFeed({
   onOpenMenu,
 }: ProfileDetailFeedProps) {
   const hasPosts = posts && posts.length > 0;
-  const totalPostsCount = hasPosts ? posts.length : 0;
+
+  useEffect(() => {
+    if (clickedPostId) {
+      const el = document.getElementById(`feed-detail-card-${clickedPostId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [clickedPostId]);
 
   if (!hasPosts) {
     return (
@@ -34,18 +43,6 @@ export default function ProfileDetailFeed({
 
   return (
     <div className="flex flex-col w-full space-y-4 pt-1 px-0">
-      <div className="px-4 py-1.5 bg-surface-container-low text-xs text-secondary text-right flex items-center justify-between" dir="rtl">
-        <span className="font-semibold">
-          ({totalPostsCount} پست) برای بازگشت به گالری، دکمه بازگشت بالا را بزنید.
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-primary font-bold hover:underline cursor-pointer"
-        >
-          بستن فید
-        </button>
-      </div>
 
       {posts.map((post) => (
         <ProfileDetailCard

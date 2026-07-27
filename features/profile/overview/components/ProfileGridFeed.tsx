@@ -2,12 +2,14 @@
 
 import { useInView } from 'react-intersection-observer';
 import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/features/posts/utils/media';
 import { text } from '../../constants';
 
 export interface GridPostItem {
   id: string;
   images?: string[];
   caption?: string;
+  media?: Array<{ url?: string | null; storageKey?: string | null }>;
   [key: string]: unknown;
 }
 
@@ -17,10 +19,12 @@ interface ProfileGridItemProps {
 }
 
 function ProfileGridItem({ post, onClick }: ProfileGridItemProps) {
-  const images = post.images || (post.media ? post.media.map((m: { url?: string } | string) => (typeof m === 'string' ? m.url || m : m?.url || '')) : []);
+  const images = (post.images && post.images.length > 0)
+    ? post.images
+    : (post.media ? post.media.map((m) => getMediaUrl(m)).filter(Boolean) : []);
   const hasMultipleImages = images.length > 1;
   const firstImage = images[0] || '';
-  const captionText = post.caption || post.description || '';
+  const captionText = post.caption || (post.description as string) || '';
   const accessibilityLabel = text.overview.gridItemLabel(captionText.split(/[.،؛]/)[0] || '');
   const imageAlt = `تصویر محصول ${captionText.split(/[.،؛]/)[0] || ''}`;
 

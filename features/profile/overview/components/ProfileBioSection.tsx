@@ -93,7 +93,7 @@ export default function ProfileBioSection({
       </div>
 
       {/* Shop location address */}
-      {shopProfile.showAddress !== false && shopProfile.address ? (
+      {shopProfile.showAddress && shopProfile.address ? (
         <div className="mt-2.5 flex items-center justify-start gap-1 text-secondary text-[11px] self-start" dir="rtl">
           <MapPin className="w-3.5 h-3.5 text-secondary/70 shrink-0" />
           <span className="truncate">{shopProfile.address}</span>

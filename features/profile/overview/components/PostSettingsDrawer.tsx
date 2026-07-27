@@ -1,8 +1,8 @@
 'use client';
 
-import { Copy, Share2, Bookmark, AlertTriangle } from 'lucide-react';
+import { Copy, Share2, Bookmark, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Menu } from '@/components/ui/Menu';
 
 export interface DrawerPostItem {
   id: string;
@@ -18,6 +18,7 @@ interface PostSettingsDrawerProps {
   onBookmarkToggle?: (id: string) => void;
   onCopyLink?: (post: DrawerPostItem) => void;
   onSharePost?: (post: DrawerPostItem) => void;
+  onDeletePost?: (id: string) => void;
   showReport?: boolean;
 }
 
@@ -27,7 +28,8 @@ export default function PostSettingsDrawer({
   onBookmarkToggle,
   onCopyLink,
   onSharePost,
-  showReport = true,
+  onDeletePost,
+  showReport = !onDeletePost,
 }: PostSettingsDrawerProps) {
   if (!post) return null;
 
@@ -69,69 +71,49 @@ export default function PostSettingsDrawer({
     onClose();
   };
 
+  const handleDeletePost = () => {
+    onDeletePost?.(post.id);
+    onClose();
+  };
+
   return (
-    <BottomSheet.Root isOpen={post !== null} onClose={onClose}>
-      <BottomSheet.Overlay />
-      <BottomSheet.Panel maxWidth="md" dir="rtl" className="pb-6">
-        <BottomSheet.Handle />
-        <BottomSheet.Header className="flex items-center justify-between pb-3">
-          <BottomSheet.Title>تنظیمات پست {shopName}</BottomSheet.Title>
-          <BottomSheet.Close />
-        </BottomSheet.Header>
+    <Menu.Root isOpen={post !== null} onClose={onClose}>
+      <Menu.Title className="justify-center text-center">تنظیمات پست</Menu.Title>
 
-        <BottomSheet.Content className="divide-y divide-zinc-100 p-0">
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-100 transition-colors cursor-pointer text-zinc-900 text-right focus-visible:outline-none"
-          >
-            <div className="flex items-center gap-3">
-              <Copy className="w-4.5 h-4.5 text-zinc-500" strokeWidth={2} />
-              <span className="text-xs font-semibold">کپی لینک پست</span>
-            </div>
-          </button>
+      <Menu.Item
+        icon={<Copy className="w-4 h-4" />}
+        label="کپی لینک پست"
+        onClick={handleCopyLink}
+      />
 
-          <button
-            type="button"
-            onClick={handleShareMessage}
-            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-100 transition-colors cursor-pointer text-zinc-900 text-right focus-visible:outline-none"
-          >
-            <div className="flex items-center gap-3">
-              <Share2 className="w-4.5 h-4.5 text-zinc-500" strokeWidth={2} />
-              <span className="text-xs font-semibold">اشتراک‌گذاری پست</span>
-            </div>
-          </button>
+      <Menu.Item
+        icon={<Share2 className="w-4 h-4" />}
+        label="اشتراک‌گذاری پست"
+        onClick={handleShareMessage}
+      />
 
-          <button
-            type="button"
-            onClick={handleBookmarkClick}
-            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-100 transition-colors cursor-pointer text-zinc-900 text-right focus-visible:outline-none"
-          >
-            <div className="flex items-center gap-3">
-              <Bookmark
-                className={`w-4.5 h-4.5 text-zinc-500 ${isBookmarked ? 'fill-zinc-400' : ''}`}
-                strokeWidth={2}
-              />
-              <span className="text-xs font-semibold">
-                {isBookmarked ? 'حذف از نشان‌شده‌ها' : 'افزودن به نشان‌شده‌ها'}
-              </span>
-            </div>
-          </button>
+      <Menu.Item
+        icon={<Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />}
+        label={isBookmarked ? 'حذف از نشان‌شده‌ها' : 'افزودن به نشان‌شده‌ها'}
+        onClick={handleBookmarkClick}
+      />
 
-          {showReport ? (
-            <button
-              type="button"
-              onClick={handleReport}
-              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-100 transition-colors cursor-pointer text-zinc-900 text-right focus-visible:outline-none"
-            >
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-4.5 h-4.5 text-zinc-500" strokeWidth={2} />
-                <span className="text-xs font-semibold">گزارش تخلف پست</span>
-              </div>
-            </button>
-          ) : null}
-        </BottomSheet.Content>
-      </BottomSheet.Panel>
-    </BottomSheet.Root>
+      {onDeletePost ? (
+        <Menu.Item
+          icon={<Trash2 className="w-4 h-4" />}
+          label="حذف پست"
+          tone="danger"
+          onClick={handleDeletePost}
+        />
+      ) : null}
+
+      {showReport ? (
+        <Menu.Item
+          icon={<AlertTriangle className="w-4 h-4" />}
+          label="گزارش تخلف پست"
+          onClick={handleReport}
+        />
+      ) : null}
+    </Menu.Root>
   );
 }

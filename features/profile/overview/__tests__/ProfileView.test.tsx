@@ -7,9 +7,10 @@ import type { UserProfile } from '../../services/profileService';
 import type { PendingPost } from '@/features/posts/pending/types';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn(), prefetch: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace, back: jest.fn(), prefetch: jest.fn() }),
   usePathname: () => '/app/profile',
 }));
 
@@ -22,6 +23,12 @@ let mockUser: UserProfile | null = null;
 
 jest.mock('../../context/UserContext', () => ({
   useUser: () => ({ user: mockUser, isLoading: false, error: null, isLoggedIn: !!mockUser }),
+}));
+
+jest.mock('../../services/profileService', () => ({
+  profileService: {
+    useUserProfile: () => ({ data: mockUser, isLoading: false }),
+  },
 }));
 
 const POST_STATUS = {
@@ -41,6 +48,7 @@ jest.mock('@/features/posts/services/postsQueryService', () => ({
     DELETED: 'DELETED',
   },
   postsQueryService: {
+    useDeletePendingPost: () => ({ mutate: jest.fn() }),
     useSellerPostsByStatus: (status: string) => ({
       data: mockPosts.filter((post) => post.status === status),
     }),
@@ -89,6 +97,16 @@ function makeUser(overrides: Partial<UserProfile> = {}): UserProfile {
     sellerActivatedAt: null,
     isAdmin: false,
     avatarUrl: null,
+    sellerProfile: {
+      id: 'sp-1',
+      userId: 'user-1',
+      username: 'modern_gold',
+      shopName: 'گالری طلای مدرن',
+      bio: 'فروش طلا و جواهر',
+      address: 'تهران، خیابان پاسداران',
+      addressShow: true,
+      phones: [{ id: 'p-1', phoneNumber: '09171234567' }],
+    },
     profile: {
       id: 1,
       phoneNumber: '09171234567',
@@ -99,29 +117,25 @@ function makeUser(overrides: Partial<UserProfile> = {}): UserProfile {
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     },
-    businessData: {
-      id: 1,
-      preRegistrationId: 1,
-      shopName: 'گالری طلای مدرن',
-      instagramId: 'modern_gold',
-      guildId: 'gold',
-      address: 'تهران، خیابان پاسداران',
-      bio: 'فروش طلا و جواهر',
-      showAddress: true,
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    },
     ...overrides,
   };
 }
 
 beforeEach(() => {
   mockPush.mockClear();
+  mockReplace.mockClear();
   mockUser = makeUser();
   mockPosts = [];
 });
 
 describe('ProfileView', () => {
+  it('redirects to edit page when user has no seller profile', () => {
+    mockUser = makeUser({ sellerProfile: undefined, businessData: undefined });
+    render(<ProfileView />);
+
+    expect(mockReplace).toHaveBeenCalledWith('/app/profile/edit');
+  });
+
   it('renders the shop name, handle, bio and address', () => {
     render(<ProfileView />);
 
@@ -133,7 +147,7 @@ describe('ProfileView', () => {
 
   it('hides the address when the seller turned visibility off', () => {
     const hidden = makeUser();
-    hidden.businessData!.showAddress = false;
+    hidden.sellerProfile!.addressShow = false;
     mockUser = hidden;
 
     render(<ProfileView />);
@@ -143,7 +157,7 @@ describe('ProfileView', () => {
 
   it('shows placeholder copy when no bio has been written', () => {
     const noBio = makeUser();
-    noBio.businessData!.bio = '';
+    noBio.sellerProfile!.bio = '';
     mockUser = noBio;
 
     render(<ProfileView />);
@@ -202,14 +216,5 @@ describe('ProfileView', () => {
     const { container } = render(<ProfileView />);
 
     expect(container.querySelectorAll('[id^="profile-grid-item-"]')).toHaveLength(3);
-  });
-
-  it('falls back to placeholder identity when business data is missing', () => {
-    mockUser = makeUser({ businessData: undefined });
-
-    render(<ProfileView />);
-
-    expect(screen.getByText(text.overview.fallbackShopName)).toBeInTheDocument();
-    expect(screen.getByText(`@${text.overview.fallbackHandle}`)).toBeInTheDocument();
   });
 });

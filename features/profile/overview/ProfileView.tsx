@@ -1,20 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import MainFooter from '@/components/layout/MainFooter';
 import { postsQueryService, POST_STATUS } from '@/features/posts/services/postsQueryService';
-import { useUser } from '../context/UserContext';
+import { profileService } from '../services/profileService';
 import { PROFILE_ROUTES, text } from '../constants';
-import {
-  getHandle,
-  getPhoneNumber,
-  getShopName,
-  getStoreUrl,
-  isAddressVisible,
-} from '../utils/profileMapper';
 
+import { getMediaUrl } from '@/features/posts/utils/media';
 import ProfileHeader from './components/ProfileHeader';
 import ProfileBioSection from './components/ProfileBioSection';
 import ProfileGridFeed from './components/ProfileGridFeed';
@@ -23,7 +17,21 @@ import PostSettingsDrawer from './components/PostSettingsDrawer';
 
 export default function ProfileView() {
   const router = useRouter();
-  const { user } = useUser();
+  const { data: user, isLoading } = profileService.useUserProfile();
+  const sellerProfile = user?.sellerProfile;
+  const hasProfile = Boolean(
+    user?.username ||
+    user?.shopName ||
+    sellerProfile?.id ||
+    sellerProfile?.username
+  );
+
+  useEffect(() => {
+    if (!isLoading && user && !hasProfile) {
+      toast.info('لطفا ابتدا اطلاعات پروفایل خود را تکمیل کنید');
+      router.replace(PROFILE_ROUTES.edit);
+    }
+  }, [isLoading, user, hasProfile, router]);
 
   const {
     data: approvedInfiniteData,
@@ -43,23 +51,28 @@ export default function ProfileView() {
     POST_STATUS.REJECTED,
   );
 
+  const deletePostMutation = postsQueryService.useDeletePendingPost();
+
   const [clickedPostId, setClickedPostId] = useState<string | null>(null);
   const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
   const [bookmarkedSet, setBookmarkedSet] = useState<Set<string>>(new Set());
 
-  const shopName = getShopName(user);
-  const handle = getHandle(user);
-  const phoneNumber = getPhoneNumber(user);
-  const address = user?.businessData?.address?.trim() ?? '';
-  const showAddress = isAddressVisible(user);
+  const shopName = user?.shopName || sellerProfile?.shopName || text.overview.fallbackShopName;
+  const handle = user?.username || sellerProfile?.username || text.overview.fallbackHandle;
+  const phoneNumber = user?.phones?.[0]?.phoneNumber || sellerProfile?.phones?.[0]?.phoneNumber || '';
+  const address = (user?.address || sellerProfile?.address || '').trim();
+  const showAddress = Boolean(address) && (user?.addressShow ?? sellerProfile?.addressShow ?? true) !== false;
+  const bio = user?.bio || sellerProfile?.bio || '';
+  const avatar = user?.profilePhotoUrl || sellerProfile?.profilePhotoUrl || user?.avatarUrl || '';
 
   const formattedPosts = approvedPosts.map((p) => ({
     id: String(p.id),
     shopName,
     sellerName: shopName,
-    sellerAvatar: user?.avatarUrl || '',
+    sellerAvatar: avatar,
     caption: p.description || '',
-    images: p.media ? p.media.map((m) => m.url ?? '').filter(Boolean) : [],
+    images: p.media ? p.media.map((m) => getMediaUrl(m)).filter(Boolean) : [],
+    media: p.media,
     isBookmarked: bookmarkedSet.has(String(p.id)),
     isVerified: !!user?.isVerifiedSeller,
   }));
@@ -76,7 +89,6 @@ export default function ProfileView() {
     router.push(PROFILE_ROUTES.pendingPosts);
   };
 
-
   const handleCall = () => {
     if (phoneNumber) {
       window.location.href = `tel:${phoneNumber}`;
@@ -86,7 +98,7 @@ export default function ProfileView() {
   };
 
   const handleShare = async () => {
-    const storeUrl = getStoreUrl(handle);
+    const storeUrl = `https://inshop.ir/store/${handle}`;
     try {
       await navigator.clipboard.writeText(storeUrl);
       toast.success(text.overview.shareCopied);
@@ -119,14 +131,18 @@ export default function ProfileView() {
 
   const shopProfileData = {
     name: shopName,
-    avatar: user?.avatarUrl || '',
+    avatar,
     handleId: handle,
-    bio: user?.businessData?.bio ?? '',
+    bio,
     address,
     showAddress,
     phone: phoneNumber,
     isVerified: !!user?.isVerifiedSeller,
   };
+
+  if (!hasProfile) {
+    return null;
+  }
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
@@ -183,6 +199,7 @@ export default function ProfileView() {
         post={activeMenuPost}
         onClose={() => setActiveMenuPostId(null)}
         onBookmarkToggle={handleBookmarkToggle}
+        onDeletePost={(id) => deletePostMutation.mutate(id)}
       />
 
       <MainFooter />
