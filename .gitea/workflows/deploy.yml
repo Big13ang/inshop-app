@@ -37,6 +37,11 @@ jobs:
         run: |
           set -euo pipefail
           test -f .npmrc
+          if [ -z "${NPM_USER:-}" ] || [ -z "${NPM_PASS:-}" ]; then
+            echo "::error:: NPM_USER or NPM_PASS secret is missing in Gitea repository secrets!"
+            echo "Please set NPM_USER and NPM_PASS in Gitea repository secrets (Repo Settings -> Actions -> Secrets)."
+            exit 1
+          fi
           npm_registry="$(npm config get registry --userconfig .npmrc)"
           test -n "$npm_registry"
           npm_host="$(node -e "console.log(new URL(process.argv[1]).host)" "$npm_registry")"
@@ -68,6 +73,26 @@ jobs:
           echo "Logging in to Docker registry ${{ vars.REGISTRY_HOST }}..."
           echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
           echo "Successfully authenticated with ${{ vars.REGISTRY_HOST }}."
+
+      - name: Log in to the internal npm registry (Verdaccio)
+        env:
+          NPM_USER: "${{ secrets.NPM_USER }}"
+          NPM_PASS: "${{ secrets.NPM_PASS }}"
+        run: |
+          echo "=========================================================="
+          echo "Verifying login to internal npm registry (Verdaccio)..."
+          set -euo pipefail
+          if [ -z "${NPM_USER:-}" ] || [ -z "${NPM_PASS:-}" ]; then
+            echo "::error:: NPM_USER or NPM_PASS secret is NOT set in Gitea Repo Secrets!"
+            echo "Please set NPM_USER and NPM_PASS in Gitea Repository Secrets."
+            exit 1
+          fi
+          npm_registry="$(npm config get registry --userconfig .npmrc.ci)"
+          echo "npm registry URL: ${npm_registry}"
+          echo "Attempting authentication ping..."
+          npm ping --userconfig .npmrc.ci
+          echo "Successfully authenticated with npm registry ${npm_registry}."
+          echo "=========================================================="
 
       - name: Build image (Next.js standalone)
         run: |

@@ -30,8 +30,8 @@ RUN --mount=type=cache,target=/root/.npm \
         echo "//npm.inshop.social/:_auth=$npm_auth" >> .npmrc; \
         echo "//npm.inshop.social/:always-auth=true" >> .npmrc; \
       fi; \
-      if ! grep -qE "_auth|_authToken" .npmrc 2>/dev/null; then \
-        echo "Warning: No npm authentication credentials provided for private registry. Falling back to public npm registry."; \
+      if ! grep -qE "_auth=|_authToken=" .npmrc 2>/dev/null || grep -q "_auth=Og==" .npmrc 2>/dev/null; then \
+        echo "Warning: No valid npm authentication credentials provided for private registry. Falling back to public npm registry."; \
         echo "registry=https://registry.npmjs.org/" > .npmrc; \
       fi; \
       npm ci --verbose'
