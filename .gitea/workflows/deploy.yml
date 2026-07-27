@@ -30,44 +30,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure npm client for container build
-        env:
-          NPM_USER: "${{ secrets.NPM_USER }}"
-          NPM_PASS: "${{ secrets.NPM_PASS }}"
-        run: |
-          set -euo pipefail
-          test -f .npmrc
-          if [ -z "${NPM_USER:-}" ] || [ -z "${NPM_PASS:-}" ]; then
-            echo "::error:: NPM_USER or NPM_PASS secret is missing in Gitea repository secrets!"
-            echo "Please set NPM_USER and NPM_PASS in Gitea repository secrets (Repo Settings -> Actions -> Secrets)."
-            exit 1
-          fi
-          npm_registry="$(npm config get registry --userconfig .npmrc)"
-          test -n "$npm_registry"
-          npm_host="$(node -e "console.log(new URL(process.argv[1]).host)" "$npm_registry")"
-          npm_auth="$(printf '%s:%s' "$NPM_USER" "$NPM_PASS" | base64 | tr -d '\n')"
-          cp .npmrc .npmrc.ci
-          {
-            echo "//$npm_host/:_auth=$npm_auth"
-            echo "ignore-scripts=true"
-          } >> .npmrc.ci
-          echo "Configured npm auth for $npm_host."
-
       - name: Diagnostic DNS and Registry Network Check
         run: |
           echo "=========================================================="
-          echo "Checking host/container DNS resolution for ${{ vars.REGISTRY_HOST }} and npm.inshop.social..."
+          echo "Checking host/container DNS resolution for ${{ vars.REGISTRY_HOST }}..."
           echo "--- Local /etc/hosts ---"
           cat /etc/hosts
           echo "--- Local Resolution (getent) ---"
           getent hosts "${{ vars.REGISTRY_HOST }}" || echo "getent hosts: unresolved"
-          getent hosts "npm.inshop.social" || echo "getent hosts npm.inshop.social: unresolved"
           echo "--- Host DNS Resolution (nslookup) ---"
           nslookup "${{ vars.REGISTRY_HOST }}" || echo "nslookup: failed"
-          nslookup "npm.inshop.social" || echo "nslookup npm.inshop.social: failed"
           echo "--- HTTP Connectivity (curl with timeout) ---"
           curl --connect-timeout 2 --max-time 3 -Is "http://${{ vars.REGISTRY_HOST }}/v2/" || echo "curl docker: connection failed or timed out"
-          curl --connect-timeout 2 --max-time 3 -Is "https://npm.inshop.social/" || echo "curl npm: connection failed or timed out"
           echo "=========================================================="
 
       - name: Log in to the internal registry
@@ -76,34 +50,10 @@ jobs:
           echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
           echo "Successfully authenticated with ${{ vars.REGISTRY_HOST }}."
 
-      - name: Log in to the internal npm registry (Verdaccio)
-        env:
-          NPM_USER: "${{ secrets.NPM_USER }}"
-          NPM_PASS: "${{ secrets.NPM_PASS }}"
-        run: |
-          echo "=========================================================="
-          echo "Verifying login to internal npm registry (Verdaccio)..."
-          set -euo pipefail
-          if [ -z "${NPM_USER:-}" ] || [ -z "${NPM_PASS:-}" ]; then
-            echo "::error:: NPM_USER or NPM_PASS secret is NOT set in Gitea Repo Secrets!"
-            echo "Please set NPM_USER and NPM_PASS in Gitea Repository Secrets."
-            exit 1
-          fi
-          npm_registry="$(npm config get registry --userconfig .npmrc.ci)"
-          echo "npm registry URL: ${npm_registry}"
-          echo "Attempting authentication ping..."
-          if npm ping --userconfig .npmrc.ci; then
-            echo "Successfully authenticated with npm registry ${npm_registry}."
-          else
-            echo "::warning:: Internal npm registry ping failed (host/network unresolvable on runner). Docker build fallback will handle public dependencies."
-          fi
-          echo "=========================================================="
-
       - name: Build image (Next.js standalone)
         run: |
           echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
           docker build \
-            --secret id=npmrc,src=.npmrc.ci \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
             --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
