@@ -1,6 +1,6 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
+import { http, Result } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
@@ -74,15 +74,13 @@ export async function deleteUploadSessionPhoto({
   const res = await http.delete(
     `/upload-sessions/${uploadSessionId}/photos/${mediaId}`
   );
-  if (!res.ok) throw new Error(res.error.message);
+  Result.unwrap(res);
 }
 
 async function fetchSellerPosts(user: UserProfile | null): Promise<BackendPost[]> {
   if (!user) return [];
   const res = await http.get<CursorPaginatedResult<BackendPost>>('/seller/posts');
-  if (!res.ok) throw new Error(res.error.message);
-
-  return res.value.data;
+  return Result.unwrap(res).data;
 }
 
 async function fetchSellerPostsPaginated(
@@ -99,9 +97,21 @@ async function fetchSellerPostsPaginated(
   }
   const endpoint = `/seller/posts?${params.toString()}`;
   const res = await http.get<CursorPaginatedResult<BackendPost>>(endpoint);
-  if (!res.ok) throw new Error(res.error.message);
+  return Result.unwrap(res);
+}
 
-  return res.value;
+export async function fetchApprovedPostsBySeller(
+  sellerId: string,
+  cursor?: string | null,
+  limit: number = 20
+): Promise<CursorPaginatedResult<BackendPost>> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) {
+    params.set('cursor', cursor);
+  }
+  const endpoint = `/posts/seller/${encodeURIComponent(sellerId)}?${params.toString()}`;
+  const res = await http.get<CursorPaginatedResult<BackendPost>>(endpoint);
+  return Result.unwrap(res);
 }
 
 export const postsQueryService = {
@@ -112,6 +122,17 @@ export const postsQueryService = {
       queryKey: queryKeys.posts.pending(),
       queryFn: () => fetchSellerPosts(user),
       enabled: !!user,
+    });
+  },
+
+  /**
+   * Fetch approved posts for a specific seller by sellerId using GET /posts/seller/:sellerId.
+   */
+  useApprovedPostsBySeller(sellerId?: string, limit: number = 20) {
+    return useQuery<CursorPaginatedResult<BackendPost>>({
+      queryKey: [...queryKeys.posts.all, 'seller-approved', sellerId, limit],
+      queryFn: () => fetchApprovedPostsBySeller(sellerId!, null, limit),
+      enabled: !!sellerId,
     });
   },
 
@@ -132,14 +153,20 @@ export const postsQueryService = {
 
   /**
    * Infinite cursor query for seller posts filtered by status.
+   * For APPROVED status, fetches directly from /posts/seller/:sellerId.
    * Enables infinite scrolling on profile grids (default page size limit = 6).
    */
   useInfiniteSellerPostsByStatus(status: PostStatus, limit: number = 6) {
     const { user } = useUser();
 
     return useInfiniteQuery({
-      queryKey: [...queryKeys.posts.pending(), 'infinite', status, limit],
-      queryFn: ({ pageParam }) => fetchSellerPostsPaginated(user, pageParam as string | null, limit),
+      queryKey: [...queryKeys.posts.pending(), 'infinite', status, limit, user?.id],
+      queryFn: ({ pageParam }) => {
+        if (status === POST_STATUS.APPROVED && user?.id) {
+          return fetchApprovedPostsBySeller(user.id, pageParam as string | null, limit);
+        }
+        return fetchSellerPostsPaginated(user, pageParam as string | null, limit);
+      },
       initialPageParam: null as string | null,
       getNextPageParam: (lastPage) =>
         lastPage.pagination?.hasNext ? lastPage.pagination.nextCursor : undefined,
@@ -161,7 +188,7 @@ export const postsQueryService = {
           '/upload-sessions/publish',
           payload
         );
-        if (!res.ok) throw new Error(res.error?.message || 'Submit post failed');
+        Result.unwrap(res);
       },
       onSuccess,
       onError: () => {
@@ -176,7 +203,7 @@ export const postsQueryService = {
     return useMutation({
       mutationFn: async (id: string) => {
         const res = await http.delete(`/seller/posts/${id}`);
-        if (!res.ok) throw new Error(res.error.message);
+        Result.unwrap(res);
       },
       ...optimistic.deleteList({
         queryClient,

@@ -6,6 +6,7 @@ import { useUploadSession } from '../services/uploadSession';
 import { useMediaStore } from '../services/mediaStore';
 
 jest.mock('@/lib/utils', () => ({
+  ...jest.requireActual('@/lib/utils'),
   http: {
     post: jest.fn(),
   },

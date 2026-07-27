@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { Post, usePostContext } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
 import { useUser } from '@/features/profile/context/UserContext';
-import { getShopName } from '@/features/profile/utils/profileMapper';
 import { text } from '../constants';
 import RejectionOverlay from './RejectionOverlay';
 import type { PendingPost } from '../types';
@@ -58,13 +57,14 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
   }
 
   const postAny = post as unknown as Record<string, unknown>;
+  const sellerName = (postAny.sellerName as string) || user?.sellerProfile?.shopName || '';
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
     media: post.media,
     createdAt: post.createdAt,
-    sellerName: (postAny.sellerName as string) || (user ? getShopName(user) : ''),
-    sellerAvatar: (postAny.sellerAvatar as string) || user?.sellerProfile?.profilePhotoUrl || user?.avatarUrl || '',
+    sellerName,
+    sellerAvatar: (postAny.sellerAvatar as string) || user?.sellerProfile?.profilePhotoUrl || '',
     isVerified: typeof postAny.isVerified === 'boolean' ? postAny.isVerified : !!user?.isVerifiedSeller,
   };
 

@@ -100,6 +100,32 @@ describe('postsQueryService', () => {
     });
   });
 
+  describe('useApprovedPostsBySeller', () => {
+    it('fetches approved posts using /posts/seller/:sellerId endpoint', async () => {
+      server.use(
+        httpMock.get('*/posts/seller/seller-1', () =>
+          HttpResponse.json({
+            success: true,
+            data: [backendPosts.data[1]],
+            pagination: { nextCursor: null, hasNext: false },
+          }),
+        ),
+      );
+
+      const { result } = renderHook(
+        () => postsQueryService.useApprovedPostsBySeller('seller-1'),
+        { wrapper: createWrapper(queryClient) },
+      );
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      const posts = result.current.data!.data;
+      expect(posts).toHaveLength(1);
+      expect(posts[0].id).toBe('post-2');
+      expect(posts[0].status).toBe(POST_STATUS.APPROVED);
+    });
+  });
+
   describe('useSubmitPost', () => {
     it('calls publish endpoint successfully', async () => {
       let capturedPayload: unknown = null;
