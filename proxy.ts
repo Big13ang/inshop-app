@@ -25,10 +25,9 @@ export function proxy(request: NextRequest) {
 
   const isHome = pathname === '/';
   const isAuth = pathname.startsWith('/auth');
-  const isApp = pathname.startsWith('/app');
 
   if (isHome) {
-    const destination = isLoggedIn ? '/app/posts/pending' : '/auth/login';
+    const destination = isLoggedIn ? '/app/profile' : '/auth/login';
     debugAuth('proxy', 'redirect:root', { destination, isLoggedIn });
     return NextResponse.redirect(new URL(destination, request.url));
   }
@@ -36,23 +35,9 @@ export function proxy(request: NextRequest) {
   if (isAuth && isLoggedIn) {
     debugAuth('proxy', 'redirect:alreadyLoggedIn', {
       pathname,
-      destination: '/app/posts/pending',
+      destination: '/app/profile',
     });
-    return NextResponse.redirect(new URL('/app/posts/pending', request.url));
-  }
-
-  if (isApp && !isLoggedIn) {
-    const loginUrl = new URL('/auth/login', request.url);
-
-    loginUrl.searchParams.set('callbackUrl', pathname);
-
-    debugAuth('proxy', 'redirect:missingSession', {
-      pathname,
-      destination: loginUrl.pathname,
-      callbackUrl: pathname,
-    });
-
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL('/app/profile', request.url));
   }
 
   debugAuth('proxy', 'next', { pathname, isLoggedIn });
