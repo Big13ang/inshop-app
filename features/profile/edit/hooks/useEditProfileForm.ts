@@ -91,14 +91,25 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
     defaultValues,
     mode: 'onTouched',
   });
-  const { isDirty } = form.formState;
-
   useEffect(() => {
+    // When initialUser is provided (SSR path), the form is already seeded with
+    // correct values at mount. Resetting again on re-renders would silently
+    // discard any edits the user has made (e.g. bio changes mid-session).
+    if (options.initialUser) return;
+
     if (!user || lastResetKeyRef.current === resetKey) return;
 
     lastResetKeyRef.current = resetKey;
     form.reset(getFormValues(user));
-  }, [form, resetKey, user]);
+  }, [form, options.initialUser, resetKey, user]);
+
+  // RHF's formState uses a lazy proxy — a property is only tracked if it is
+  // read during render. Reading isDirty here (render phase) ensures RHF
+  // subscribes and keeps it up-to-date. The ref then exposes the latest value
+  // to the async submit handler without creating a stale closure that the
+  // React Compiler could cache.
+  const isDirtyRef = useRef(false);
+  isDirtyRef.current = form.formState.isDirty;
 
   const handleAvatarChange = (file: File, previewUrl: string) => {
     form.setValue('profilePhotoUrl', previewUrl);
@@ -110,7 +121,10 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
   };
 
   const onSubmitHandler = async (values: ProfileFormValues) => {
-    if (!isCreateMode && !isDirty) {
+    // Read from the ref (not form.formState directly) so the React Compiler
+    // cannot cache a stale render-time value, while still reflecting the
+    // latest isDirty state that RHF updated via the render-phase subscription.
+    if (!isCreateMode && !isDirtyRef.current) {
       toast.info(text.edit.noChanges);
       navigateToOverview();
       return;

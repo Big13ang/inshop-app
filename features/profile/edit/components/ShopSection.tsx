@@ -1,6 +1,7 @@
 'use client';
+'use no memo';
 
-import { useEffect, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Check, LoaderCircle, Store, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -32,8 +33,23 @@ export default function ShopSection() {
   } = useFormContext<ProfileFormValues>();
 
   const initialUsername = (defaultValues?.username || getValues('username') || '').trim();
-  const username = useWatch({ control, name: 'username' }) || '';
-  const currentUsername = username.trim();
+
+  // useWatch tracks the RHF store value (lags one render behind setValue).
+  // We only use it to sync inputValue when the form is reset externally.
+  const rhfUsername = useWatch({ control, name: 'username' }) || '';
+
+  // Local state updates synchronously on every keystroke so the debounce
+  // always receives the latest character — not the previous render's value.
+  const [inputValue, setInputValue] = useState(rhfUsername);
+
+  // Sync when form.reset() is called from outside (e.g. after profile loads).
+  // "use no memo" above opts this component out of the React Compiler so this
+  // intentional effect-based sync does not trigger the compiler's setState warning.
+  useEffect(() => {
+    setInputValue(rhfUsername);
+  }, [rhfUsername]);
+
+  const currentUsername = inputValue.trim();
   const debouncedUsername = useDebounce(currentUsername, 300);
 
   const isChanged =
@@ -90,6 +106,9 @@ export default function ShopSection() {
 
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextUsername = event.target.value;
+    // Update local state first so the debounce sees the latest value
+    // immediately, without waiting for the RHF store round-trip.
+    setInputValue(nextUsername);
     setValue('username', nextUsername, {
       shouldDirty: true,
       shouldTouch: true,
@@ -98,8 +117,8 @@ export default function ShopSection() {
   };
 
   const handleUsernameBlur = () => {
-    setValue('username', username, {
-      shouldDirty: username.trim().toLowerCase() !== initialUsername.toLowerCase(),
+    setValue('username', inputValue, {
+      shouldDirty: inputValue.trim().toLowerCase() !== initialUsername.toLowerCase(),
       shouldTouch: true,
       shouldValidate: true,
     });
@@ -151,7 +170,7 @@ export default function ShopSection() {
             isError={!!errors.username}
             aria-invalid={!!errors.username}
             className="pl-7 pr-8 font-mono tracking-wider"
-            value={username}
+            value={inputValue}
             onBlur={handleUsernameBlur}
             onChange={handleUsernameChange}
           />
