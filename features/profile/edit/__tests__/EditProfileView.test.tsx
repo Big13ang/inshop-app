@@ -22,12 +22,15 @@ jest.mock('next/navigation', () => ({
 
 const mockUpdateMutate = jest.fn();
 const mockCreateMutate = jest.fn();
+const mockUploadPhotoMutate = jest.fn();
 let mockIsPending = false;
+let mockIsUploadPending = false;
 
 jest.mock('../../services/profileMutationService', () => ({
   profileMutationService: {
     useUpdateProfile: () => ({ mutate: mockUpdateMutate, isPending: mockIsPending }),
     useCreateProfile: () => ({ mutate: mockCreateMutate, isPending: mockIsPending }),
+    useUploadProfilePhoto: () => ({ mutate: mockUploadPhotoMutate, isPending: mockIsUploadPending }),
   },
 }));
 
@@ -85,14 +88,37 @@ function renderView(user = makeUser()) {
 beforeEach(() => {
   mockUpdateMutate.mockClear();
   mockCreateMutate.mockClear();
+  mockUploadPhotoMutate.mockClear();
   mockPush.mockClear();
   mockReplace.mockClear();
   mockIsPending = false;
+  mockIsUploadPending = false;
 });
 
 describe('EditProfileView', () => {
   it('prefills every field from the seller profile in edit mode', () => {
     renderView();
+
+    expect(screen.getByLabelText(/نام فروشگاه/)).toHaveValue('گالری طلای مدرن');
+    expect(screen.getByLabelText(/آیدی اختصاصی/)).toHaveValue('modern_gold');
+    expect(screen.getByLabelText(/متن معرفی/)).toHaveValue('فروش طلا و جواهر');
+    expect(screen.getByLabelText(/نشانی دقیق/)).toHaveValue('تهران، خیابان پاسداران');
+    expect(screen.getByLabelText(/شماره تماس فروشگاه/)).toHaveValue('09171234567');
+  });
+
+  it('prefills every field from the top-level user profile api shape', () => {
+    renderView({
+      id: 'sp-1',
+      userId: 'user-1',
+      username: 'modern_gold',
+      shopName: 'گالری طلای مدرن',
+      bio: 'فروش طلا و جواهر',
+      address: 'تهران، خیابان پاسداران',
+      addressShow: true,
+      profilePhotoUrl: null,
+      phones: [{ id: 'p-1', phoneNumber: '09171234567' }],
+      sellerProfile: null,
+    });
 
     expect(screen.getByLabelText(/نام فروشگاه/)).toHaveValue('گالری طلای مدرن');
     expect(screen.getByLabelText(/آیدی اختصاصی/)).toHaveValue('modern_gold');
@@ -182,6 +208,18 @@ describe('EditProfileView', () => {
     await user.type(phone, '۰۹۱۲۳۴۵۶۷۸۹');
 
     expect(phone).toHaveValue('09123456789');
+  });
+
+  it('uploads profile image immediately after selecting an avatar', async () => {
+    const user = userEvent.setup();
+    renderView();
+
+    const file = new File(['avatar'], 'avatar.png', { type: 'image/png' });
+    await user.upload(screen.getByTestId('avatar-file-input'), file);
+
+    await waitFor(() => expect(mockUploadPhotoMutate).toHaveBeenCalledTimes(1));
+    expect(mockUploadPhotoMutate).toHaveBeenCalledWith(file);
+    expect(mockUpdateMutate).not.toHaveBeenCalled();
   });
 
   it('skips request and returns to overview when nothing changed in edit mode', async () => {

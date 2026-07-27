@@ -2,7 +2,6 @@
 
 import { FormProvider, useWatch } from 'react-hook-form';
 import Header from '@/components/layout/Header';
-import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
 import type { UserProfile } from '../services/profileService';
 import AvatarField from './components/AvatarField';
 import ShopSection from './components/ShopSection';
@@ -20,10 +19,9 @@ interface EditProfileViewProps {
 
 export default function EditProfileView({ user: initialUser }: EditProfileViewProps = {}) {
   const {
-    user,
-    isLoading,
     form,
     isSaving,
+    isAvatarUploading,
     shopNameForAvatar,
     headerTitle,
     submitText,
@@ -32,14 +30,11 @@ export default function EditProfileView({ user: initialUser }: EditProfileViewPr
     handleSubmit,
   } = useEditProfileForm({ initialUser });
 
-  if (isLoading || !user) {
-    return <ProfileEditSkeleton />;
-  }
-
   return (
     <ViewContent
       form={form}
       isSaving={isSaving}
+      isAvatarUploading={isAvatarUploading}
       shopNameForAvatar={shopNameForAvatar}
       headerTitle={headerTitle}
       submitText={submitText}
@@ -53,10 +48,11 @@ export default function EditProfileView({ user: initialUser }: EditProfileViewPr
 interface ViewContentProps {
   form: ReturnType<typeof useEditProfileForm>['form'];
   isSaving: boolean;
+  isAvatarUploading: boolean;
   shopNameForAvatar: string;
   headerTitle: string;
   submitText: string;
-  onAvatarChange: (dataUrl: string) => void;
+  onAvatarChange: (file: File, previewUrl: string) => void;
   onCancel: () => void;
   onSubmit: ReturnType<typeof useEditProfileForm>['handleSubmit'];
 }
@@ -64,6 +60,7 @@ interface ViewContentProps {
 function ViewContent({
   form,
   isSaving,
+  isAvatarUploading,
   shopNameForAvatar,
   headerTitle,
   submitText,
@@ -87,6 +84,7 @@ function ViewContent({
             <AvatarField
               value={avatarValue}
               alt={shopNameForAvatar}
+              isUploading={isAvatarUploading}
               onChange={onAvatarChange}
             />
             <ShopSection />

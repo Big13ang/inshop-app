@@ -2,21 +2,27 @@
 
 import { ChevronLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { text } from '../../constants';
+import { PROFILE_ROUTES, text } from '../../constants';
+import { useRouter } from 'next/navigation';
 
 interface PendingPostsBannerProps {
   pendingCount: number;
-  onNavigate: () => void;
 }
 
-export default function PendingPostsBanner({ pendingCount, onNavigate }: PendingPostsBannerProps) {
+export default function PendingPostsBanner({ pendingCount }: PendingPostsBannerProps) {
+  const router = useRouter();
+
   if (pendingCount <= 0) return null;
+
+  const handleNavigatePending = () => {
+    router.push(PROFILE_ROUTES.pendingPosts);
+  };
 
   return (
     <Button
       id="profile-pending-banner"
       variant="secondary"
-      onClick={onNavigate}
+      onClick={handleNavigatePending}
       dir="rtl"
       className="tap-card mt-4 h-auto w-full justify-between rounded-xl border border-zinc-200 bg-surface-l2 p-3.5 text-right"
     >

@@ -1,0 +1,21 @@
+type CopyOptions = {
+  onSuccess?: () => void;
+  onError?: (error: unknown) => void;
+};
+
+export async function copyToClipboard(
+  text: string,
+  options?: CopyOptions
+) {
+  try {
+    await navigator.clipboard.writeText(text);
+
+    options?.onSuccess?.();
+
+    return true;
+  } catch (error) {
+    options?.onError?.(error);
+
+    return false;
+  }
+}

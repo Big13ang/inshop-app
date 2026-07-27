@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { http, Result } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 
@@ -79,18 +79,6 @@ export interface UseCheckUsernameOptions {
   enabled?: boolean;
 }
 
-export function hasSellerProfile(user?: UserProfile | null): boolean {
-  const sellerProfile = user?.sellerProfile;
-
-  return Boolean(
-    sellerProfile?.id ||
-    sellerProfile?.username ||
-    user?.userId ||
-    user?.username ||
-    user?.shopName
-  );
-}
-
 export async function checkUsernameAvailability(username: string): Promise<CheckUsernameResponse> {
   const trimmed = username.trim();
 
@@ -104,6 +92,13 @@ export async function checkUsernameAvailability(username: string): Promise<Check
 export const profileService = {
   useMe() {
     return useQuery<UserProfile>({
+      queryKey: queryKeys.profile.me,
+      queryFn: async () => Result.unwrap(await http.get<UserProfile>('/me')),
+    });
+  },
+
+  useSuspenseMe() {
+    return useSuspenseQuery<UserProfile>({
       queryKey: queryKeys.profile.me,
       queryFn: async () => Result.unwrap(await http.get<UserProfile>('/me')),
     });

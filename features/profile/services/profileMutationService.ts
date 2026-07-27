@@ -12,7 +12,6 @@ export interface CreateProfileDto {
   address?: string;
   addressShow?: boolean;
   shopPhoneNumber: string;
-  avatarUrl?: string | null;
 }
 
 export interface UpdateProfileDto {
@@ -22,24 +21,6 @@ export interface UpdateProfileDto {
   address?: string;
   addressShow?: boolean;
   shopPhoneNumber?: string;
-  avatarUrl?: string | null;
-}
-
-async function uploadProfilePhoto(avatarDataUrl: string): Promise<void> {
-  if (!avatarDataUrl.startsWith('data:')) return;
-  try {
-    const fetchRes = await fetch(avatarDataUrl);
-    const blob = await fetchRes.blob();
-    const formData = new FormData();
-    formData.append('photo', blob, 'avatar.jpg');
-
-    const photoRes = await http.post('/user/profile/photo', formData);
-    if (!photoRes.ok) {
-      console.warn('Avatar photo upload warning:', photoRes.error.message);
-    }
-  } catch (err) {
-    console.warn('Failed to upload avatar photo:', err);
-  }
 }
 
 export async function createProfile(dto: CreateProfileDto): Promise<void> {
@@ -54,10 +35,6 @@ export async function createProfile(dto: CreateProfileDto): Promise<void> {
 
   const res = await http.post('/user/profile', payload);
   Result.unwrap(res);
-
-  if (dto.avatarUrl) {
-    await uploadProfilePhoto(dto.avatarUrl);
-  }
 }
 
 export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
@@ -73,10 +50,17 @@ export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
   const res = await http.patch('/user/profile', payload);
 
   Result.unwrap(res);
+}
 
-  if (dto.avatarUrl) {
-    await uploadProfilePhoto(dto.avatarUrl);
-  }
+export async function uploadProfilePhoto(photo: File): Promise<void> {
+  const formData = new FormData();
+  formData.append('photo', photo);
+
+  Result.unwrap(await http.post('/user/profile/photo', formData, {
+    headers: {
+      Accept: 'application/json',
+    },
+  }));
 }
 
 export const profileMutationService = {
@@ -117,6 +101,28 @@ export const profileMutationService = {
 
     return useMutation({
       mutationFn: updateProfile,
+      onSuccess: handleSuccess,
+      onError: handleError,
+    });
+  },
+
+  useUploadProfilePhoto() {
+    const queryClient = useQueryClient();
+
+    const handleSuccess = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+      ]);
+      toast.success(text.edit.avatarSelected);
+    };
+
+    const handleError = () => {
+      toast.error(ERROR_MESSAGES.profile.updateFailed);
+    };
+
+    return useMutation({
+      mutationFn: uploadProfilePhoto,
       onSuccess: handleSuccess,
       onError: handleError,
     });
