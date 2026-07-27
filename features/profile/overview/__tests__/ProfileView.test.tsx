@@ -20,6 +20,7 @@ jest.mock('@/components/layout/MainFooter', () => ({
 }));
 
 let mockUser: UserProfile | null = null;
+let mockMe: UserProfile | null = null;
 
 jest.mock('../../context/UserContext', () => ({
   useUser: () => ({ user: mockUser, isLoading: false, error: null, isLoggedIn: !!mockUser }),
@@ -28,7 +29,15 @@ jest.mock('../../context/UserContext', () => ({
 jest.mock('../../services/profileService', () => ({
   profileService: {
     useUserProfile: () => ({ data: mockUser, isLoading: false }),
+    useMe: () => ({ data: mockMe, isLoading: false }),
   },
+  hasSellerProfile: (user?: UserProfile | null) => Boolean(
+    user?.sellerProfile?.id ||
+    user?.sellerProfile?.username ||
+    user?.userId ||
+    user?.username ||
+    user?.shopName
+  ),
 }));
 
 const POST_STATUS = {
@@ -125,12 +134,14 @@ beforeEach(() => {
   mockPush.mockClear();
   mockReplace.mockClear();
   mockUser = makeUser();
+  mockMe = makeUser();
   mockPosts = [];
 });
 
 describe('ProfileView', () => {
   it('redirects to edit page when user has no seller profile', () => {
-    mockUser = makeUser({ sellerProfile: undefined, businessData: undefined });
+    mockMe = makeUser({ sellerProfile: null, businessData: undefined });
+    mockUser = null;
     render(<ProfileView />);
 
     expect(mockReplace).toHaveBeenCalledWith('/app/profile/edit');

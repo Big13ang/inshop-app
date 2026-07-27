@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { http, Result } from '@/lib/utils';
-import { useDebounce } from '@/lib/hooks/useDebounce';
 import { queryKeys } from '@/lib/query-keys';
 
 export interface UserProfile {
@@ -64,7 +63,7 @@ export interface UserProfile {
       phoneNumber: string;
       label?: string | null;
     }>;
-  };
+  } | null;
   avatarUrl?: string | null;
 }
 
@@ -78,9 +77,29 @@ export interface CheckUsernameResponse {
 
 export interface UseCheckUsernameOptions {
   enabled?: boolean;
-  debounceMs?: number;
 }
 
+export function hasSellerProfile(user?: UserProfile | null): boolean {
+  const sellerProfile = user?.sellerProfile;
+
+  return Boolean(
+    sellerProfile?.id ||
+    sellerProfile?.username ||
+    user?.userId ||
+    user?.username ||
+    user?.shopName
+  );
+}
+
+export async function checkUsernameAvailability(username: string): Promise<CheckUsernameResponse> {
+  const trimmed = username.trim();
+
+  return Result.unwrap(
+    await http.get<CheckUsernameResponse>(
+      `/user/profile/check-username/${encodeURIComponent(trimmed)}`
+    )
+  );
+}
 
 export const profileService = {
   useMe() {
@@ -101,16 +120,14 @@ export const profileService = {
   },
 
   useCheckUsername(username: string, options: UseCheckUsernameOptions = {}) {
-    const { enabled = true, debounceMs = 400 } = options;
-    const trimmed = useDebounce(username.trim(), debounceMs);
+    const { enabled = true } = options;
+    const trimmed = username.trim();
 
     return useQuery<CheckUsernameResponse>({
       queryKey: queryKeys.profile.checkUsername(trimmed),
-      queryFn: async () => Result.unwrap(await http.get<CheckUsernameResponse>(
-        `/user/profile/check-username/${encodeURIComponent(trimmed)}`
-      )),
+      queryFn: async () => checkUsernameAvailability(trimmed),
       enabled: enabled && trimmed.length >= 3,
-      staleTime: 1000 * 60 * 5,
+      staleTime: 0,
       retry: false,
     });
   },

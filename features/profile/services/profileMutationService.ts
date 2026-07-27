@@ -35,11 +35,7 @@ async function uploadProfilePhoto(avatarDataUrl: string): Promise<void> {
 
     const photoRes = await http.post('/user/profile/photo', formData);
     if (!photoRes.ok) {
-      // Fallback to legacy endpoint if /user/profile/photo is not available
-      const legacyPhotoRes = await http.post('/seller-profile/me/photo', formData);
-      if (!legacyPhotoRes.ok) {
-        console.warn('Avatar photo upload warning:', legacyPhotoRes.error.message);
-      }
+      console.warn('Avatar photo upload warning:', photoRes.error.message);
     }
   } catch (err) {
     console.warn('Failed to upload avatar photo:', err);
@@ -56,11 +52,7 @@ export async function createProfile(dto: CreateProfileDto): Promise<void> {
     shopPhoneNumber: dto.shopPhoneNumber,
   };
 
-  let res = await http.post('/user/profile', payload);
-  if (!res.ok) {
-    // Fallback to legacy endpoint
-    res = await http.post('/seller-profile/me', payload);
-  }
+  const res = await http.post('/user/profile', payload);
   Result.unwrap(res);
 
   if (dto.avatarUrl) {

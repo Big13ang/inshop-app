@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import MainFooter from '@/components/layout/MainFooter';
 import { postsQueryService, POST_STATUS } from '@/features/posts/services/postsQueryService';
-import { profileService } from '../services/profileService';
+import { hasSellerProfile, profileService } from '../services/profileService';
 import { PROFILE_ROUTES, text } from '../constants';
 
 import { getMediaUrl } from '@/features/posts/utils/media';
@@ -17,21 +17,20 @@ import PostSettingsDrawer from './components/PostSettingsDrawer';
 
 export default function ProfileView() {
   const router = useRouter();
-  const { data: user, isLoading } = profileService.useUserProfile();
+  const { data: me, isLoading: isMeLoading } = profileService.useMe();
+  const meHasSellerProfile = hasSellerProfile(me);
+  const { data: user, isLoading: isProfileLoading } = profileService.useUserProfile({
+    enabled: meHasSellerProfile,
+  });
   const sellerProfile = user?.sellerProfile;
-  const hasProfile = Boolean(
-    user?.username ||
-    user?.shopName ||
-    sellerProfile?.id ||
-    sellerProfile?.username
-  );
+  const hasProfile = hasSellerProfile(user);
 
   useEffect(() => {
-    if (!isLoading && user && !hasProfile) {
+    if (!isMeLoading && me && !meHasSellerProfile) {
       toast.info('لطفا ابتدا اطلاعات پروفایل خود را تکمیل کنید');
       router.replace(PROFILE_ROUTES.edit);
     }
-  }, [isLoading, user, hasProfile, router]);
+  }, [isMeLoading, me, meHasSellerProfile, router]);
 
   const {
     data: approvedInfiniteData,
@@ -140,7 +139,11 @@ export default function ProfileView() {
     isVerified: !!user?.isVerifiedSeller,
   };
 
-  if (!hasProfile) {
+  if (isMeLoading || (meHasSellerProfile && isProfileLoading)) {
+    return null;
+  }
+
+  if (!meHasSellerProfile || !hasProfile) {
     return null;
   }
 
