@@ -8,13 +8,16 @@ interface EditProfileFooterProps {
   formId: string;
   isSaving: boolean;
   onCancel: () => void;
+  submitText?: string;
 }
 
-export default function EditProfileFooter({ formId, isSaving, onCancel }: EditProfileFooterProps) {
+export default function EditProfileFooter({ formId, isSaving, onCancel, submitText }: EditProfileFooterProps) {
+  const label = submitText || text.edit.saveAction;
+
   return (
     <footer className="sticky bottom-0 left-0 right-0 z-40 w-full shrink-0 border-t border-zinc-200 bg-surface/95 p-3.5 shadow-lg backdrop-blur-md">
       <div className="mx-auto flex max-w-lg items-center justify-between gap-3" dir="rtl">
-        {/* Right Button: Save */}
+        {/* Right Button: Save / Create */}
         <Button
           id="profile-save-btn"
           type="submit"
@@ -28,7 +31,7 @@ export default function EditProfileFooter({ formId, isSaving, onCancel }: EditPr
           ) : (
             <Check className="size-4" aria-hidden="true" />
           )}
-          <span>{isSaving ? text.edit.savingAction : text.edit.saveAction}</span>
+          <span>{isSaving ? text.edit.savingAction : label}</span>
         </Button>
 
         {/* Left Button: Cancel */}
@@ -46,4 +49,3 @@ export default function EditProfileFooter({ formId, isSaving, onCancel }: EditPr
     </footer>
   );
 }
-
