@@ -5,9 +5,36 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the package-lock.json and CI-provided npm auth.
-COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm --mount=type=secret,id=npmrc,target=/app/.npmrc npm ci --verbose
+# Accept optional npm authentication credentials via build arguments
+ARG NPM_USER
+ARG NPM_PASS
+ARG NPM_AUTH
+ARG NPM_TOKEN
+
+# Install dependencies based on package-lock.json and provided npm auth/secret.
+COPY package.json package-lock.json* .npmrc* ./
+RUN --mount=type=cache,target=/root/.npm \
+    --mount=type=secret,id=npmrc,target=/tmp/npmrc \
+    sh -c '\
+      set -e; \
+      if [ -f /tmp/npmrc ] && [ -s /tmp/npmrc ]; then \
+        cp /tmp/npmrc .npmrc; \
+      fi; \
+      if [ -n "$NPM_AUTH" ]; then \
+        echo "//npm.inshop.social/:_auth=$NPM_AUTH" >> .npmrc; \
+        echo "//npm.inshop.social/:always-auth=true" >> .npmrc; \
+      elif [ -n "$NPM_TOKEN" ]; then \
+        echo "//npm.inshop.social/:_authToken=$NPM_TOKEN" >> .npmrc; \
+      elif [ -n "$NPM_USER" ] && [ -n "$NPM_PASS" ]; then \
+        npm_auth=$(printf "%s:%s" "$NPM_USER" "$NPM_PASS" | base64 | tr -d "\n"); \
+        echo "//npm.inshop.social/:_auth=$npm_auth" >> .npmrc; \
+        echo "//npm.inshop.social/:always-auth=true" >> .npmrc; \
+      fi; \
+      if ! grep -qE "_auth|_authToken" .npmrc 2>/dev/null; then \
+        echo "Warning: No npm authentication credentials provided for private registry. Falling back to public npm registry."; \
+        echo "registry=https://registry.npmjs.org/" > .npmrc; \
+      fi; \
+      npm ci --verbose'
 
 # Rebuild the source code only when needed
 FROM base AS builder
