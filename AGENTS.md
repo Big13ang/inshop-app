@@ -73,7 +73,8 @@ Rules:
   - **Inputs**: Use `<Input>` from `@/components/ui/input` instead of native `<input>`.
   - **Textareas**: Use `<Textarea>` from `@/components/ui/textarea` instead of native `<textarea>`.
   - **Dialogs**: Use `Dialog` from `@/components/ui/Dialog` instead of native `<dialog>` or custom dialog containers.
-  - **Bottom Sheets**: Use `BottomSheet` from `@/components/ui/BottomSheet` for slide-up drawers/sheets.
+  - **Bottom Sheets**: Use `BottomSheet` from `@/components/ui/BottomSheet` for general slide-up sheets.
+  - **3-Dots Context Menus**: ALL 3-dots context/options menus anywhere in the app MUST use `<Menu>` from `@/components/ui/Menu` (`Menu.Root`, `Menu.Title`, `Menu.Item`) with context-specific options (never use popovers, floating dropdowns, or native context menus).
   - **Back Button**: Use `BackButton` from `@/components/ui/BackButton` for header/page back buttons.
   - **Verified Badges**: Use `VerifiedBadge` from `@/components/ui/VerifiedBadge` for verification markers (only when explicitly requested by the user).
   - **Toast Notifications**: Use `toast` from `sonner` or `@/components/ui/sonner`.
