@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import MainFooter from '@/components/layout/MainFooter';
 import { postsQueryService, POST_STATUS } from '@/features/posts/services/postsQueryService';
 import { profileService } from '../services/profileService';
@@ -10,6 +11,11 @@ import ProfileGridFeed from './components/ProfileGridFeed';
 import { useRouter } from 'next/navigation';
 import { PROFILE_ROUTES } from '../constants';
 import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
+import type { UserProfile } from '../services/profileService';
+
+function getSellerProfile(userProfile?: UserProfile) {
+  return userProfile?.sellerProfile ?? userProfile;
+}
 
 export default function ProfileView() {
   const router = useRouter();
@@ -17,9 +23,15 @@ export default function ProfileView() {
 
   const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me.sellerProfile !== null });
 
-  const hasUserProfle = me.sellerProfile !== null;
+  const hasUserProfile = me.sellerProfile !== null;
 
-  if (!hasUserProfle) return router.push(PROFILE_ROUTES.edit);
+  function redirectMissingProfile() {
+    if (!hasUserProfile) {
+      router.replace(PROFILE_ROUTES.edit);
+    }
+  }
+
+  useEffect(redirectMissingProfile, [hasUserProfile, router]);
 
   const {
     hasNextPage,
@@ -35,8 +47,11 @@ export default function ProfileView() {
   const approvedPosts = approvedInfiniteData
     ? approvedInfiniteData.pages.flatMap((page) => page.data)
     : [];
+  const sellerProfile = getSellerProfile(userProfile);
 
-  if (isLoading) return <ProfileOverviewSkeleton />
+  if (!hasUserProfile) return null;
+
+  if (isLoading) return <ProfileOverviewSkeleton />;
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
@@ -45,7 +60,7 @@ export default function ProfileView() {
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="flex flex-col w-full">
           <ProfileBioSection
-            sellerProfile={userProfile}
+            sellerProfile={sellerProfile}
             publishedCount={approvedPosts.length}
             pendingCount={pendingPosts.length}
           />

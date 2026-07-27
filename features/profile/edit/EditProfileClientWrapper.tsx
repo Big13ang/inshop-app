@@ -4,6 +4,15 @@ import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
 import { profileService, type UserProfile } from '../services/profileService';
 import EditProfileView from './EditProfileView';
 
+function getSellerPhones(userProfile?: UserProfile, me?: UserProfile) {
+  const phones = userProfile?.phones || me?.sellerProfile?.phones;
+
+  return phones?.map((phone) => ({
+    ...phone,
+    id: phone.id || '',
+  }));
+}
+
 function getEditUser(me: UserProfile, userProfile?: UserProfile) {
   if (!userProfile) return me;
 
@@ -21,7 +30,7 @@ function getEditUser(me: UserProfile, userProfile?: UserProfile) {
       addressProvince: userProfile.addressProvince ?? me.sellerProfile?.addressProvince,
       addressCity: userProfile.addressCity ?? me.sellerProfile?.addressCity,
       addressShow: userProfile.addressShow ?? me.sellerProfile?.addressShow,
-      phones: userProfile.phones || me.sellerProfile?.phones,
+      phones: getSellerPhones(userProfile, me),
       createdAt: me.sellerProfile?.createdAt,
       updatedAt: userProfile.profile?.updatedAt || me.sellerProfile?.updatedAt,
     },
