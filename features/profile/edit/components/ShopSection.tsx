@@ -1,7 +1,6 @@
 'use client';
-'use no memo';
 
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { Check, LoaderCircle, Store, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,20 +11,15 @@ import type { ProfileFormValues } from '../../schemas/profileSchema';
 import { profileService } from '../../services/profileService';
 import FormSection from './FormSection';
 
-const USERNAME_CHECKING_MESSAGE =
-  '\u062f\u0631 \u062d\u0627\u0644 \u0628\u0631\u0631\u0633\u06cc \u0622\u06cc\u062f\u06cc...';
-const USERNAME_CHECK_FAILED_MESSAGE =
-  '\u0628\u0631\u0631\u0633\u06cc \u0622\u06cc\u062f\u06cc \u0627\u0646\u062c\u0627\u0645 \u0646\u0634\u062f. \u062f\u0648\u0628\u0627\u0631\u0647 \u062a\u0644\u0627\u0634 \u06a9\u0646\u06cc\u062f.';
-const USERNAME_TAKEN_MESSAGE =
-  '\u0627\u06cc\u0646 \u0622\u06cc\u062f\u06cc \u0642\u0628\u0644\u0627 \u062b\u0628\u062a \u0634\u062f\u0647 \u0627\u0633\u062a';
-const USERNAME_AVAILABLE_MESSAGE =
-  '\u0627\u06cc\u0646 \u0622\u06cc\u062f\u06cc \u062f\u0631 \u062f\u0633\u062a\u0631\u0633 \u0627\u0633\u062a';
+const USERNAME_CHECKING_MESSAGE = 'در حال بررسی آیدی...';
+const USERNAME_CHECK_FAILED_MESSAGE = 'بررسی آیدی انجام نشد. دوباره تلاش کنید.';
+const USERNAME_TAKEN_MESSAGE = 'این آیدی قبلا ثبت شده است';
+const USERNAME_AVAILABLE_MESSAGE = 'این آیدی در دسترس است';
 
 export default function ShopSection() {
   const {
     register,
     getValues,
-    setValue,
     setError,
     clearErrors,
     control,
@@ -34,22 +28,11 @@ export default function ShopSection() {
 
   const initialUsername = (defaultValues?.username || getValues('username') || '').trim();
 
-  // useWatch tracks the RHF store value (lags one render behind setValue).
-  // We only use it to sync inputValue when the form is reset externally.
+  // useWatch subscribes to the RHF store for debounce purposes only.
+  // The input itself uses register() — an uncontrolled DOM input — so keystrokes
+  // are always instant with no local-state mirror and no sync effect needed.
   const rhfUsername = useWatch({ control, name: 'username' }) || '';
-
-  // Local state updates synchronously on every keystroke so the debounce
-  // always receives the latest character — not the previous render's value.
-  const [inputValue, setInputValue] = useState(rhfUsername);
-
-  // Sync when form.reset() is called from outside (e.g. after profile loads).
-  // "use no memo" above opts this component out of the React Compiler so this
-  // intentional effect-based sync does not trigger the compiler's setState warning.
-  useEffect(() => {
-    setInputValue(rhfUsername);
-  }, [rhfUsername]);
-
-  const currentUsername = inputValue.trim();
+  const currentUsername = rhfUsername.trim();
   const debouncedUsername = useDebounce(currentUsername, 300);
 
   const isChanged =
@@ -104,26 +87,6 @@ export default function ShopSection() {
     !isUsernameUnavailable &&
     !errors.username;
 
-  const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const nextUsername = event.target.value;
-    // Update local state first so the debounce sees the latest value
-    // immediately, without waiting for the RHF store round-trip.
-    setInputValue(nextUsername);
-    setValue('username', nextUsername, {
-      shouldDirty: true,
-      shouldTouch: true,
-      shouldValidate: true,
-    });
-  };
-
-  const handleUsernameBlur = () => {
-    setValue('username', inputValue, {
-      shouldDirty: inputValue.trim().toLowerCase() !== initialUsername.toLowerCase(),
-      shouldTouch: true,
-      shouldValidate: true,
-    });
-  };
-
   return (
     <FormSection.Root>
       <FormSection.Title icon={<Store className="size-4" />}>
@@ -163,16 +126,15 @@ export default function ShopSection() {
           </span>
           <Input
             id="profile-handle"
-            name="username"
             dir="ltr"
             inputSize="sm"
             placeholder={text.edit.handlePlaceholder}
             isError={!!errors.username}
             aria-invalid={!!errors.username}
             className="pl-7 pr-8 font-mono tracking-wider"
-            value={inputValue}
-            onBlur={handleUsernameBlur}
-            onChange={handleUsernameChange}
+            {...register('username', {
+              shouldUnregister: false,
+            })}
           />
           <div className="absolute right-2.5 flex items-center pointer-events-none">
             {isCheckingUsername ? (

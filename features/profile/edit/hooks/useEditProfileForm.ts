@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormState } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
@@ -91,6 +91,7 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
     defaultValues,
     mode: 'onTouched',
   });
+
   useEffect(() => {
     // When initialUser is provided (SSR path), the form is already seeded with
     // correct values at mount. Resetting again on re-renders would silently
@@ -103,13 +104,10 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
     form.reset(getFormValues(user));
   }, [form, options.initialUser, resetKey, user]);
 
-  // RHF's formState uses a lazy proxy — a property is only tracked if it is
-  // read during render. Reading isDirty here (render phase) ensures RHF
-  // subscribes and keeps it up-to-date. The ref then exposes the latest value
-  // to the async submit handler without creating a stale closure that the
-  // React Compiler could cache.
-  const isDirtyRef = useRef(false);
-  isDirtyRef.current = form.formState.isDirty;
+  // useFormState is RHF's dedicated subscription hook — it properly tracks
+  // formState fields as reactive values, so the React Compiler handles
+  // isDirty as a normal state dependency with no proxy or ref tricks needed.
+  const { isDirty } = useFormState({ control: form.control });
 
   const handleAvatarChange = (file: File, previewUrl: string) => {
     form.setValue('profilePhotoUrl', previewUrl);
@@ -121,10 +119,7 @@ export function useEditProfileForm(options: UseEditProfileFormOptions = {}) {
   };
 
   const onSubmitHandler = async (values: ProfileFormValues) => {
-    // Read from the ref (not form.formState directly) so the React Compiler
-    // cannot cache a stale render-time value, while still reflecting the
-    // latest isDirty state that RHF updated via the render-phase subscription.
-    if (!isCreateMode && !isDirtyRef.current) {
+    if (!isCreateMode && !isDirty) {
       toast.info(text.edit.noChanges);
       navigateToOverview();
       return;
