@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent } from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useEffect, type ChangeEvent } from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { Check, LoaderCircle, Store, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -27,12 +27,12 @@ export default function ShopSection() {
     setValue,
     setError,
     clearErrors,
+    control,
     formState: { errors, defaultValues },
   } = useFormContext<ProfileFormValues>();
 
   const initialUsername = (defaultValues?.username || getValues('username') || '').trim();
-  const [username, setUsername] = useState(initialUsername);
-
+  const username = useWatch({ control, name: 'username' }) || '';
   const currentUsername = username.trim();
   const debouncedUsername = useDebounce(currentUsername, 300);
 
@@ -90,7 +90,6 @@ export default function ShopSection() {
 
   const handleUsernameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextUsername = event.target.value;
-    setUsername(nextUsername);
     setValue('username', nextUsername, {
       shouldDirty: true,
       shouldTouch: true,

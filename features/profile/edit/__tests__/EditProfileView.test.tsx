@@ -101,6 +101,27 @@ describe('EditProfileView', () => {
     expect(screen.getByLabelText(/شماره تماس فروشگاه/)).toHaveValue('09171234567');
   });
 
+  it('prefills every field from the top-level user profile api shape', () => {
+    renderView({
+      id: 'sp-1',
+      userId: 'user-1',
+      username: 'modern_gold',
+      shopName: 'گالری طلای مدرن',
+      bio: 'فروش طلا و جواهر',
+      address: 'تهران، خیابان پاسداران',
+      addressShow: true,
+      profilePhotoUrl: null,
+      phones: [{ id: 'p-1', phoneNumber: '09171234567' }],
+      sellerProfile: null,
+    });
+
+    expect(screen.getByLabelText(/نام فروشگاه/)).toHaveValue('گالری طلای مدرن');
+    expect(screen.getByLabelText(/آیدی اختصاصی/)).toHaveValue('modern_gold');
+    expect(screen.getByLabelText(/متن معرفی/)).toHaveValue('فروش طلا و جواهر');
+    expect(screen.getByLabelText(/نشانی دقیق/)).toHaveValue('تهران، خیابان پاسداران');
+    expect(screen.getByLabelText(/شماره تماس فروشگاه/)).toHaveValue('09171234567');
+  });
+
   it('submits update mutation when editing an existing profile', async () => {
     const user = userEvent.setup();
     renderView();

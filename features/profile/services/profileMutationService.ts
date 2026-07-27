@@ -25,11 +25,19 @@ export interface UpdateProfileDto {
   avatarUrl?: string | null;
 }
 
+function dataUrlToBlob(dataUrl: string) {
+  const [header, base64Data] = dataUrl.split(',');
+  const mimeType = header.match(/^data:(.*?);base64$/)?.[1] || 'image/jpeg';
+  const byteCharacters = atob(base64Data || '');
+  const byteNumbers = Array.from(byteCharacters, (character) => character.charCodeAt(0));
+
+  return new Blob([new Uint8Array(byteNumbers)], { type: mimeType });
+}
+
 async function uploadProfilePhoto(avatarDataUrl: string): Promise<void> {
   if (!avatarDataUrl.startsWith('data:')) return;
   try {
-    const fetchRes = await fetch(avatarDataUrl);
-    const blob = await fetchRes.blob();
+    const blob = dataUrlToBlob(avatarDataUrl);
     const formData = new FormData();
     formData.append('photo', blob, 'avatar.jpg');
 
