@@ -1,10 +1,10 @@
+import Image from "next/image";
+
 export default function AppLogo() {
     return (
         <div className="flex justify-center pt-8">
             <div className="flex flex-col items-center">
-                <span className="font-logo font-extrabold text-5xl tracking-widest text-zinc-950 select-none">
-                    inShop
-                </span>
+                <Image quality={100} src="/logo/inshop-logo.png" alt="لوگوی برند اینشاپ" width={188} height={48} />
             </div>
         </div>
     );
