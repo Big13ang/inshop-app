@@ -1,13 +1,13 @@
 'use client';
 
 import { useTransition, useState } from 'react';
-import { useAuthFlow } from '@/features/auth/hooks/useAuthFlow';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, LogOut, PlusSquare, Loader2 } from 'lucide-react';
+import { User, LogOut, PlusSquare } from 'lucide-react';
 import { profileService } from '@/features/profile/services/profileService';
 import { getMediaUrl } from '@/features/posts/utils/media';
 import { cn } from '@/lib/utils';
 import Footer, { type FooterTabConfig } from './Footer';
+import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet';
 
 const ROUTES = {
     profile: '/app/profile',
@@ -19,11 +19,10 @@ export default function MainFooterNav() {
     const pathname = usePathname();
     const router = useRouter();
     const [, startTransition] = useTransition();
-    const { signOut } = useAuthFlow();
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const { data: meData } = profileService.useMe();
+    const [isConfirmLogoutOpen, setIsConfirmLogoutOpen] = useState(false);
 
-    const rawPhoto = meData?.sellerProfile?.profilePhotoUrl || meData?.profilePhotoUrl || meData?.avatarUrl;
+    const rawPhoto = meData?.sellerProfile?.profilePhotoUrl;
     const profilePhotoUrl = rawPhoto ? getMediaUrl({ url: rawPhoto }) : '';
 
     function navigate(href: string) {
@@ -33,22 +32,14 @@ export default function MainFooterNav() {
         });
     }
 
-    const handleLogout = async () => {
-        if (isLoggingOut) return;
-        setIsLoggingOut(true);
-        const success = await signOut();
-        setIsLoggingOut(false);
-        if (success) {
-            navigate(ROUTES.login);
-        }
-    };
+    const handleOpenConfirmLogout = () => setIsConfirmLogoutOpen(true);
+    const handleCloseConfirmLogoutModal = () => setIsConfirmLogoutOpen(false);
 
     const tabs: FooterTabConfig[] = [
         {
             id: ROUTES.profile,
             label: 'پروفایل',
             onPress: navigate,
-            disabled: isLoggingOut,
             customRender: (isActive: boolean) => {
                 if (profilePhotoUrl) {
                     return (
@@ -89,20 +80,22 @@ export default function MainFooterNav() {
             icon: PlusSquare,
             label: 'پست جدید',
             onPress: navigate,
-            disabled: isLoggingOut,
         },
         {
             id: 'logout',
             icon: LogOut,
             label: 'خروج',
             isActionButton: true,
-            onPress: handleLogout,
-            disabled: isLoggingOut,
-            customRender: isLoggingOut ? () => (
-                <Loader2 data-testid="logout-spinner" className="size-8 animate-spin text-secondary" />
-            ) : undefined,
+            onPress: handleOpenConfirmLogout,
         },
     ];
 
-    return <Footer.Nav activeTab={pathname} tabs={tabs} />;
+    return <>
+        <Footer.Nav activeTab={pathname} tabs={tabs} />
+        <LogoutConfirmationBottomSheet
+            isOpen={isConfirmLogoutOpen}
+            onClose={handleCloseConfirmLogoutModal}
+            onConfirm={handleCloseConfirmLogoutModal}
+        />
+    </>;
 }

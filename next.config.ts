@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   reactCompiler: true,
   allowedDevOrigins: getLocalIPs(),
+  images: {
+    qualities: [75, 100]
+  }
 };
 
 export default nextConfig;

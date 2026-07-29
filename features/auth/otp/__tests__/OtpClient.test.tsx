@@ -48,7 +48,7 @@ afterEach(() => {
 describe('OtpClient Integration', () => {
   const TEST_PHONE = '09171234567';
 
-  it('completes login successfully and redirects to /app/posts/pending', async () => {
+  it('completes login successfully and redirects to /app/profile', async () => {
     mockVerify.mockResolvedValue({
       error: null,
     });
@@ -67,7 +67,7 @@ describe('OtpClient Integration', () => {
         code: '1234',
         phoneNumber: TEST_PHONE,
       });
-      expect(mockReplace).toHaveBeenCalledWith('/app/posts/pending');
+      expect(mockReplace).toHaveBeenCalledWith('/app/profile');
     });
   });
 
@@ -193,7 +193,7 @@ describe('OtpClient Integration', () => {
         code: '1234',
         phoneNumber: TEST_PHONE,
       });
-      expect(mockReplace).toHaveBeenCalledWith('/app/posts/pending');
+      expect(mockReplace).toHaveBeenCalledWith('/app/profile');
     });
   });
 });

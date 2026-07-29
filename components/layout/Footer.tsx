@@ -96,8 +96,8 @@ export function FooterNavRoot({
                     isActive={!tab.isActionButton && activeTab === tab.id}
                     customRender={tab.customRender}
                     aria-label={tab.label}
-                    onClick={() => tab.onPress(tab.id)}
                     disabled={tab.disabled}
+                    onClick={() => tab.onPress(tab.id)}
                 />
             ))}
         </nav>

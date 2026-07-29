@@ -21,17 +21,15 @@ export default function ProfileView() {
   const router = useRouter();
   const { data: me } = profileService.useSuspenseMe();
 
-  const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me.sellerProfile !== null });
+  const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me?.sellerProfile != null });
 
-  const hasUserProfile = me.sellerProfile !== null;
+  const isMissingSellerProfile = me != null && me.sellerProfile == null;
 
-  function redirectMissingProfile() {
-    if (!hasUserProfile) {
+  useEffect(() => {
+    if (isMissingSellerProfile) {
       router.replace(PROFILE_ROUTES.edit);
     }
-  }
-
-  useEffect(redirectMissingProfile, [hasUserProfile, router]);
+  }, [isMissingSellerProfile, router]);
 
   const {
     hasNextPage,
@@ -49,13 +47,13 @@ export default function ProfileView() {
     : [];
   const sellerProfile = getSellerProfile(userProfile);
 
-  if (!hasUserProfile) return null;
+  if (!me || !me.sellerProfile) return null;
 
   if (isLoading) return <ProfileOverviewSkeleton />;
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
-      <ProfileHeader username={userProfile?.username} />
+      <ProfileHeader username={sellerProfile?.username || userProfile?.username} />
 
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="flex flex-col w-full">

@@ -122,7 +122,7 @@ describe('useAuthFlow', () => {
 
       expect(success).toBe(true);
       expect(mockVerify).toHaveBeenCalledWith({ code: '1234', phoneNumber: '09171234567' });
-      expect(mockReplace).toHaveBeenCalledWith('/app/posts/pending');
+      expect(mockReplace).toHaveBeenCalledWith('/app/profile');
     });
 
     it('returns false and shows error toast on failure', async () => {

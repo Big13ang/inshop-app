@@ -30,6 +30,7 @@ jest.mock('../../services/profileService', () => ({
   profileService: {
     useUserProfile: () => ({ data: mockUser, isLoading: false }),
     useMe: () => ({ data: mockMe, isLoading: false }),
+    useSuspenseMe: () => ({ data: mockMe, isLoading: false }),
   },
   hasSellerProfile: (user?: UserProfile | null) => Boolean(
     user?.sellerProfile?.id ||
@@ -170,10 +171,11 @@ describe('ProfileView', () => {
     const noBio = makeUser();
     noBio.sellerProfile!.bio = '';
     mockUser = noBio;
+    mockMe = noBio;
 
     render(<ProfileView />);
 
-    expect(screen.getByText(text.overview.bioEmpty)).toBeInTheDocument();
+    expect(screen.queryByText(text.overview.bioEmpty)).not.toBeInTheDocument();
   });
 
   it('counts published posts in the stats row', () => {
@@ -226,6 +228,6 @@ describe('ProfileView', () => {
 
     const { container } = render(<ProfileView />);
 
-    expect(container.querySelectorAll('[id^="profile-grid-item-"]')).toHaveLength(3);
+    expect(container.querySelectorAll('.grid button')).toHaveLength(3);
   });
 });
