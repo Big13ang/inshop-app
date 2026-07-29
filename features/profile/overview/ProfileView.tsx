@@ -21,17 +21,15 @@ export default function ProfileView() {
   const router = useRouter();
   const { data: me } = profileService.useSuspenseMe();
 
-  const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me.sellerProfile !== null });
+  const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me?.sellerProfile != null });
 
-  const hasUserProfile = me.sellerProfile !== null;
+  const isMissingSellerProfile = me != null && me.sellerProfile == null;
 
-  function redirectMissingProfile() {
-    if (!hasUserProfile) {
+  useEffect(() => {
+    if (isMissingSellerProfile) {
       router.replace(PROFILE_ROUTES.edit);
     }
-  }
-
-  useEffect(redirectMissingProfile, [hasUserProfile, router]);
+  }, [isMissingSellerProfile, router]);
 
   const {
     hasNextPage,
@@ -49,7 +47,7 @@ export default function ProfileView() {
     : [];
   const sellerProfile = getSellerProfile(userProfile);
 
-  if (!hasUserProfile) return null;
+  if (!me || !me.sellerProfile) return null;
 
   if (isLoading) return <ProfileOverviewSkeleton />;
 

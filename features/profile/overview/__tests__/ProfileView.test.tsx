@@ -30,6 +30,7 @@ jest.mock('../../services/profileService', () => ({
   profileService: {
     useUserProfile: () => ({ data: mockUser, isLoading: false }),
     useMe: () => ({ data: mockMe, isLoading: false }),
+    useSuspenseMe: () => ({ data: mockMe, isLoading: false }),
   },
   hasSellerProfile: (user?: UserProfile | null) => Boolean(
     user?.sellerProfile?.id ||
