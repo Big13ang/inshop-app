@@ -1,5 +1,6 @@
 'use client';
 
+import { useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -17,9 +18,10 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const [, startTransition] = useTransition();
 
   const urlCallback = searchParams?.get ? searchParams.get('callbackUrl') : null;
-  const { onSuccessRedirect = urlCallback || '/app/posts/pending' } = options;
+  const { onSuccessRedirect = urlCallback || '/app/profile' } = options;
 
   const sendOtp = async (phoneNumber: string): Promise<boolean> => {
     debugAuth('auth-flow', 'sendOtp:start', { phoneNumber });
@@ -77,7 +79,9 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
     debugAuth('auth-flow', 'verifyOtp:redirect', {
       destination,
     });
-    router.replace(destination);
+    startTransition(() => {
+      router.replace(destination);
+    });
     return true;
   };
 
@@ -87,7 +91,9 @@ export function useAuthFlow(options: UseAuthFlowOptions = {}) {
       destination += `&callbackUrl=${encodeURIComponent(urlCallback)}`;
     }
     debugAuth('auth-flow', 'redirectToOtp', { phoneNumber, destination });
-    router.replace(destination);
+    startTransition(() => {
+      router.replace(destination);
+    });
   };
 
   const signOut = async (): Promise<boolean> => {
