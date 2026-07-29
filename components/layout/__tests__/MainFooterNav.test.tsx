@@ -40,8 +40,20 @@ describe('MainFooterNav', () => {
     render(<MainFooterNav />);
 
     expect(screen.getByLabelText('پروفایل')).toBeInTheDocument();
+    expect(screen.getByLabelText('پیام‌ها - بزودی')).toBeInTheDocument();
     expect(screen.getByLabelText('پست جدید')).toBeInTheDocument();
     expect(screen.getByLabelText('خروج')).toBeInTheDocument();
+  });
+
+  it('shows info toast when clicking message tab', async () => {
+    const user = userEvent.setup();
+    render(<MainFooterNav />);
+
+    const messageTab = screen.getByLabelText('پیام‌ها - بزودی');
+    await user.click(messageTab);
+
+    expect(toast.info).toHaveBeenCalledWith('بخش پیام‌ها به‌زودی اضافه خواهد شد');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('navigates to profile when clicking profile tab', async () => {
