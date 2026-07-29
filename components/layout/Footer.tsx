@@ -55,7 +55,7 @@ export function FooterTab({
         <AnimatedIconButton
             isActive={isActive}
             aria-current={isActive ? 'page' : undefined}
-            className={className}
+            className={cn('overflow-visible', className)}
             {...props}
         >
             {renderContent()}
@@ -84,7 +84,7 @@ export function FooterNavRoot({
                 'absolute bottom-0 left-0 right-0 z-50 h-16 w-full',
                 'flex flex-row items-center justify-around px-4',
                 'border-t border-primary/5 bg-surface-l3/95 backdrop-blur-md',
-                'select-none',
+                'select-none overflow-visible',
                 className,
             )}
             style={style}

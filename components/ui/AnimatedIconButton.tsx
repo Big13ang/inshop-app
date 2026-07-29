@@ -124,14 +124,13 @@ export default function AnimatedIconButton({
       onPointerCancel={() => animateButton(MOTION.normalScale)}
       disabled={disabled}
       className={cn(
-        'relative h-11 w-11 cursor-pointer hover:cursor-pointer [&_*]:cursor-pointer select-none border-none bg-transparent p-0 text-primary outline-none transition-opacity duration-200 transform-gpu [will-change:transform] hover:bg-transparent',
+        'relative h-11 w-11 cursor-pointer hover:cursor-pointer [&_*]:cursor-pointer select-none border-none bg-transparent p-0 text-primary outline-none transition-opacity duration-200 hover:bg-transparent overflow-visible z-10',
         'disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950/20',
         className
       )}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '0 44px' }}
       {...props}
     >
-      <span ref={iconRef} className="flex h-full w-full items-center justify-center transform-gpu [will-change:transform]">
+      <span ref={iconRef} className="flex h-full w-full items-center justify-center overflow-visible">
         {children}
       </span>
     </Button>

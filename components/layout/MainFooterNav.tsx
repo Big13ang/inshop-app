@@ -2,7 +2,8 @@
 
 import { useTransition, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, LogOut, PlusSquare } from 'lucide-react';
+import { User, LogOut, PlusSquare, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { profileService } from '@/features/profile/services/profileService';
 import { getMediaUrl } from '@/features/posts/utils/media';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,10 @@ export default function MainFooterNav() {
 
     const handleOpenConfirmLogout = () => setIsConfirmLogoutOpen(true);
     const handleCloseConfirmLogoutModal = () => setIsConfirmLogoutOpen(false);
+
+    function handleMessageClick() {
+        toast.info('بخش پیام‌ها به‌زودی اضافه خواهد شد');
+    }
 
     const tabs: FooterTabConfig[] = [
         {
@@ -74,6 +79,32 @@ export default function MainFooterNav() {
                     </span>
                 );
             },
+        },
+        {
+            id: 'messages',
+            label: 'پیام‌ها - بزودی',
+            isActionButton: true,
+            onPress: handleMessageClick,
+            customRender: (isActive: boolean) => (
+                <span className={cn(
+                    "relative inline-flex items-center justify-center size-8 !overflow-visible",
+                    "after:content-['بزودی'] after:absolute after:-top-2 after:-right-3",
+                    "after:rounded-full after:bg-primary after:px-1.5 after:py-0.5",
+                    "after:text-[9px] after:font-bold after:text-on-primary",
+                    "after:leading-none after:whitespace-nowrap after:pointer-events-none after:z-50"
+                )}>
+                    <Send
+                        data-testid="tab-icon"
+                        className={cn(
+                            'size-8 -scale-x-100',
+                            isActive ? 'text-primary' : 'text-secondary',
+                        )}
+                        strokeWidth={isActive ? 2.5 : 2}
+                        fill={isActive ? 'currentColor' : 'none'}
+                        aria-hidden="true"
+                    />
+                </span>
+            ),
         },
         {
             id: ROUTES.newPost,
