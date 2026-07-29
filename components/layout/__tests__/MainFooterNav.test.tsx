@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act, within } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MainFooterNav from '../MainFooterNav';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ let mockPathname = '/';
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
+    replace: mockPush,
   }),
   usePathname: () => mockPathname,
   useSearchParams: () => ({
@@ -65,7 +66,7 @@ describe('MainFooterNav', () => {
     expect(mockPush).toHaveBeenCalledWith('/app/posts/new');
   });
 
-  it('calls signOut and redirects to login when clicking logout tab', async () => {
+  it('calls signOut and redirects to login when clicking logout tab and confirming', async () => {
     const user = userEvent.setup();
     mockPathname = '/app/posts/new';
     mockSignOut.mockResolvedValue({ error: null });
@@ -74,6 +75,9 @@ describe('MainFooterNav', () => {
 
     const logoutTab = screen.getByLabelText('خروج');
     await user.click(logoutTab);
+
+    const confirmBtn = screen.getByRole('button', { name: /تایید خروج/i });
+    await user.click(confirmBtn);
 
     expect(mockSignOut).toHaveBeenCalled();
     await waitFor(() => {
@@ -104,6 +108,9 @@ describe('MainFooterNav', () => {
     const logoutTab = screen.getByLabelText('خروج');
     await user.click(logoutTab);
 
+    const confirmBtn = screen.getByRole('button', { name: /تایید خروج/i });
+    await user.click(confirmBtn);
+
     expect(mockSignOut).toHaveBeenCalled();
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('خطای خروج');
@@ -111,7 +118,7 @@ describe('MainFooterNav', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('prevents multiple signOut calls and disables tabs during logout', async () => {
+  it('prevents multiple signOut calls and disables button during logout', async () => {
     const user = userEvent.setup();
     mockPathname = '/app/posts/new';
     let resolveSignOut: (value: unknown) => void = () => {};
@@ -123,23 +130,18 @@ describe('MainFooterNav', () => {
     render(<MainFooterNav />);
 
     const logoutTab = screen.getByLabelText('خروج');
-    const profileTab = screen.getByLabelText('پروفایل');
-    const newPostTab = screen.getByLabelText('پست جدید');
 
-    // First click
+    // Click logout tab to open modal
     await user.click(logoutTab);
 
-    // Verify that all tabs are disabled while logging out
-    expect(logoutTab).toBeDisabled();
-    expect(profileTab).toBeDisabled();
-    expect(newPostTab).toBeDisabled();
+    const confirmBtn = screen.getByRole('button', { name: /تایید خروج/i });
+    await user.click(confirmBtn);
 
-    // Verify that the loader spinner is rendered inside the logout button
-    const spinner = within(logoutTab).getByTestId('logout-spinner');
-    expect(spinner).toBeInTheDocument();
+    // Verify confirm button is disabled while logging out
+    expect(confirmBtn).toBeDisabled();
 
     // Second click (should not trigger another signOut since button is disabled)
-    await user.click(logoutTab);
+    await user.click(confirmBtn);
 
     expect(mockSignOut).toHaveBeenCalledTimes(1);
 

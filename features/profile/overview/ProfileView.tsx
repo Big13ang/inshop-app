@@ -53,7 +53,7 @@ export default function ProfileView() {
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
-      <ProfileHeader username={userProfile?.username} />
+      <ProfileHeader username={sellerProfile?.username || userProfile?.username} />
 
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="flex flex-col w-full">

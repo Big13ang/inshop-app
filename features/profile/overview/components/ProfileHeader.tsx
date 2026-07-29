@@ -10,7 +10,7 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ username, onBack }: ProfileHeaderProps) {
   const router = useRouter();
-  const displayUsername = username?.trim() || `@inShop`;
+  const displayUsername = username?.trim().replace(/^@/, '') || 'inShop';
 
   const handleBackClick = () => {
     if (onBack) {
