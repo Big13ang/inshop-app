@@ -9,6 +9,11 @@ debugAuth('auth-client', 'createAuthClient', {
 
 export const authClient = createAuthClient({
     baseURL: env.NEXT_PUBLIC_API_URL,
+    fetchOptions: {
+        headers: {
+            'Accept-Language': 'fa',
+        },
+    },
     plugins: [
         phoneNumberClient(),
     ]
