@@ -58,9 +58,9 @@ function Input({
       ref={ref}
       type={type}
       className={cn(inputVariants({ variant: activeVariant, inputSize, className }))}
-      onChange={handleChange}
       suppressHydrationWarning={true}
       {...props}
+      onChange={handleChange}
     />
   );
 }
