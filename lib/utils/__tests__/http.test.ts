@@ -33,7 +33,7 @@ describe('parseBackendError', () => {
     (mockError as unknown as Record<string, unknown>).response = mockResponse;
 
     const { parseBackendError } = await import('../httpConfig');
-    const resultError = await parseBackendError({ error: mockError } as any);
+    const resultError = await parseBackendError({ error: mockError } as Parameters<typeof parseBackendError>[0]);
 
     expect(resultError.message).toBe('شماره موبایل یا رمز عبور نادرست است.');
     expect((resultError as unknown as Record<string, unknown>).code).toBe('INVALID_PHONE_OR_PASSWORD');
@@ -50,7 +50,7 @@ describe('parseBackendError', () => {
     (mockError as unknown as Record<string, unknown>).response = mockResponse;
 
     const { parseBackendError } = await import('../httpConfig');
-    const resultError = await parseBackendError({ error: mockError } as any);
+    const resultError = await parseBackendError({ error: mockError } as Parameters<typeof parseBackendError>[0]);
 
     expect(resultError.message).toBe('Request failed with status code 500 Internal Server Error');
   });

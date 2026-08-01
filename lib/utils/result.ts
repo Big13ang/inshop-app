@@ -24,7 +24,7 @@ export const Result = {
       if (result.error instanceof Error) {
         throw result.error;
       }
-      const errObj = result.error as any;
+      const errObj = result.error as { message?: string } | null | undefined;
       throw new Error(errObj?.message || String(result.error));
     }
     return result.value;
