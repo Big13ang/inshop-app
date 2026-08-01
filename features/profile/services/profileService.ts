@@ -1,5 +1,5 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { http, Result } from '@/lib/utils';
+import { http } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 
 export interface UserProfile {
@@ -82,9 +82,14 @@ export interface UseCheckUsernameOptions {
 export async function checkUsernameAvailability(username: string): Promise<CheckUsernameResponse> {
   const trimmed = username.trim();
 
-  return http.get<CheckUsernameResponse>(
+  const response = await http.get<CheckUsernameResponse>(
     `/user/profile/check-username/${encodeURIComponent(trimmed)}`
   );
+
+  return {
+    ...response,
+    username: response.username || trimmed,
+  };
 }
 
 export const profileService = {

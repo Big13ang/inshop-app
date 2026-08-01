@@ -255,7 +255,7 @@ export const handlers = [
     ];
     return HttpResponse.json({ id }, { status: 201 });
   }),
-  http.post('http://localhost:3000/api/auth/phone-number/send-otp', async ({ request }) => {
+  http.post('http://localhost:3000/api/auth/phone-number/request-sign-up', async ({ request }) => {
     const { phoneNumber } = (await request.json()) as { phoneNumber: string };
     if (phoneNumber === '09000000000') {
       return HttpResponse.json(
@@ -267,8 +267,9 @@ export const handlers = [
       message: 'کد تایید ارسال شد',
     });
   }),
-  http.post('http://localhost:3000/api/auth/phone-number/verify', async ({ request }) => {
-    const { code, phoneNumber } = (await request.json()) as { code: string; phoneNumber: string };
+  http.post('http://localhost:3000/api/auth/phone-number/sign-up', async ({ request }) => {
+    const body = (await request.json()) as { otp?: string; code?: string; phoneNumber: string };
+    const code = body.otp || body.code;
     if (code === '0000') {
       return HttpResponse.json(
         { message: 'کد وارد شده نامعتبر است.' },
@@ -278,7 +279,7 @@ export const handlers = [
     return HttpResponse.json({
       user: {
         id: 'user-1',
-        phoneNumber,
+        phoneNumber: body.phoneNumber,
       },
       session: {
         id: 'session-1',

@@ -28,13 +28,13 @@ describe('authService', () => {
   });
 
   describe('sendPhoneNumberOTP', () => {
-    it('calls POST api/auth/phone-number/send-otp with exact backend payload', async () => {
+    it('calls POST api/auth/phone-number/request-sign-up with exact backend payload', async () => {
       (authHttp.post as jest.Mock).mockResolvedValue({ message: 'code sent' });
 
       const res = await sendPhoneNumberOTP({ phoneNumber: '09123456789' });
 
       expect(authHttp.post).toHaveBeenCalledWith(
-        'api/auth/phone-number/send-otp',
+        'api/auth/phone-number/request-sign-up',
         { phoneNumber: '09123456789' }
       );
       expect(res).toEqual({ message: 'code sent' });
@@ -42,7 +42,7 @@ describe('authService', () => {
   });
 
   describe('verifyPhoneNumber', () => {
-    it('calls POST api/auth/phone-number/verify with exact backend payload', async () => {
+    it('calls POST api/auth/phone-number/sign-up with exact backend payload', async () => {
       (authHttp.post as jest.Mock).mockResolvedValue({
         token: 'test-token',
         user: { id: '1', name: 'User', phoneNumber: '09123456789' },
@@ -50,20 +50,20 @@ describe('authService', () => {
 
       const res = await verifyPhoneNumber({
         phoneNumber: '09123456789',
-        code: '1234',
-        password: 'test1234',
+        otp: '1234',
+        newPassword: 'test1234',
       });
 
       expect(authHttp.post).toHaveBeenCalledWith(
-        'api/auth/phone-number/verify',
-        { phoneNumber: '09123456789', code: '1234', password: 'test1234' }
+        'api/auth/phone-number/sign-up',
+        { phoneNumber: '09123456789', otp: '1234', newPassword: 'test1234' }
       );
       expect(res.token).toBe('test-token');
     });
   });
 
   describe('signInPhoneNumber', () => {
-    it('calls POST api/auth/sign-in/phone-number with exact backend payload', async () => {
+    it('calls POST api/auth/sign-in/phone-number with exact backend payload including rememberMe', async () => {
       (authHttp.post as jest.Mock).mockResolvedValue({ token: 'session-token' });
 
       const res = await signInPhoneNumber({
@@ -73,7 +73,7 @@ describe('authService', () => {
 
       expect(authHttp.post).toHaveBeenCalledWith(
         'api/auth/sign-in/phone-number',
-        { phoneNumber: '09123456789', password: 'test1234' }
+        { phoneNumber: '09123456789', password: 'test1234', rememberMe: true }
       );
       expect(res.token).toBe('session-token');
     });

@@ -50,6 +50,7 @@ export default function ShopSection() {
 
   const isMatchingResult =
     checkResult &&
+    checkResult.username &&
     checkResult.username.toLowerCase() === debouncedUsername.toLowerCase();
 
   useEffect(() => {

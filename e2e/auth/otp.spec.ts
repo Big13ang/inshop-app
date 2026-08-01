@@ -314,7 +314,11 @@ test.describe('OTP page — retry after failure', () => {
   }) => {
     // First verify fails, then succeed on retry
     let callCount = 0;
-    await page.route('**/api/auth/phone-number/verify', async (route) => {
+    await page.route(
+      (url) =>
+        url.pathname.includes('/api/auth/phone-number/verify') ||
+        url.pathname.includes('/api/auth/phone-number/sign-up'),
+      async (route) => {
       callCount++;
       if (callCount === 1) {
         await route.fulfill({

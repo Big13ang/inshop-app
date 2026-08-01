@@ -1,5 +1,5 @@
 import ky, { Options } from 'ky';
-import { getBaseUrl, setLanguageHeader } from './httpConfig';
+import { getBaseUrl, setLanguageHeader, parseBackendError } from './httpConfig';
 import { Result } from './result';
 
 export function createAuthHttpClient(prefixUrl?: string) {
@@ -8,6 +8,7 @@ export function createAuthHttpClient(prefixUrl?: string) {
     credentials: 'include',
     hooks: {
       beforeRequest: [setLanguageHeader],
+      beforeError: [parseBackendError],
     },
   });
 

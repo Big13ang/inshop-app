@@ -10,8 +10,8 @@ export interface SendPhoneNumberOTPResponse {
 
 export interface VerifyPhoneNumberPayload {
   phoneNumber: string;
-  code: string;
-  password?: string;
+  otp: string;
+  newPassword: string;
 }
 
 export interface AuthUser {
@@ -30,6 +30,7 @@ export interface VerifyPhoneNumberResponse {
 export interface SignInPhoneNumberPayload {
   phoneNumber: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface SignInPhoneNumberResponse {
@@ -62,19 +63,22 @@ export interface ResetPasswordPhoneNumberResponse {
 export async function sendPhoneNumberOTP(
   payload: SendPhoneNumberOTPPayload
 ) {
-  return authHttp.post<SendPhoneNumberOTPResponse>('api/auth/phone-number/send-otp', payload);
+  return authHttp.post<SendPhoneNumberOTPResponse>('api/auth/phone-number/request-sign-up', payload);
 }
 
 export async function verifyPhoneNumber(
   payload: VerifyPhoneNumberPayload
 ) {
-  return authHttp.post<VerifyPhoneNumberResponse>('api/auth/phone-number/verify', payload);
+  return authHttp.post<VerifyPhoneNumberResponse>('api/auth/phone-number/sign-up', payload);
 }
 
 export async function signInPhoneNumber(
   payload: SignInPhoneNumberPayload
 ) {
-  return authHttp.post<SignInPhoneNumberResponse>('api/auth/sign-in/phone-number', payload);
+  return authHttp.post<SignInPhoneNumberResponse>('api/auth/sign-in/phone-number', {
+    rememberMe: true,
+    ...payload,
+  });
 }
 
 export async function requestPasswordResetPhoneNumber(

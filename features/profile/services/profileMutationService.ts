@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http, Result } from '@/lib/utils';
+import { http } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { text } from '../constants';
@@ -64,9 +64,11 @@ export const profileMutationService = {
   useCreateProfile(onSaved?: () => void) {
     const queryClient = useQueryClient();
 
-    const handleSuccess = () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+    const handleSuccess = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+      ]);
       toast.success(text.edit.saveSuccess);
       onSaved?.();
     };
@@ -85,9 +87,11 @@ export const profileMutationService = {
   useUpdateProfile(onSaved?: () => void) {
     const queryClient = useQueryClient();
 
-    const handleSuccess = () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+    const handleSuccess = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+      ]);
       toast.success(text.edit.saveSuccess);
       onSaved?.();
     };

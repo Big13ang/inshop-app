@@ -17,3 +17,41 @@ describe('Ky-backed HTTP client instances', () => {
     expect(typeof customClient.get).toBe('function');
   });
 });
+
+describe('parseBackendError', () => {
+  it('updates error.message and error.code from response JSON', async () => {
+    const mockResponse = {
+      clone: () => ({
+        json: async () => ({
+          message: 'شماره موبایل یا رمز عبور نادرست است.',
+          code: 'INVALID_PHONE_OR_PASSWORD',
+        }),
+      }),
+    } as unknown as Response;
+
+    const mockError = new Error('Request failed with status code 401 Unauthorized');
+    (mockError as unknown as Record<string, unknown>).response = mockResponse;
+
+    const { parseBackendError } = await import('../httpConfig');
+    const resultError = await parseBackendError({ error: mockError } as any);
+
+    expect(resultError.message).toBe('شماره موبایل یا رمز عبور نادرست است.');
+    expect((resultError as unknown as Record<string, unknown>).code).toBe('INVALID_PHONE_OR_PASSWORD');
+  });
+
+  it('keeps original message if response JSON has no message property', async () => {
+    const mockResponse = {
+      clone: () => ({
+        json: async () => ({ foo: 'bar' }),
+      }),
+    } as unknown as Response;
+
+    const mockError = new Error('Request failed with status code 500 Internal Server Error');
+    (mockError as unknown as Record<string, unknown>).response = mockResponse;
+
+    const { parseBackendError } = await import('../httpConfig');
+    const resultError = await parseBackendError({ error: mockError } as any);
+
+    expect(resultError.message).toBe('Request failed with status code 500 Internal Server Error');
+  });
+});

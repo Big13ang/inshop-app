@@ -46,7 +46,11 @@ export default function SignInForm() {
   const authForm = (useWatch({ control: formActions.control, name: 'authForm' }) as AuthForm) || AUTH_FORMS.SIGN_IN;
 
   const navigateToDestination = () => {
-    startTransition(() => router.replace(destination));
+    if (typeof window !== 'undefined') {
+      window.location.replace(destination);
+    } else {
+      startTransition(() => router.replace(destination));
+    }
   };
 
   const setFormStep = (nextStep: AuthForm) => {
@@ -58,7 +62,7 @@ export default function SignInForm() {
 
     switch (currentForm) {
       case AUTH_FORMS.SIGN_IN:
-        signInMutation.mutate({ phoneNumber, password }, { onSuccess: navigateToDestination });
+        signInMutation.mutate({ phoneNumber, password, rememberMe: true }, { onSuccess: navigateToDestination });
         break;
 
       case AUTH_FORMS.SIGN_UP_INIT:
@@ -66,7 +70,7 @@ export default function SignInForm() {
         break;
 
       case AUTH_FORMS.SIGN_UP_FINALIZE:
-        verifyMutation.mutate({ phoneNumber, code: otp, password }, { onSuccess: navigateToDestination });
+        verifyMutation.mutate({ phoneNumber, otp, newPassword: password }, { onSuccess: navigateToDestination });
         break;
 
       case AUTH_FORMS.FORGOT_PASS_INIT:
@@ -74,7 +78,15 @@ export default function SignInForm() {
         break;
 
       case AUTH_FORMS.FORGOT_PASS_FINALIZE:
-        resetMutation.mutate({ phoneNumber, otp, newPassword: password }, { onSuccess: () => setFormStep(AUTH_FORMS.SIGN_IN) });
+        resetMutation.mutate(
+          { phoneNumber, otp, newPassword: password },
+          {
+            onSuccess: () => {
+              // Sign in with the new password so a session cookie is set before navigating
+              signInMutation.mutate({ phoneNumber, password, rememberMe: true }, { onSuccess: navigateToDestination });
+            },
+          }
+        );
         break;
     }
   };

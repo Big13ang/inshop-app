@@ -38,6 +38,7 @@ export function useVerifyPhoneNumberMutation() {
   return useMutation({
     mutationFn: (payload: VerifyPhoneNumberPayload) => verifyPhoneNumber(payload),
     onSuccess: (data) => {
+      queryClient.resetQueries({ queryKey: queryKeys.profile.me });
       queryCacheFactory.profile.invalidateMe(queryClient);
       queryCacheFactory.auth.invalidateSession(queryClient);
       if (data?.message) {
@@ -58,6 +59,7 @@ export function useSignInPhoneNumberMutation() {
   return useMutation({
     mutationFn: (payload: SignInPhoneNumberPayload) => signInPhoneNumber(payload),
     onSuccess: (data) => {
+      queryClient.resetQueries({ queryKey: queryKeys.profile.me });
       queryCacheFactory.profile.invalidateMe(queryClient);
       queryCacheFactory.auth.invalidateSession(queryClient);
       if (data?.message) {
