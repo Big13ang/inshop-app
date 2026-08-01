@@ -44,6 +44,15 @@ export default function SignInForm() {
   });
 
   const authForm = (useWatch({ control: formActions.control, name: 'authForm' }) as AuthForm) || AUTH_FORMS.SIGN_IN;
+  const phoneNumber = (useWatch({ control: formActions.control, name: 'phoneNumber' }) as string) || '';
+
+  const handleResendOtp = () => {
+    if (authForm === AUTH_FORMS.SIGN_UP_FINALIZE) {
+      sendOtpMutation.mutate({ phoneNumber });
+    } else if (authForm === AUTH_FORMS.FORGOT_PASS_FINALIZE) {
+      requestResetMutation.mutate({ phoneNumber });
+    }
+  };
 
   const navigateToDestination = () => {
     if (typeof window !== 'undefined') {
@@ -116,7 +125,7 @@ export default function SignInForm() {
 
         {showOtpAndPassword && (
           <>
-            <OtpInputSection />
+            <OtpInputSection onResend={handleResendOtp} />
             <PasswordInput />
           </>
         )}

@@ -1,9 +1,14 @@
 import { useFormContext, useFormState } from 'react-hook-form';
 import OtpInputGroup from '@/features/auth/otp/components/OtpInputGroup';
+import OtpTimer from '@/features/auth/otp/components/OtpTimer';
 import ErrorMessage from '@/features/auth/login/components/ErrorMessage';
 import { useOtp } from '@/features/auth/otp/hooks/useOtp';
 
-export default function OtpInputSection() {
+interface OtpInputSectionProps {
+  onResend?: () => void | Promise<void | boolean> | boolean;
+}
+
+export default function OtpInputSection({ onResend }: OtpInputSectionProps) {
   const { setValue, control } = useFormContext();
   const { errors } = useFormState({ control });
 
@@ -11,7 +16,12 @@ export default function OtpInputSection() {
     setValue('otp', code, { shouldValidate: true });
   };
 
-  const { slots, inputRefs, handleChange, handleKeyDown, handlePaste } = useOtp(handleOtpComplete);
+  const { slots, inputRefs, handleChange, handleKeyDown, handlePaste, reset } = useOtp(handleOtpComplete);
+
+  const handleResetOtp = () => {
+    reset();
+    setValue('otp', '', { shouldValidate: true });
+  };
 
   const handleOtpSlotChange = (index: number, value: string) => {
     handleChange(index, value);
@@ -41,6 +51,7 @@ export default function OtpInputSection() {
         onPaste={handleOtpPaste}
       />
       {errorMessage && <ErrorMessage message={errorMessage} />}
+      <OtpTimer onResend={onResend} resetOtp={handleResetOtp} initialTime={120} />
     </div>
   );
 }
