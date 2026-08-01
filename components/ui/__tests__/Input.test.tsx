@@ -56,40 +56,4 @@ describe('Input Component', () => {
     expect(input).toBeDisabled();
     expect(input).toHaveAttribute('maxLength', '10');
   });
-
-  describe('Value Normalization', () => {
-    it('normalizes typed characters when normalize prop is provided', async () => {
-      const user = userEvent.setup();
-      const normalizeMock = jest.fn((val: string) => val.toUpperCase());
-      const onChangeMock = jest.fn();
-
-      render(<Input normalize={normalizeMock} onChange={onChangeMock} placeholder="Normalizing" />);
-      const input = screen.getByPlaceholderText('Normalizing');
-
-      await user.type(input, 'abc');
-
-      // The mock should have been called during input typing
-      expect(normalizeMock).toHaveBeenCalled();
-      expect(input).toHaveValue('ABC');
-
-      // The onChange callback should have received the normalized value in the event
-      expect(onChangeMock).toHaveBeenCalled();
-      const lastEvent = onChangeMock.mock.calls[onChangeMock.mock.calls.length - 1][0];
-      expect(lastEvent.target.value).toBe('ABC');
-    });
-
-    it('does not modify typed characters when normalize prop is omitted', async () => {
-      const user = userEvent.setup();
-      const onChangeMock = jest.fn();
-
-      render(<Input onChange={onChangeMock} placeholder="No Normalizing" />);
-      const input = screen.getByPlaceholderText('No Normalizing');
-
-      await user.type(input, 'abc');
-      expect(input).toHaveValue('abc');
-      expect(onChangeMock).toHaveBeenCalled();
-      const lastEvent = onChangeMock.mock.calls[onChangeMock.mock.calls.length - 1][0];
-      expect(lastEvent.target.value).toBe('abc');
-    });
-  });
 });

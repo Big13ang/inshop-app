@@ -28,7 +28,6 @@ export interface InputProps
   VariantProps<typeof inputVariants> {
   isError?: boolean;
   ref?: React.Ref<HTMLInputElement>;
-  normalize?: (value: string) => string;
 }
 
 function Input({
@@ -37,21 +36,10 @@ function Input({
   variant,
   inputSize = "default",
   isError = false,
-  onChange,
-  normalize,
   ref,
   ...props
 }: InputProps) {
   const activeVariant = isError ? "error" : (variant || "default");
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (normalize) {
-      e.target.value = normalize(e.target.value);
-    }
-    if (onChange) {
-      onChange(e);
-    }
-  };
 
   return (
     <input
@@ -60,7 +48,6 @@ function Input({
       className={cn(inputVariants({ variant: activeVariant, inputSize, className }))}
       suppressHydrationWarning={true}
       {...props}
-      onChange={handleChange}
     />
   );
 }

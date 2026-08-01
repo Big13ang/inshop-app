@@ -63,7 +63,8 @@ Rules:
 ## Developer Directives
 
 - **RTK Usage**: Always prepend `rtk` to any shell command you run on this machine (e.g., `rtk git status`, `rtk npm test`).
-- **Use Project HTTP Client**: Always use the project's custom `http` client (from `@/lib/utils`) instead of the native `fetch` API for making network requests. This ensures standard URL normalization, cookies/credentials management, and use of the `Result` wrapper pattern.
+- **No Try/Catch — Mandatory Result Pattern**: You MUST NOT use standard `try/catch` blocks anywhere in client-side code, services, or utils. Always use the `Result` pattern (`Result.try`, `Result.ok`, `Result.err`, `Result.unwrap`) for clean, exception-free error handling.
+- **Mandatory HTTP Client Usage**: All client-side network requests anywhere in the app MUST use `http` (for general API requests) or `authHttp` (for authentication requests) from `@/lib/utils`. Direct `fetch` API calls or unapproved third-party callers are strictly forbidden.
 - **Extract Functions**: Avoid defining inline functions that span more than one line (e.g., multiline callback handlers or event listeners). Always extract them into named helper functions/handlers within the component or module to improve readability and testability.
 - **No Response Transformation**: Do not transform backend API response field names or status values to custom frontend structures. Keep backend field names (e.g., `description`, `createdAt`, `rejectReason`) and status values (e.g., `'PENDING_REVIEW'`, `'REJECTED'`) as-is in frontend query services and models. Only use lightweight rendering utilities (e.g., `getMediaUrl`) to convert backend URLs/data at render time.
 - **Clean Architecture**: Use the `Result` pattern (`Result.ok`, `Result.err`) anywhere you can for cleaner, exception-free code.

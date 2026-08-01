@@ -37,8 +37,6 @@ export default function ContactSection() {
           placeholder={text.edit.phonePlaceholder}
           isError={!!errors.phoneNumber}
           aria-invalid={!!errors.phoneNumber}
-          // Sellers routinely type Persian digits; normalise before validation sees them.
-          normalize={convertPersianArabicToEnglish}
           className="font-mono tracking-widest"
           {...register('phoneNumber')}
         />
