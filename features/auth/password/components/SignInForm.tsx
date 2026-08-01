@@ -1,62 +1,118 @@
-import { FormProvider, useForm, useFormContext } from 'react-hook-form';
-import PasswordInput from './PasswordInput';
-import { Button } from '@/components/ui/button';
-import PhoneInput from '@/features/auth/login/components/PhoneInput';
+import { useTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AUTH_FORMS, AuthForm, signInValidationSchema } from '../../constant';
+import PhoneInput from '@/features/auth/login/components/PhoneInput';
+import { AUTH_FORMS, AuthForm } from '../../constant';
 import { AuthFormHeader } from './AuthFormHeader';
 import { AuthFormActions } from './AuthFormActions';
-
-const ForgotPasswordLink = () => {
-  const { watch, setValue } = useFormContext();
-  const authForm = watch('authFrom') as AuthForm;
-
-  if (authForm !== AUTH_FORMS.SIGN_IN) return null;
-
-  const handleForgotPasswordClick = () => {
-    setValue('authFrom', AUTH_FORMS.FORGOT_PASS_INIT);
-  };
-
-  return (
-    <div className="flex items-center justify-between text-xs mt-1 px-1">
-      <Button
-        type="button"
-        variant="link"
-        size="xs"
-        onClick={handleForgotPasswordClick}
-      >
-        فراموشی رمز عبور؟
-      </Button>
-    </div>
-  );
-};
+import PasswordSection from './PasswordSection';
+import PasswordInput from './PasswordInput';
+import OtpInputSection from './OtpInputSection';
+import { dynamicAuthValidationSchema, SignInFormData } from '../schemas/dynamicAuthSchema';
+import {
+  useSendPhoneNumberOTPMutation,
+  useVerifyPhoneNumberMutation,
+  useSignInPhoneNumberMutation,
+  useRequestPasswordResetPhoneNumberMutation,
+  useResetPasswordPhoneNumberMutation,
+} from '@/features/auth/hooks/useAuthMutations';
 
 export default function SignInForm() {
-  const formActions = useForm({
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+
+  const callbackUrl = searchParams?.get ? searchParams.get('callbackUrl') : null;
+  const destination = callbackUrl || '/app/profile';
+
+  const sendOtpMutation = useSendPhoneNumberOTPMutation();
+  const verifyMutation = useVerifyPhoneNumberMutation();
+  const signInMutation = useSignInPhoneNumberMutation();
+  const requestResetMutation = useRequestPasswordResetPhoneNumberMutation();
+  const resetMutation = useResetPasswordPhoneNumberMutation();
+
+  const formActions = useForm<SignInFormData>({
     mode: 'onChange',
     defaultValues: {
       phoneNumber: '',
       password: '',
-      authFrom: AUTH_FORMS.SIGN_IN,
+      otp: '',
+      authForm: AUTH_FORMS.SIGN_IN,
     },
-    resolver: zodResolver(signInValidationSchema)
+    resolver: zodResolver(dynamicAuthValidationSchema),
   });
+
+  const authForm = (useWatch({ control: formActions.control, name: 'authForm' }) as AuthForm) || AUTH_FORMS.SIGN_IN;
+
+  const navigateToDestination = () => {
+    startTransition(() => router.replace(destination));
+  };
+
+  const setFormStep = (nextStep: AuthForm) => {
+    formActions.setValue('authForm', nextStep, { shouldValidate: true });
+  };
+
+  const handleAuthSubmit = (data: SignInFormData) => {
+    const { authForm: currentForm, phoneNumber, password = '', otp = '' } = data;
+
+    switch (currentForm) {
+      case AUTH_FORMS.SIGN_IN:
+        signInMutation.mutate({ phoneNumber, password }, { onSuccess: navigateToDestination });
+        break;
+
+      case AUTH_FORMS.SIGN_UP_INIT:
+        sendOtpMutation.mutate({ phoneNumber }, { onSuccess: () => setFormStep(AUTH_FORMS.SIGN_UP_FINALIZE) });
+        break;
+
+      case AUTH_FORMS.SIGN_UP_FINALIZE:
+        verifyMutation.mutate({ phoneNumber, code: otp, password }, { onSuccess: navigateToDestination });
+        break;
+
+      case AUTH_FORMS.FORGOT_PASS_INIT:
+        requestResetMutation.mutate({ phoneNumber }, { onSuccess: () => setFormStep(AUTH_FORMS.FORGOT_PASS_FINALIZE) });
+        break;
+
+      case AUTH_FORMS.FORGOT_PASS_FINALIZE:
+        resetMutation.mutate({ phoneNumber, otp, newPassword: password }, { onSuccess: () => setFormStep(AUTH_FORMS.SIGN_IN) });
+        break;
+    }
+  };
+
+  const showOtpAndPassword =
+    authForm === AUTH_FORMS.SIGN_UP_FINALIZE ||
+    authForm === AUTH_FORMS.FORGOT_PASS_FINALIZE;
+
+  const isLoading =
+    signInMutation.isPending ||
+    sendOtpMutation.isPending ||
+    verifyMutation.isPending ||
+    requestResetMutation.isPending ||
+    resetMutation.isPending;
 
   return (
     <FormProvider {...formActions}>
-      <form className="w-full max-w-sm mx-auto flex flex-col gap-5 font-sans text-right select-none">
+      <form
+        onSubmit={formActions.handleSubmit(handleAuthSubmit)}
+        className="w-full max-w-sm mx-auto flex flex-col gap-5 font-sans text-right select-none"
+      >
         <AuthFormHeader />
-        <PhoneInput placeholder="۰۹۱۲۳۴۵۶۷۸۹" className="text-left" />
 
-        <div className="flex flex-col gap-1.5">
-          <PasswordInput />
-          <ForgotPasswordLink />
-        </div>
+        {!showOtpAndPassword && (
+          <PhoneInput placeholder="۰۹۱۲۳۴۵۶۷۸۹" className="text-left" />
+        )}
 
-        <AuthFormActions />
+        {showOtpAndPassword && (
+          <>
+            <OtpInputSection />
+            <PasswordInput />
+          </>
+        )}
+
+        {authForm === AUTH_FORMS.SIGN_IN && <PasswordSection />}
+
+        <AuthFormActions isLoading={isLoading} />
       </form>
     </FormProvider>
   );
 }
-
-

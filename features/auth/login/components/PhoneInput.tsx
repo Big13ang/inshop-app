@@ -1,9 +1,9 @@
 import React from 'react';
 import { Phone } from 'lucide-react';
-import { cn, convertPersianArabicToEnglish } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import ErrorMessage from './ErrorMessage';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useFormState } from 'react-hook-form';
 
 interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     name?: string;
@@ -13,23 +13,23 @@ interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     ref?: React.Ref<HTMLInputElement>;
 }
 
-export default function PhoneInput({
-    name = 'phoneNumber',
+interface PhoneInputUIProps extends PhoneInputProps {
+    activeError?: string;
+    activeIsError: boolean;
+    registerProps: Record<string, any>;
+}
+
+function PhoneInputUI({
     label = 'شماره همراه',
-    error: customError,
-    isError: customIsError,
+    activeError,
+    activeIsError,
     className,
     id = 'sign-in-phone',
+    registerProps,
+    error: _error,
+    isError: _isError,
     ...props
-}: PhoneInputProps) {
-    const formContext = useFormContext();
-
-    const registerProps = formContext ? formContext.register(name) : {};
-    const formError = formContext?.formState.errors[name]?.message as string | undefined;
-
-    const activeError = customError || formError;
-    const activeIsError = customIsError ?? !!activeError;
-
+}: PhoneInputUIProps) {
     return (
         <div className="flex flex-col gap-2">
             <label htmlFor={id} className="text-xs font-semibold text-zinc-600 text-right pr-1">
@@ -42,15 +42,14 @@ export default function PhoneInput({
                     type="tel"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    normalize={convertPersianArabicToEnglish}
                     isError={activeIsError}
                     aria-invalid={activeIsError ? 'true' : 'false'}
                     className={cn(
                         'peer text-center text-base tracking-widest pr-11 pl-4',
                         className
                     )}
-                    {...registerProps}
                     {...props}
+                    {...registerProps}
                 />
                 <span
                     className={cn(
@@ -69,3 +68,49 @@ export default function PhoneInput({
     );
 }
 
+function ContextPhoneInput(props: PhoneInputProps & { name: string }) {
+    const formContext = useFormContext();
+    const { errors } = useFormState({ control: formContext.control });
+
+    const registerProps = formContext.register(props.name);
+    const formError = errors?.[props.name]?.message as string | undefined;
+
+    const activeError = props.error || formError;
+    const activeIsError = props.isError ?? !!activeError;
+
+    return (
+        <PhoneInputUI
+            {...props}
+            activeError={activeError}
+            activeIsError={activeIsError}
+            registerProps={registerProps}
+        />
+    );
+}
+
+function StandalonePhoneInput(props: PhoneInputProps) {
+    const activeError = props.error;
+    const activeIsError = props.isError ?? !!activeError;
+
+    return (
+        <PhoneInputUI
+            {...props}
+            activeError={activeError}
+            activeIsError={activeIsError}
+            registerProps={{}}
+        />
+    );
+}
+
+export default function PhoneInput({
+    name = 'phoneNumber',
+    ...props
+}: PhoneInputProps) {
+    const formContext = useFormContext();
+
+    if (formContext) {
+        return <ContextPhoneInput name={name} {...props} />;
+    }
+
+    return <StandalonePhoneInput name={name} {...props} />;
+}

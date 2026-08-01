@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import ErrorMessage from '@/features/auth/login/components/ErrorMessage';
-import { useFormContext } from 'react-hook-form';
-import { passwordSchema, passwordValidationSchema } from '../../constant';
+import { useFormContext, useFormState } from 'react-hook-form';
 
 export default function PasswordInput() {
   const [hide, setHide] = useState(true);
-  const { register, formState: { errors } } = useFormContext();
+  const { register, control } = useFormContext();
+  const { errors } = useFormState({ control });
 
   const toggleHidePassword = () => setHide(prev => !prev);
 
   const errorMessage = errors.password?.message as string | undefined;
+  const isError = !!errorMessage;
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -31,7 +32,7 @@ export default function PasswordInput() {
           id="password-input"
           type={hide ? "password" : "text"}
           placeholder="••••••••"
-          isError={!!errors.password}
+          isError={isError}
           className="pr-11 pl-11 text-left font-sans"
           {...register('password')}
         />

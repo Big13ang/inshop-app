@@ -2,6 +2,7 @@ import { ArrowLeft, MessageSquare } from 'lucide-react';
 import PasswordInput from './PasswordInput';
 import OtpInputGroup from '@/features/auth/otp/components/OtpInputGroup';
 import { Button } from '@/components/ui/button';
+import PhoneNumberBadge from './PhoneNumberBadge';
 
 export default function CombinedOtpPasswordForm() {
   return (
@@ -18,18 +19,12 @@ export default function CombinedOtpPasswordForm() {
           کد تأیید ارسال‌شده و رمز عبور جدید خود را وارد نمایید.
         </p>
 
-        <div className="flex items-center justify-center gap-2 mt-3">
-          <span className="text-xs font-sans font-semibold text-zinc-800 bg-zinc-100/90 px-3 py-1 rounded-xl border border-zinc-200/80">
-            ۰۹۱۲۳۴۵۶۷۸۹
-          </span>
-          <button
-            type="button"
-            className="text-xs text-zinc-500 hover:text-zinc-950 transition font-medium underline underline-offset-4 cursor-pointer"
-          >
-            ویرایش شماره
-          </button>
-        </div>
+        <PhoneNumberBadge
+          phoneNumberBadge="۰۹۱۲۳۴۵۶۷۸۹"
+          onEditPhone={() => { }}
+        />
       </div>
+
 
       <div className="flex flex-col gap-1.5 items-center">
         <label className="text-xs font-semibold text-zinc-600 self-start pr-1">

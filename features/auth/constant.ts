@@ -84,7 +84,8 @@ export const passwordSchema = z.string()
     .max(12, { message: 'رمز عبور می‌تواند حداکثر ۱۲ کاراکتر باشد.' })
     .regex(/[a-zA-Z]/, { message: 'رمز عبور باید شامل حداقل یک حرف انگلیسی باشد.' })
     .regex(/[0-9]/, { message: 'رمز عبور باید شامل حداقل یک عدد باشد.' })
-    .regex(/^\S+$/, { message: 'رمز عبور نباید شامل فاصله باشد.' });
+    .regex(/^\S+$/, { message: 'رمز عبور نباید شامل فاصله باشد.' })
+    .regex(/^[\x21-\x7E]+$/, { message: 'رمز عبور تنها می‌تواند شامل حروف انگلیسی، اعداد و علائم باشد.' });
 
 export const passwordValidationSchema = z.object({
     password: passwordSchema,
@@ -101,19 +102,19 @@ export type PhoneFormValues = z.infer<typeof phoneNumberSchema>;
 // Form 1: Sign In (Phone + Strictly Required Password)
 export const signInValidationSchema = phoneNumberSchema.extend({
     password: passwordSchema,
-    authFrom: z.nativeEnum(AUTH_FORMS),
+    authForm: z.enum(AUTH_FORMS),
 });
 
 // Form 2: Initial Step (Strictly Phone Only)
 export const phoneOnlyValidationSchema = phoneNumberSchema.extend({
-    authFrom: z.nativeEnum(AUTH_FORMS),
+    authForm: z.enum(AUTH_FORMS),
 });
 
 // Form 3: Set / Reset Password Step (Strictly Password + Confirm Password)
 export const setPasswordValidationSchema = z.object({
     password: passwordSchema,
     confirmPassword: passwordSchema,
-    authFrom: z.nativeEnum(AUTH_FORMS),
+    authForm: z.enum(AUTH_FORMS),
 }).refine((data) => data.password === data.confirmPassword, {
     message: 'رمز عبور و تکرار آن مطابقت ندارند.',
     path: ['confirmPassword'],
