@@ -1,12 +1,9 @@
 'use client';
 
-import { createContext, use, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { usePathname } from 'next/navigation';
-import { queryKeys } from '@/lib/query-keys';
+import { createContext, use, useEffect, ReactNode, Suspense } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { profileService, UserProfile } from '../services/profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
-import { http, Result } from '@/lib/utils';
-import { UserProfile } from '../services/profileService';
 
 interface UserContextType {
   user: UserProfile | null;
@@ -22,48 +19,65 @@ interface UserProviderProps {
   initialUser?: UserProfile | null;
 }
 
-export function UserProvider({ children, initialUser }: UserProviderProps) {
+function handleUserRedirection(
+  user: UserProfile | null,
+  pathname: string | null,
+  router: ReturnType<typeof useRouter>
+) {
+  if (!pathname) return;
+
+  const isAppRoute = pathname.startsWith('/app');
+  const isEditProfilePage = pathname === '/app/profile/edit';
+
+  if (isAppRoute) {
+    if (!user) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    if (user.sellerProfile == null && !isEditProfilePage) {
+      router.replace('/app/profile/edit');
+    }
+  }
+}
+
+function UserInitializer({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname?.startsWith('/auth') ?? false;
+  const router = useRouter();
+  const { data: user, error } = profileService.useSuspenseMe();
 
-  debugAuth('user-context', 'render', {
-    pathname,
-    isAuthPage,
-    hasInitialUser: !!initialUser,
-  });
+  const currentUser = user ?? null;
+  const isLoggedIn = currentUser != null;
 
-  const { data: user, isLoading, error } = useQuery<UserProfile>({
-    queryKey: queryKeys.profile.me,
-    queryFn: async () => {
-      debugAuth('user-context', 'queryMe:start', { pathname });
-      const user = await http.get<UserProfile>('/me');
-      debugAuth('user-context', 'queryMe:success', { hasUser: !!user });
-      return user;
-    },
-    initialData: initialUser ?? undefined,
-    staleTime: Infinity,
-    retry: false,
-    enabled: !isAuthPage,
-  });
-
-  const contextValue: UserContextType = {
-    user: user ?? null,
-    isLoading: isLoading && !user,
-    error: error as Error | null,
-    isLoggedIn: !!user,
-  };
+  useEffect(() => {
+    handleUserRedirection(currentUser, pathname, router);
+  }, [currentUser, pathname, router]);
 
   debugAuth('user-context', 'state', {
     pathname,
-    isLoading: contextValue.isLoading,
-    hasError: !!contextValue.error,
-    isLoggedIn: contextValue.isLoggedIn,
+    isLoggedIn,
+    hasSellerProfile: currentUser?.sellerProfile != null,
   });
+
+  const contextValue: UserContextType = {
+    user: currentUser,
+    isLoading: false,
+    error: (error as Error) || null,
+    isLoggedIn,
+  };
 
   return (
     <UserContext value={contextValue}>
       {children}
     </UserContext>
+  );
+}
+
+export function UserProvider({ children }: UserProviderProps) {
+  return (
+    <Suspense fallback={<div className="h-full w-full bg-background" />}>
+      <UserInitializer>{children}</UserInitializer>
+    </Suspense>
   );
 }
 

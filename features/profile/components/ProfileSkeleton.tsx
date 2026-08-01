@@ -3,8 +3,8 @@ const shimmer = 'animate-pulse rounded-input bg-container-base';
 /** Prerendered placeholder for the profile shell while the seller's data streams in. */
 export function ProfileOverviewSkeleton() {
   return (
-    <div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
-      <div className="h-16 w-full shrink-0 border-b border-primary/5 bg-surface-l3" />
+    <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
+      <header className="h-16 w-full shrink-0 border-b border-primary/5 bg-surface-l3" />
 
       <div className="flex-1 overflow-hidden px-4 pt-5">
         <div className="flex items-end justify-between gap-3">
@@ -33,8 +33,8 @@ export function ProfileOverviewSkeleton() {
 
 export function ProfileEditSkeleton() {
   return (
-    <div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
-      <div className="h-16 w-full shrink-0 border-b border-primary/5 bg-surface-l3" />
+    <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
+      <header className="h-16 w-full shrink-0 border-b border-primary/5 bg-surface-l3" />
 
       <div className="flex-1 space-y-6 px-4 pt-4">
         <div className="flex justify-center">

@@ -1,5 +1,5 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { http } from '@/lib/utils';
+import { http, Result } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 
 export interface UserProfile {
@@ -92,18 +92,27 @@ export async function checkUsernameAvailability(username: string): Promise<Check
   };
 }
 
+async function fetchMe(): Promise<UserProfile | null> {
+  const result = await Result.try(http.get<UserProfile>('/me'));
+  return result.ok ? result.value : null;
+}
+
 export const profileService = {
   useMe() {
-    return useQuery<UserProfile>({
+    return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserProfile>('/me'),
+      queryFn: fetchMe,
+      staleTime: Infinity,
+      retry: false,
     });
   },
 
   useSuspenseMe() {
-    return useSuspenseQuery<UserProfile>({
+    return useSuspenseQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserProfile>('/me'),
+      queryFn: fetchMe,
+      staleTime: Infinity,
+      retry: false,
     });
   },
 
