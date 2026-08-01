@@ -36,15 +36,9 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     queryKey: queryKeys.profile.me,
     queryFn: async () => {
       debugAuth('user-context', 'queryMe:start', { pathname });
-      const res = await http.get<UserProfile>('/me');
-      if (!res.ok) {
-        debugAuth('user-context', 'queryMe:error', {
-          status: res.error.status,
-          errorMessage: res.error.message,
-        });
-      }
-      debugAuth('user-context', 'queryMe:success', { hasUser: true });
-      return Result.unwrap(res);
+      const user = await http.get<UserProfile>('/me');
+      debugAuth('user-context', 'queryMe:success', { hasUser: !!user });
+      return user;
     },
     initialData: initialUser ?? undefined,
     staleTime: Infinity,

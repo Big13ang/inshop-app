@@ -9,18 +9,24 @@ export const Result = {
   err<E>(error: E): Result<never, E> {
     return { ok: false, error };
   },
-  async try<T>(promise: Promise<T>): Promise<Result<T>> {
+  async try<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
     try {
       return Result.ok(await promise);
     } catch (e) {
-      return Result.err(e);
+      return Result.err(e as E);
     }
   },
   match<T, E, R>(result: Result<T, E>, cases: { ok: (value: T) => R; err: (error: E) => R }): R {
     return result.ok ? cases.ok(result.value) : cases.err(result.error);
   },
-  unwrap<T>(result: Result<T, { message: string }>): T {
-    if (!result.ok) throw new Error(result.error.message);
+  unwrap<T, E = unknown>(result: Result<T, E>): T {
+    if (!result.ok) {
+      if (result.error instanceof Error) {
+        throw result.error;
+      }
+      const errObj = result.error as any;
+      throw new Error(errObj?.message || String(result.error));
+    }
     return result.value;
   },
 };

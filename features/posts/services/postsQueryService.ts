@@ -71,16 +71,15 @@ export async function deleteUploadSessionPhoto({
   uploadSessionId,
   mediaId,
 }: DeleteUploadSessionPhotoParams): Promise<void> {
-  const res = await http.delete(
+  await http.delete(
     `/upload-sessions/${uploadSessionId}/photos/${mediaId}`
   );
-  Result.unwrap(res);
 }
 
 async function fetchSellerPosts(user: UserProfile | null): Promise<BackendPost[]> {
   if (!user) return [];
   const res = await http.get<CursorPaginatedResult<BackendPost>>('/seller/posts');
-  return Result.unwrap(res).data;
+  return res.data;
 }
 
 async function fetchSellerPostsPaginated(
@@ -96,8 +95,7 @@ async function fetchSellerPostsPaginated(
     params.set('cursor', cursor);
   }
   const endpoint = `/seller/posts?${params.toString()}`;
-  const res = await http.get<CursorPaginatedResult<BackendPost>>(endpoint);
-  return Result.unwrap(res);
+  return http.get<CursorPaginatedResult<BackendPost>>(endpoint);
 }
 
 export async function fetchApprovedPostsBySeller(
@@ -110,8 +108,7 @@ export async function fetchApprovedPostsBySeller(
     params.set('cursor', cursor);
   }
   const endpoint = `/posts/seller/${encodeURIComponent(sellerId)}?${params.toString()}`;
-  const res = await http.get<CursorPaginatedResult<BackendPost>>(endpoint);
-  return Result.unwrap(res);
+  return http.get<CursorPaginatedResult<BackendPost>>(endpoint);
 }
 
 export const postsQueryService = {
@@ -184,11 +181,10 @@ export const postsQueryService = {
   useSubmitPost(onSuccess: () => void) {
     return useMutation({
       mutationFn: async (payload: SubmitPostPayload) => {
-        const res = await http.post(
+        await http.post(
           '/upload-sessions/publish',
           payload
         );
-        Result.unwrap(res);
       },
       onSuccess,
       onError: () => {
@@ -202,8 +198,7 @@ export const postsQueryService = {
 
     return useMutation({
       mutationFn: async (id: string) => {
-        const res = await http.delete(`/seller/posts/${id}`);
-        Result.unwrap(res);
+        await http.delete(`/seller/posts/${id}`);
       },
       ...optimistic.deleteList({
         queryClient,

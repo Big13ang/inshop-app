@@ -1,42 +1,13 @@
-import ky, { KyInstance, Options, HTTPError } from 'ky';
-import { getBaseUrl, setLanguageHeader, handleUnauthorizedRedirect } from './httpConfig';
+import ky, { Options } from 'ky';
+import { getBaseUrl, setLanguageHeader } from './httpConfig';
 import { Result } from './result';
 
-export type { KyInstance, Options as HttpRequestOptions, HTTPError };
-
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  message?: string;
-  data: T;
-  meta?: {
-    currentDateTime?: string;
-    [key: string]: unknown;
-  };
-}
-
-export interface PaginatedApiResponse<T = unknown> {
-  success: boolean;
-  message?: string;
-  data: T[];
-  pagination?: {
-    nextCursor?: string;
-    hasNext?: boolean;
-    total?: number;
-    [key: string]: unknown;
-  };
-  meta?: {
-    currentDateTime?: string;
-    [key: string]: unknown;
-  };
-}
-
-export function createHttpClient(prefixUrl?: string) {
+export function createAuthHttpClient(prefixUrl?: string) {
   const client = ky.create({
     prefix: getBaseUrl(prefixUrl),
     credentials: 'include',
     hooks: {
       beforeRequest: [setLanguageHeader],
-      afterResponse: [handleUnauthorizedRedirect],
     },
   });
 
@@ -65,5 +36,4 @@ export function createHttpClient(prefixUrl?: string) {
   };
 }
 
-// General HTTP client instance for standard ApiResponse<T> endpoints
-export const http = createHttpClient();
+export const authHttp = createAuthHttpClient();

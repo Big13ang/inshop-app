@@ -4,6 +4,7 @@ import type { UserProfile } from './profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
 
 export const AUTH_COOKIE_KEYS = [
+  'session_token',
   'better-auth.session_token',
   '__Secure-better-auth.session_token',
 ] as const;
@@ -45,16 +46,6 @@ export async function getServerProfile(): Promise<UserProfile | null> {
     debugAuth('profile', 'serverProfile:requestError', {
       errorMessage: getErrorMessage(resResult.error),
     });
-    console.error('Error executing profile request on server:', resResult.error);
-    return null;
-  }
-
-  const res = resResult.value;
-  if (!res.ok) {
-    debugAuth('profile', 'serverProfile:notAuthenticated', {
-      status: res.error.status,
-      errorMessage: res.error.message,
-    });
     return null;
   }
 
@@ -62,5 +53,5 @@ export async function getServerProfile(): Promise<UserProfile | null> {
     hasUser: true,
   });
 
-  return res.value;
+  return resResult.value;
 }

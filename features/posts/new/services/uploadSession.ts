@@ -10,8 +10,7 @@ export interface UploadSessionData {
 }
 
 export async function fetchUploadSession(): Promise<UploadSessionData> {
-  const res = await http.post<UploadSessionData>('/upload-sessions');
-  return Result.unwrap(res);
+  return http.post<UploadSessionData>('/upload-sessions');
 }
 
 export function useUploadSession() {

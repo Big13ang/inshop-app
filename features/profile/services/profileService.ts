@@ -82,10 +82,8 @@ export interface UseCheckUsernameOptions {
 export async function checkUsernameAvailability(username: string): Promise<CheckUsernameResponse> {
   const trimmed = username.trim();
 
-  return Result.unwrap(
-    await http.get<CheckUsernameResponse>(
-      `/user/profile/check-username/${encodeURIComponent(trimmed)}`
-    )
+  return http.get<CheckUsernameResponse>(
+    `/user/profile/check-username/${encodeURIComponent(trimmed)}`
   );
 }
 
@@ -93,21 +91,21 @@ export const profileService = {
   useMe() {
     return useQuery<UserProfile>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => Result.unwrap(await http.get<UserProfile>('/me')),
+      queryFn: async () => http.get<UserProfile>('/me'),
     });
   },
 
   useSuspenseMe() {
     return useSuspenseQuery<UserProfile>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => Result.unwrap(await http.get<UserProfile>('/me')),
+      queryFn: async () => http.get<UserProfile>('/me'),
     });
   },
 
   useUserProfile(options?: { initialData?: UserProfile; enabled?: boolean }) {
     return useQuery<UserProfile>({
       queryKey: queryKeys.user.profile,
-      queryFn: async () => Result.unwrap(await http.get<UserProfile>('/user/profile')),
+      queryFn: async () => http.get<UserProfile>('/user/profile'),
       staleTime: 1000 * 60 * 5,
       retry: false,
       ...options,

@@ -33,8 +33,7 @@ export async function createProfile(dto: CreateProfileDto): Promise<void> {
     shopPhoneNumber: dto.shopPhoneNumber,
   };
 
-  const res = await http.post('/user/profile', payload);
-  Result.unwrap(res);
+  await http.post('/user/profile', payload);
 }
 
 export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
@@ -47,20 +46,18 @@ export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
     ...(dto.shopPhoneNumber ? { shopPhoneNumber: dto.shopPhoneNumber } : {}),
   };
 
-  const res = await http.patch('/user/profile', payload);
-
-  Result.unwrap(res);
+  await http.patch('/user/profile', payload);
 }
 
 export async function uploadProfilePhoto(photo: File): Promise<void> {
   const formData = new FormData();
   formData.append('photo', photo);
 
-  Result.unwrap(await http.post('/user/profile/photo', formData, {
+  await http.post('/user/profile/photo', formData, {
     headers: {
       Accept: 'application/json',
     },
-  }));
+  });
 }
 
 export const profileMutationService = {

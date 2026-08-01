@@ -1,3 +1,6 @@
+process.env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+process.env.NEXT_PUBLIC_CDN_URL = process.env.NEXT_PUBLIC_CDN_URL || 'http://localhost:9000/inshop-uploads';
+
 import '@testing-library/jest-dom';
 import mockReact from 'react';
 import { server } from './mocks/server';
