@@ -23,13 +23,18 @@ export async function mockSendOtp(
   response: { message: string },
   status = 200
 ) {
-  await page.route('**/api/auth/phone-number/send-otp', async (route) => {
-    await route.fulfill({
-      status,
-      contentType: 'application/json',
-      body: JSON.stringify(response),
-    });
-  });
+  await page.route(
+    (url) =>
+      url.pathname.includes('/api/auth/phone-number/send-otp') ||
+      url.pathname.includes('/api/auth/phone-number/request-sign-up'),
+    async (route) => {
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify(response),
+      });
+    }
+  );
 }
 
 export async function mockVerify(
@@ -37,19 +42,24 @@ export async function mockVerify(
   response: Record<string, unknown>,
   status = 200
 ) {
-  await page.route('**/api/auth/phone-number/verify', async (route) => {
-    const headers: Record<string, string> = {
-      'content-type': 'application/json',
-    };
-    if (status === 200) {
-      headers['set-cookie'] = 'better-auth.session_token=mock-session-token; Path=/; SameSite=Lax';
+  await page.route(
+    (url) =>
+      url.pathname.includes('/api/auth/phone-number/verify') ||
+      url.pathname.includes('/api/auth/phone-number/sign-up'),
+    async (route) => {
+      const headers: Record<string, string> = {
+        'content-type': 'application/json',
+      };
+      if (status === 200) {
+        headers['set-cookie'] = 'better-auth.session_token=mock-session-token; Path=/; SameSite=Lax';
+      }
+      await route.fulfill({
+        status,
+        headers,
+        body: JSON.stringify(response),
+      });
     }
-    await route.fulfill({
-      status,
-      headers,
-      body: JSON.stringify(response),
-    });
-  });
+  );
 }
 
 export async function mockSendOtpSuccess(page: Page) {

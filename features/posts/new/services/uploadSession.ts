@@ -1,5 +1,5 @@
 import { queryKeys } from "@/lib/query-keys";
-import { http, Result } from "@/lib/utils";
+import { http } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMediaStore } from "./mediaStore";
 import { useEffect } from "react";
@@ -10,8 +10,7 @@ export interface UploadSessionData {
 }
 
 export async function fetchUploadSession(): Promise<UploadSessionData> {
-  const res = await http.post<UploadSessionData>('/upload-sessions');
-  return Result.unwrap(res);
+  return http.post<UploadSessionData>('/upload-sessions');
 }
 
 export function useUploadSession() {

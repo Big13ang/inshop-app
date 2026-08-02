@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http, Result } from '@/lib/utils';
+import { http } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { text } from '../constants';
@@ -33,8 +33,7 @@ export async function createProfile(dto: CreateProfileDto): Promise<void> {
     shopPhoneNumber: dto.shopPhoneNumber,
   };
 
-  const res = await http.post('/user/profile', payload);
-  Result.unwrap(res);
+  await http.post('/user/profile', payload);
 }
 
 export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
@@ -47,29 +46,29 @@ export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
     ...(dto.shopPhoneNumber ? { shopPhoneNumber: dto.shopPhoneNumber } : {}),
   };
 
-  const res = await http.patch('/user/profile', payload);
-
-  Result.unwrap(res);
+  await http.patch('/user/profile', payload);
 }
 
 export async function uploadProfilePhoto(photo: File): Promise<void> {
   const formData = new FormData();
   formData.append('photo', photo);
 
-  Result.unwrap(await http.post('/user/profile/photo', formData, {
+  await http.post('/user/profile/photo', formData, {
     headers: {
       Accept: 'application/json',
     },
-  }));
+  });
 }
 
 export const profileMutationService = {
   useCreateProfile(onSaved?: () => void) {
     const queryClient = useQueryClient();
 
-    const handleSuccess = () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+    const handleSuccess = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+      ]);
       toast.success(text.edit.saveSuccess);
       onSaved?.();
     };
@@ -88,9 +87,11 @@ export const profileMutationService = {
   useUpdateProfile(onSaved?: () => void) {
     const queryClient = useQueryClient();
 
-    const handleSuccess = () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me });
-      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+    const handleSuccess = async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+      ]);
       toast.success(text.edit.saveSuccess);
       onSaved?.();
     };

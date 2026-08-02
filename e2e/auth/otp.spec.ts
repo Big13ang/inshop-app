@@ -90,34 +90,6 @@ test.describe('OTP page — focus management', () => {
   });
 });
 
-// ─── Suite 3: Localization and Digit Translation ─────────────────────────────
-
-test.describe('OTP page — input translation', () => {
-  test('converts Persian digits to English numbers', async ({ otpPage }) => {
-    await otpPage.goto();
-    
-    // Type Persian digit "۱"
-    await otpPage.getOtpInput(0).fill('۱');
-    await expect(otpPage.getOtpInput(0)).toHaveValue('1');
-    
-    // Type Persian digit "۲"
-    await otpPage.getOtpInput(1).fill('۲');
-    await expect(otpPage.getOtpInput(1)).toHaveValue('2');
-  });
-
-  test('converts Arabic digits to English numbers', async ({ otpPage }) => {
-    await otpPage.goto();
-    
-    // Type Arabic digit "٣"
-    await otpPage.getOtpInput(0).fill('٣');
-    await expect(otpPage.getOtpInput(0)).toHaveValue('3');
-    
-    // Type Arabic digit "٤"
-    await otpPage.getOtpInput(1).fill('٤');
-    await expect(otpPage.getOtpInput(1)).toHaveValue('4');
-  });
-});
-
 // ─── Suite 4: Clock manipulation & Resend Flow ───────────────────────────────
 
 test.describe('OTP page — timer & resend flow', () => {
@@ -314,7 +286,11 @@ test.describe('OTP page — retry after failure', () => {
   }) => {
     // First verify fails, then succeed on retry
     let callCount = 0;
-    await page.route('**/api/auth/phone-number/verify', async (route) => {
+    await page.route(
+      (url) =>
+        url.pathname.includes('/api/auth/phone-number/verify') ||
+        url.pathname.includes('/api/auth/phone-number/sign-up'),
+      async (route) => {
       callCount++;
       if (callCount === 1) {
         await route.fulfill({

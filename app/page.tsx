@@ -2,17 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { profileService } from '@/features/profile/services/profileService';
 
 export default function Home() {
   const router = useRouter();
 
-  const { data: session, isPending } = authClient.useSession();
+  const { data: user, isLoading } = profileService.useMe();
 
   useEffect(() => {
-    if (isPending) return;
-    router.replace(session ? '/app/profile' : '/auth/login');
-  }, [session, isPending, router]);
+    if (isLoading) return;
+    router.replace(user ? '/app/profile' : '/auth/login');
+  }, [user, isLoading, router]);
 
   return null;
 }

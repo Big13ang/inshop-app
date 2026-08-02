@@ -4,14 +4,16 @@
 import { TEXTS } from '../constants';
 import { Button } from '@/components/ui/button';
 import { useCountdown } from '../hooks/useCountdown';
+import { cn } from '@/lib/utils';
 
 interface OtpTimerProps {
   onResend?: () => void | Promise<void | boolean> | boolean;
   resetOtp: () => void;
   initialTime?: number;
+  className?: string;
 }
 
-export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpTimerProps) {
+export default function OtpTimer({ onResend, resetOtp, initialTime = 120, className }: OtpTimerProps) {
   const { timeLeft, isExpired, reset } = useCountdown({
     initialSeconds: initialTime,
   });
@@ -32,11 +34,13 @@ export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpT
   };
 
   return (
-    <div className="text-center mt-4">
+    <div className={cn("text-center mt-2", className)}>
       {!isExpired ? (
-        <span className="text-xs text-zinc-500 cursor-pointer">
-          {TEXTS.resendPrefix}
-          {formatTime(timeLeft)}
+        <span className="text-xs text-zinc-500 font-medium flex items-center justify-center gap-1">
+          <span>{TEXTS.resendPrefix}</span>
+          <span className="font-mono font-semibold text-zinc-700 tracking-wider dir-ltr" dir="ltr">
+            {formatTime(timeLeft)}
+          </span>
         </span>
       ) : (
         <Button
@@ -51,3 +55,4 @@ export default function OtpTimer({ onResend, resetOtp, initialTime = 120 }: OtpT
     </div>
   );
 }
+

@@ -1,15 +1,13 @@
 export { cn } from './cn';
 export { storage } from './localStorage';
-export { convertPersianArabicToEnglish } from './numbers';
 export { Result } from './result';
 export type { Result as ResultType } from './result';
-export { tryCatchAuth } from './tryCatchAuth';
-export { http } from './http';
-export type { HttpError, HttpRequestOptions, ApiResponse, PaginatedApiResponse } from './http';
+export { http, createHttpClient } from './http';
+export { authHttp, createAuthHttpClient } from './authHttp';
+export type { HTTPError, HttpRequestOptions, ApiResponse, PaginatedApiResponse } from './http';
 export { createUuid, formatToUUID, extractMediaId } from './uuid';
 export { isMobile } from './platform';
 export { debugAuth, isAuthDebugEnabled } from './authDebug';
 export { goBackSafely } from './navigation';
 export { getMediaKind } from './media';
 export type { MediaKind } from './media';
-

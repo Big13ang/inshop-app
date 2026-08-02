@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
-import { http, Result } from '@/lib/utils';
+import { http } from '@/lib/utils';
 import { UserProfile } from '../services/profileService';
 
 interface UserContextType {
@@ -36,15 +36,9 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     queryKey: queryKeys.profile.me,
     queryFn: async () => {
       debugAuth('user-context', 'queryMe:start', { pathname });
-      const res = await http.get<UserProfile>('/me');
-      if (!res.ok) {
-        debugAuth('user-context', 'queryMe:error', {
-          status: res.error.status,
-          errorMessage: res.error.message,
-        });
-      }
-      debugAuth('user-context', 'queryMe:success', { hasUser: true });
-      return Result.unwrap(res);
+      const user = await http.get<UserProfile>('/me');
+      debugAuth('user-context', 'queryMe:success', { hasUser: !!user });
+      return user;
     },
     initialData: initialUser ?? undefined,
     staleTime: Infinity,
