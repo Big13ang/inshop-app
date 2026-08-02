@@ -1,13 +1,11 @@
 // Pure functions — no React, no DOM. Safe to unit test directly.
-import { convertPersianArabicToEnglish } from '@/lib/utils';
 
 export const OTP_LENGTH = 4;
 
 
 /** Strip non-digits and trim to OTP length. */
 export function extractDigits(raw: string): string {
-  const converted = convertPersianArabicToEnglish(raw);
-  return converted.replace(/\D/g, '').slice(0, OTP_LENGTH);
+  return raw.replace(/\D/g, '').slice(0, OTP_LENGTH);
 }
 
 /** Spread a digit string across a fixed-length slots array. */

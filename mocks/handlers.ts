@@ -145,7 +145,7 @@ export const handlers = [
   }),
 
   // 7. Publish upload-session
-  http.post('http://localhost:3000/upload-sessions/publish', async ({ request }) => {
+  http.post('*/upload-sessions/publish', async ({ request }) => {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const id = `post-${createUuid()}`;
     posts = [

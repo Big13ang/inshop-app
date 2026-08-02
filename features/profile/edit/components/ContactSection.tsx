@@ -3,7 +3,6 @@
 import { useFormContext } from 'react-hook-form';
 import { Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { convertPersianArabicToEnglish } from '@/lib/utils';
 import { text } from '../../constants';
 import type { ProfileFormValues } from '../../schemas/profileSchema';
 import FormSection from './FormSection';
