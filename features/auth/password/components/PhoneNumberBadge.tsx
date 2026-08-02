@@ -1,26 +1,27 @@
+import { cn } from "@/lib/utils";
+
 export type PhoneNumberBadgeProps = {
   phoneNumberBadge?: string;
-  onEditPhone?: () => void;
+  className?: string;
 };
 
 export default function PhoneNumberBadge({
   phoneNumberBadge,
-  onEditPhone,
+  className,
 }: PhoneNumberBadgeProps) {
+  if (!phoneNumberBadge) return null;
+
   return (
-    <div className="flex items-center justify-center gap-2 mt-3">
-      <span className="text-xs font-sans font-medium text-zinc-800 bg-zinc-100 px-3 py-1 rounded-xl border border-zinc-200/80">
+    <label className={cn("text-xs font-semibold text-zinc-600 block text-right pr-0.5 w-full", className)}>
+      کد ارسال شده به{" "}
+      <span className="font-bold text-zinc-900 tracking-wider font-mono mx-0.5" dir="ltr">
         {phoneNumberBadge}
-      </span>
-      {onEditPhone && (
-        <button
-          type="button"
-          onClick={onEditPhone}
-          className="text-xs text-zinc-500 hover:text-zinc-950 transition font-medium underline underline-offset-4 cursor-pointer"
-        >
-          ویرایش شماره
-        </button>
-      )}
-    </div>
+      </span>{" "}
+      را وارد کنید
+    </label>
   );
 }
+
+
+
+

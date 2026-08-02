@@ -1,8 +1,7 @@
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import PasswordInput from './PasswordInput';
-import OtpInputGroup from '@/features/auth/otp/components/OtpInputGroup';
+import OtpInputSection from './OtpInputSection';
 import { Button } from '@/components/ui/button';
-import PhoneNumberBadge from './PhoneNumberBadge';
 
 export default function CombinedOtpPasswordForm() {
   return (
@@ -18,26 +17,10 @@ export default function CombinedOtpPasswordForm() {
         <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
           کد تأیید ارسال‌شده و رمز عبور جدید خود را وارد نمایید.
         </p>
-
-        <PhoneNumberBadge
-          phoneNumberBadge="۰۹۱۲۳۴۵۶۷۸۹"
-          onEditPhone={() => { }}
-        />
       </div>
 
+      <OtpInputSection phoneNumber="۰۹۱۲۳۴۵۶۷۸۹" />
 
-      <div className="flex flex-col gap-1.5 items-center">
-        <label className="text-xs font-semibold text-zinc-600 self-start pr-1">
-          کد تأیید ۴ رقمی
-        </label>
-        <OtpInputGroup
-          slots={['', '', '', '']}
-          inputRefs={{ current: [] }}
-          onChange={() => { }}
-          onKeyDown={() => { }}
-          onPaste={() => { }}
-        />
-      </div>
 
       <PasswordInput />
 

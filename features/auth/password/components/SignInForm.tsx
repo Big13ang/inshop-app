@@ -23,7 +23,7 @@ export default function SignInForm() {
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  const callbackUrl = searchParams?.get ? searchParams.get('callbackUrl') : null;
+  const callbackUrl = searchParams?.get('callbackUrl');
   const destination = callbackUrl || '/app/profile';
 
   const sendOtpMutation = useSendPhoneNumberOTPMutation();

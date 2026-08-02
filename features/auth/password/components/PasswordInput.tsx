@@ -2,12 +2,20 @@ import { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import ErrorMessage from '@/features/auth/login/components/ErrorMessage';
-import { useFormContext, useFormState } from 'react-hook-form';
+import { useFormContext, useFormState, useWatch } from 'react-hook-form';
+import { AUTH_FORMS, AuthForm } from '../../constant';
 
 export default function PasswordInput() {
   const [hide, setHide] = useState(true);
   const { register, control } = useFormContext();
   const { errors } = useFormState({ control });
+  const authForm = useWatch({ control, name: 'authForm' }) as AuthForm;
+
+  const isNewPasswordStep =
+    authForm === AUTH_FORMS.SIGN_UP_FINALIZE ||
+    authForm === AUTH_FORMS.FORGOT_PASS_FINALIZE;
+
+  const displayLabel = isNewPasswordStep ? "رمز عبور جدید" : "رمز عبور";
 
   const toggleHidePassword = () => setHide(prev => !prev);
 
@@ -20,7 +28,7 @@ export default function PasswordInput() {
         htmlFor="password-input"
         className="text-xs font-semibold text-zinc-600 pr-1 cursor-pointer select-none"
       >
-        رمز عبور
+        {displayLabel}
       </label>
 
       <div className="relative flex items-center">
@@ -41,7 +49,7 @@ export default function PasswordInput() {
           type="button"
           className="absolute left-3.5 text-zinc-400 hover:text-zinc-700 transition p-1 cursor-pointer rounded-lg focus:outline-none"
           tabIndex={-1}
-          aria-label={hide ? "نمایش رمز عبور" : "مخفی کردن رمز عبور"}
+          aria-label={hide ? `نمایش ${displayLabel}` : `مخفی کردن ${displayLabel}`}
           onClick={toggleHidePassword}
         >
           {hide ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}

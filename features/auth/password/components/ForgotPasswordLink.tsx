@@ -1,12 +1,9 @@
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { AUTH_FORMS, AuthForm } from '../../constant';
+import { AUTH_FORMS } from '../../constant';
 
 export default function ForgotPasswordLink() {
   const { setValue } = useFormContext();
-  const authForm = useWatch({ name: 'authForm' }) as AuthForm;
-
-  if (authForm !== AUTH_FORMS.SIGN_IN) return null;
 
   const handleForgotPasswordClick = () => {
     setValue('authForm', AUTH_FORMS.FORGOT_PASS_INIT, { shouldValidate: true });
