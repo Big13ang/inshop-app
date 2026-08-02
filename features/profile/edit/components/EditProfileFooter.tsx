@@ -5,13 +5,18 @@ import { Button } from '@/components/ui/button';
 import { text } from '../../constants';
 
 interface EditProfileFooterProps {
-  formId: string;
-  isSaving: boolean;
-  onCancel: () => void;
+  formId?: string;
+  isSaving?: boolean;
+  onCancel?: () => void;
   submitText?: string;
 }
 
-export default function EditProfileFooter({ formId, isSaving, onCancel, submitText }: EditProfileFooterProps) {
+export default function EditProfileFooter({
+  formId = 'edit-profile-form',
+  isSaving = false,
+  onCancel,
+  submitText,
+}: EditProfileFooterProps) {
   const label = submitText || text.edit.saveAction;
 
   return (
