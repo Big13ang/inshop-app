@@ -1,6 +1,6 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http, Result } from '@/lib/utils';
+import { http } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';

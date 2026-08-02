@@ -1,5 +1,5 @@
 import { queryKeys } from "@/lib/query-keys";
-import { http, Result } from "@/lib/utils";
+import { http } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMediaStore } from "./mediaStore";
 import { useEffect } from "react";

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import type { BackendPost, BackendMedia } from '@/features/posts/services/postsQueryService';
 import { getMediaUrl } from '@/features/posts/utils/media';
 

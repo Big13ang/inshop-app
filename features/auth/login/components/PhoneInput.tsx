@@ -16,7 +16,7 @@ interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 interface PhoneInputUIProps extends PhoneInputProps {
     activeError?: string;
     activeIsError: boolean;
-    registerProps: Record<string, any>;
+    registerProps: Record<string, unknown>;
 }
 
 function PhoneInputUI({
