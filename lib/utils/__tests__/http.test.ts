@@ -55,3 +55,27 @@ describe('parseBackendError', () => {
     expect(resultError.message).toBe('Request failed with status code 500 Internal Server Error');
   });
 });
+
+describe('parseStandardBackendError', () => {
+  it('parses nested error structure { success: false, error: { code, message } }', async () => {
+    const mockResponse = {
+      clone: () => ({
+        json: async () => ({
+          success: false,
+          error: {
+            code: 'BAD_REQUEST',
+            message: 'Validation failed',
+          },
+        }),
+      }),
+    } as unknown as Response;
+
+    const mockError = new Error('HTTPError 400 Bad Request');
+    (mockError as unknown as Record<string, unknown>).response = mockResponse;
+
+    const { parseStandardBackendError } = await import('../httpConfig');
+    const resultError = await parseStandardBackendError({ error: mockError } as unknown as Parameters<typeof parseStandardBackendError>[0]);
+
+    expect(resultError.message).toBe('Validation failed');
+  });
+});

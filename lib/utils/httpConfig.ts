@@ -46,3 +46,15 @@ export async function parseBackendError({ error }: BeforeErrorState): Promise<Er
   }
   return error;
 }
+
+export async function parseStandardBackendError({ error }: BeforeErrorState): Promise<Error> {
+  if (error && 'response' in error && error.response) {
+    const res = await Result.try<{ error?: { message?: string } }>(
+      (error.response as Response).clone().json()
+    );
+    if (res.ok && res.value?.error?.message) {
+      error.message = res.value.error.message;
+    }
+  }
+  return error;
+}

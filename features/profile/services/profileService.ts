@@ -2,72 +2,67 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { http } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 
-export interface UserProfile {
-  id?: string;
-  name?: string;
-  email?: string;
-  isVerifiedSeller?: boolean;
-  sellerActivatedAt?: string | null;
-  isAdmin?: boolean;
-  userId?: string;
-  username?: string;
-  shopName?: string;
+export interface SellerProfilePhone {
+  id: string;
+  sellerProfileId?: string;
+  phoneNumber: string;
+  label?: string | null;
+  createdAt?: string;
+}
+
+export interface SellerProfile {
+  id: string;
+  userId: string;
+  username: string;
+  shopName: string;
   bio?: string | null;
   profilePhotoUrl?: string | null;
   address?: string | null;
   addressProvince?: string | null;
   addressCity?: string | null;
   addressShow?: boolean;
-  phones?: Array<{
-    id?: string;
-    phoneNumber: string;
-    label?: string | null;
-  }>;
-  profile?: {
-    id: number;
-    phoneNumber: string;
-    firstName: string;
-    lastName: string;
-    nationalId: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-  businessData?: {
-    id: number;
-    preRegistrationId: number;
-    shopName: string;
-    instagramId?: string | null;
-    guildId: string;
-    address: string;
-    createdAt: string;
-    updatedAt: string;
-    bio?: string | null;
-    showAddress?: boolean | null;
-  };
-  sellerProfile?: {
-    id: string;
-    userId: string;
-    username: string;
-    shopName: string;
-    bio?: string | null;
-    profilePhotoUrl?: string | null;
-    address?: string | null;
-    addressProvince?: string | null;
-    addressCity?: string | null;
-    addressShow?: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-    phones?: Array<{
-      id: string;
-      phoneNumber: string;
-      label?: string | null;
-    }>;
-  } | null;
-  avatarUrl?: string | null;
+  phones?: SellerProfilePhone[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export type SellerProfile = UserProfile;
+export interface UserPreRegisterProfile {
+  id: number;
+  name: string;
+  lastName: string;
+  phoneNumber: string;
+  nationalIdNumber: string;
+  province: string;
+  city: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserPreRegisterBusinessData {
+  id: number;
+  preRegistrationId: number;
+  instagramId?: string | null;
+  followersCount?: string | null;
+  businessType?: string | null;
+  productCategory?: string | null;
+  bio?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserMe {
+  id: string;
+  name: string;
+  email: string;
+  isVerifiedSeller: boolean;
+  sellerActivatedAt: string | null;
+  isAdmin: boolean;
+  profile?: UserPreRegisterProfile | null;
+  businessData?: UserPreRegisterBusinessData | null;
+  sellerProfile: SellerProfile | null;
+}
+
+export type UserProfile = UserMe;
 
 export interface CheckUsernameResponse {
   username: string;
@@ -94,23 +89,23 @@ export async function checkUsernameAvailability(username: string): Promise<Check
 
 export const profileService = {
   useMe() {
-    return useQuery<UserProfile>({
+    return useQuery<UserMe>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserProfile>('/me'),
+      queryFn: async () => http.get<UserMe>('/me'),
     });
   },
 
   useSuspenseMe() {
-    return useSuspenseQuery<UserProfile>({
+    return useSuspenseQuery<UserMe>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserProfile>('/me'),
+      queryFn: async () => http.get<UserMe>('/me'),
     });
   },
 
-  useUserProfile(options?: { initialData?: UserProfile; enabled?: boolean }) {
-    return useQuery<UserProfile>({
+  useUserProfile(options?: { initialData?: SellerProfile; enabled?: boolean }) {
+    return useQuery<SellerProfile>({
       queryKey: queryKeys.user.profile,
-      queryFn: async () => http.get<UserProfile>('/user/profile'),
+      queryFn: async () => http.get<SellerProfile>('/user/profile'),
       staleTime: 1000 * 60 * 5,
       retry: false,
       ...options,

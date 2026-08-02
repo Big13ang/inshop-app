@@ -7,12 +7,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
 import PendingPostsBanner from './PendingPostsBanner';
-import type { UserProfile } from '../../services/profileService';
+import type { SellerProfile } from '../../services/profileService';
 import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 
 interface ProfileBioSectionProps {
-  sellerProfile?: UserProfile;
+  sellerProfile?: SellerProfile;
   publishedCount: number;
   pendingCount?: number;
 }

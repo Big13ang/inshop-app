@@ -6,10 +6,10 @@ import { usePathname } from 'next/navigation';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
 import { http } from '@/lib/utils';
-import { UserProfile } from '../services/profileService';
+import { UserMe } from '../services/profileService';
 
 interface UserContextType {
-  user: UserProfile | null;
+  user: UserMe | null;
   isLoading: boolean;
   error: Error | null;
   isLoggedIn: boolean;
@@ -19,7 +19,7 @@ const UserContext = createContext<UserContextType | null>(null);
 
 interface UserProviderProps {
   children: ReactNode;
-  initialUser?: UserProfile | null;
+  initialUser?: UserMe | null;
 }
 
 export function UserProvider({ children, initialUser }: UserProviderProps) {
@@ -32,11 +32,11 @@ export function UserProvider({ children, initialUser }: UserProviderProps) {
     hasInitialUser: !!initialUser,
   });
 
-  const { data: user, isLoading, error } = useQuery<UserProfile>({
+  const { data: user, isLoading, error } = useQuery<UserMe>({
     queryKey: queryKeys.profile.me,
     queryFn: async () => {
       debugAuth('user-context', 'queryMe:start', { pathname });
-      const user = await http.get<UserProfile>('/me');
+      const user = await http.get<UserMe>('/me');
       debugAuth('user-context', 'queryMe:success', { hasUser: !!user });
       return user;
     },
