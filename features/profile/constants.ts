@@ -62,6 +62,7 @@ export const text = {
     handleLabel: 'آیدی اختصاصی',
     handlePlaceholder: 'modern_gold',
     handleHelper: 'آیدی شما در نشانی فروشگاه استفاده می‌شود.',
+    handleTakenError: 'این نام کاربری قبلاً انتخاب شده است',
 
     bioSectionTitle: 'معرفی فروشگاه',
     bioLabel: 'متن معرفی',

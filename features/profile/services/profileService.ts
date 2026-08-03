@@ -1,5 +1,5 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { http } from '@/lib/utils';
+import { http, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 
 export interface SellerProfilePhone {
@@ -67,7 +67,6 @@ export type UserProfile = UserMe;
 export interface CheckUsernameResponse {
   username: string;
   available: boolean;
-  reason?: string;
 }
 
 export interface UseCheckUsernameOptions {
@@ -75,46 +74,52 @@ export interface UseCheckUsernameOptions {
 }
 
 export async function checkUsernameAvailability(username: string): Promise<CheckUsernameResponse> {
-  const trimmed = username.trim();
+  const trimmed = (username || '').trim();
 
-  const response = await http.get<CheckUsernameResponse>(
+  const res = await http.get<ApiResponse<CheckUsernameResponse>>(
     `/user/profile/check-username/${encodeURIComponent(trimmed)}`
   );
 
-  return {
-    ...response,
-    username: response.username || trimmed,
-  };
+  return res.data;
 }
 
 export const profileService = {
   useMe() {
     return useQuery<UserMe>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserMe>('/me'),
+      queryFn: async () => {
+        const res = await http.get<ApiResponse<UserMe>>('/me');
+        return res.data;
+      },
     });
   },
 
   useSuspenseMe() {
     return useSuspenseQuery<UserMe>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserMe>('/me'),
+      queryFn: async () => {
+        const res = await http.get<ApiResponse<UserMe>>('/me');
+        return res.data;
+      },
     });
   },
 
   useUserProfile(options?: { initialData?: SellerProfile; enabled?: boolean }) {
     return useQuery<SellerProfile>({
       queryKey: queryKeys.user.profile,
-      queryFn: async () => http.get<SellerProfile>('/user/profile'),
+      queryFn: async () => {
+        const res = await http.get<ApiResponse<SellerProfile>>('/user/profile');
+        return res.data;
+      },
       staleTime: 1000 * 60 * 5,
       retry: false,
       ...options,
     });
   },
 
-  useCheckUsername(username: string, options: UseCheckUsernameOptions = {}) {
+  useCheckUsername(username?: string, options: UseCheckUsernameOptions = {}) {
     const { enabled = true } = options;
-    const trimmed = username.trim();
+    const trimmed = (username || '').trim();
 
     return useQuery<CheckUsernameResponse>({
       queryKey: queryKeys.profile.checkUsername(trimmed),

@@ -3,6 +3,7 @@ import { type MediaItem } from '../../types';
 
 const createMockItem = (id: string, order: number | null): MediaItem => ({
   id,
+  serverMediaId: id,
   kind: 'image',
   status: 'uploaded',
   uploadProgress: 100,

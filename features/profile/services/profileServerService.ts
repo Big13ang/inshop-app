@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { http, Result } from '@/lib/utils';
+import { http, Result, type ApiResponse } from '@/lib/utils';
 import type { UserMe } from './profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
 
@@ -35,7 +35,7 @@ export async function getServerProfile(): Promise<UserMe | null> {
   });
 
   const resResult = await Result.try(
-    http.get<UserMe>('/me', {
+    http.get<ApiResponse<UserMe>>('/me', {
       headers: {
         Cookie: `${sessionCookie.name}=${sessionCookie.value}`,
       },
@@ -53,5 +53,5 @@ export async function getServerProfile(): Promise<UserMe | null> {
     hasUser: true,
   });
 
-  return resResult.value;
+  return resResult.value.data;
 }
