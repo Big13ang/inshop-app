@@ -1,6 +1,7 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
+import { debugAuth } from '@/lib/utils/authDebug';
 
 export interface SellerProfilePhone {
   id: string;
@@ -85,7 +86,16 @@ export async function checkUsernameAvailability(username: string): Promise<Check
 
 async function fetchMe(): Promise<UserProfile | null> {
   const result = await Result.try(http.get<ApiResponse<UserProfile>>('/me'));
-  return result.ok ? result.value.data : null;
+
+  if (!result.ok) {
+    debugAuth('profile', 'clientFetchMe:error', {
+      errorMessage: result.error instanceof Error ? result.error.message : String(result.error),
+    });
+    console.error('[auth] /me request failed on client:', result.error);
+    return null;
+  }
+
+  return result.value.data;
 }
 
 export const profileService = {
