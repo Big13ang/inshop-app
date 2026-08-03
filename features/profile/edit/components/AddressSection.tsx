@@ -20,6 +20,7 @@ export default function AddressSection() {
       <FormSection.Field
         label={text.edit.addressLabel}
         htmlFor="profile-address"
+        isRequired
         error={errors.address?.message as string}
       >
         <Input

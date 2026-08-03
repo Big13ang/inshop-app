@@ -16,6 +16,8 @@ import { useUser } from '../context/UserContext';
 import { UserMe } from '../services/profileService';
 import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
 
+import { useCreateProfile } from '../services/profileMutationService';
+
 const FORM_ID = 'edit-profile-form';
 
 
@@ -45,8 +47,12 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
 
 export default function EditProfileView() {
   const { user, isLoading } = useUser();
-
   const router = useRouter();
+
+  const createProfileMutation = useCreateProfile(() => {
+    router.push('/app/profile');
+  });
+
   const methods = useForm({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
@@ -56,6 +62,10 @@ export default function EditProfileView() {
   const handleBack = () => {
     router.push('/app/profile');
   };
+
+  const handleSubmit = methods.handleSubmit((data: profileSchemaType) => {
+    createProfileMutation.mutate(data);
+  });
 
   if (isLoading) {
     return <ProfileEditSkeleton />;
@@ -71,7 +81,7 @@ export default function EditProfileView() {
         </Header.Root>
 
         <main className="hide-scrollbar flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
-          <form id={FORM_ID} noValidate className="mx-auto max-w-lg space-y-6">
+          <form id={FORM_ID} noValidate onSubmit={handleSubmit} className="mx-auto max-w-lg space-y-6">
             <AvatarField />
             <ShopSection />
             <BioSection />
@@ -80,8 +90,8 @@ export default function EditProfileView() {
           </form>
         </main>
 
-        <EditProfileFooter onCancel={handleBack} />
+        <EditProfileFooter isSaving={createProfileMutation.isPending} onCancel={handleBack} />
       </div>
-    </FormProvider >
+    </FormProvider>
   );
 }

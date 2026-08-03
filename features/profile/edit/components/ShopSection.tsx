@@ -68,6 +68,7 @@ export default function ShopSection() {
         htmlFor="profile-username"
         helperText={text.edit.handleHelper}
         error={availability.error}
+        isRequired
       >
         <div className="relative flex items-center group" dir="ltr">
           <span className="pointer-events-none absolute left-3 text-xs text-secondary/70 transition-colors duration-300 group-focus-within:text-zinc-950 select-none">
