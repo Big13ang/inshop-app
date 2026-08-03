@@ -1,48 +1,37 @@
 'use client';
 
-import { useRef } from 'react';
 import { Camera, LoaderCircle, Store } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { AVATAR_ACCEPTED_TYPES, text } from '../../constants';
-import { readFileAsDataUrl, validateAvatarFile } from '../../utils/avatar';
+import { useRef, useState } from 'react';
+import { useUploadProfilePhoto } from '../../services/profileMutationService';
+import { useUser } from '../../context/UserContext';
 
-interface AvatarFieldProps {
-  value: string;
-  alt: string;
-  isUploading?: boolean;
-  onChange: (file: File, previewUrl: string) => void;
-}
-
-export default function AvatarField({ value, alt, isUploading = false, onChange }: AvatarFieldProps) {
+export default function AvatarField() {
+  const { user } = useUser();
+  const [profileImage, setProfileImage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const openFilePicker = () => {
-    if (isUploading) return;
+  const {
+    isPending: isUploading,
+    mutate: uploadProfileMutation
+  } = useUploadProfilePhoto();
 
+  const handleImageProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newProfileImg = e.target.files?.[0];
+    if (!newProfileImg) return;
+
+    const previewUrl = URL.createObjectURL(newProfileImg);
+    setProfileImage(previewUrl);
+    uploadProfileMutation(newProfileImg);
+  }
+
+  const handleImageChangeBtnClick = () => {
     fileInputRef.current?.click();
-  };
+  }
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    // Reset so re-picking the same file still fires a change event.
-    event.target.value = '';
-    if (!file) return;
-
-    const validation = validateAvatarFile(file);
-    if (!validation.ok) {
-      toast.error(validation.error);
-      return;
-    }
-
-    const preview = await readFileAsDataUrl(validation.value);
-    if (!preview.ok) {
-      toast.error(preview.error);
-      return;
-    }
-
-    onChange(validation.value, preview.value);
-  };
+  const currentUserProfile = user?.sellerProfile?.profilePhotoUrl;
+  const displayImage = profileImage || currentUserProfile;
 
   return (
     <div className="flex flex-col items-center py-2">
@@ -53,10 +42,8 @@ export default function AvatarField({ value, alt, isUploading = false, onChange 
 
       <div className="relative">
         <div className="size-24 overflow-hidden rounded-pill border-2 border-container-base bg-surface-l1 shadow-float">
-          {value ? (
-            // Either a CDN URL or a local data: URL preview — next/image cannot handle both.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt={alt} className="size-full object-cover" referrerPolicy="no-referrer" />
+          {displayImage ? (
+            <img src={displayImage} alt={text.edit.avatarAlt} className="size-full object-cover" referrerPolicy="no-referrer" />
           ) : (
             <div className="flex size-full items-center justify-center text-secondary">
               <Store className="size-8" aria-hidden="true" />
@@ -69,9 +56,9 @@ export default function AvatarField({ value, alt, isUploading = false, onChange 
           variant="filled"
           size="icon-lg"
           shape="circle"
-          onClick={openFilePicker}
           disabled={isUploading}
           aria-label={text.edit.avatarUploadAction}
+          onClick={handleImageChangeBtnClick}
           className="absolute bottom-0 left-0 border-2 border-surface-l3 shadow-float"
         >
           {isUploading ? (
@@ -87,7 +74,7 @@ export default function AvatarField({ value, alt, isUploading = false, onChange 
         type="file"
         accept={AVATAR_ACCEPTED_TYPES.join(',')}
         className="hidden"
-        onChange={handleFileChange}
+        onChange={handleImageProfileChange}
         data-testid="avatar-file-input"
       />
     </div>

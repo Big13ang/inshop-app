@@ -1,15 +1,11 @@
 'use client';
 
-import { createContext, use, ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { usePathname } from 'next/navigation';
-import { queryKeys } from '@/lib/query-keys';
+import { createContext, use, ReactNode, Suspense } from 'react';
+import { profileService, UserMe } from '../services/profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
-import { http } from '@/lib/utils';
-import { UserProfile } from '../services/profileService';
 
 interface UserContextType {
-  user: UserProfile | null;
+  user: UserMe | null;
   isLoading: boolean;
   error: Error | null;
   isLoggedIn: boolean;
@@ -19,51 +15,39 @@ const UserContext = createContext<UserContextType | null>(null);
 
 interface UserProviderProps {
   children: ReactNode;
-  initialUser?: UserProfile | null;
+  initialUser?: UserMe | null;
 }
 
-export function UserProvider({ children, initialUser }: UserProviderProps) {
-  const pathname = usePathname();
-  const isAuthPage = pathname?.startsWith('/auth') ?? false;
+function UserInitializer({ children }: { children: ReactNode }) {
+  const { data: user, error } = profileService.useSuspenseMe();
 
-  debugAuth('user-context', 'render', {
-    pathname,
-    isAuthPage,
-    hasInitialUser: !!initialUser,
-  });
+  const currentUser = user ?? null;
+  const isLoggedIn = currentUser != null;
 
-  const { data: user, isLoading, error } = useQuery<UserProfile>({
-    queryKey: queryKeys.profile.me,
-    queryFn: async () => {
-      debugAuth('user-context', 'queryMe:start', { pathname });
-      const user = await http.get<UserProfile>('/me');
-      debugAuth('user-context', 'queryMe:success', { hasUser: !!user });
-      return user;
-    },
-    initialData: initialUser ?? undefined,
-    staleTime: Infinity,
-    retry: false,
-    enabled: !isAuthPage,
+  debugAuth('user-context', 'state', {
+    isLoggedIn,
+    hasSellerProfile: currentUser?.sellerProfile != null,
   });
 
   const contextValue: UserContextType = {
-    user: user ?? null,
-    isLoading: isLoading && !user,
-    error: error as Error | null,
-    isLoggedIn: !!user,
+    user: currentUser,
+    isLoading: false,
+    error: (error as Error) || null,
+    isLoggedIn,
   };
-
-  debugAuth('user-context', 'state', {
-    pathname,
-    isLoading: contextValue.isLoading,
-    hasError: !!contextValue.error,
-    isLoggedIn: contextValue.isLoggedIn,
-  });
 
   return (
     <UserContext value={contextValue}>
       {children}
     </UserContext>
+  );
+}
+
+export function UserProvider({ children }: UserProviderProps) {
+  return (
+    <Suspense fallback={<div className="h-full w-full bg-background" />}>
+      <UserInitializer>{children}</UserInitializer>
+    </Suspense>
   );
 }
 

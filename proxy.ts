@@ -7,12 +7,13 @@ export function proxy(request: NextRequest) {
   const session = getSessionCookie(request);
   const isAuth = pathname.startsWith('/auth');
   const isApp = pathname.startsWith('/app');
+  const isHome = pathname === '/';
 
-  if (isApp && !session) {
+  if ((isApp || isHome) && !session) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (isAuth && session) {
+  if ((isAuth || isHome) && session) {
     return NextResponse.redirect(new URL('/app/profile', request.url));
   }
 
@@ -20,5 +21,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/app/:path*', '/auth/:path*'],
+  matcher: ['/', '/app/:path*', '/auth/:path*'],
 };

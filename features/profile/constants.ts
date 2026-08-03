@@ -2,7 +2,7 @@ export const PROFILE_LIMITS = {
   shopName: { min: 3, max: 60 },
   handle: { min: 3, max: 30 },
   bio: { max: 150 },
-  address: { max: 80 },
+  address: { min: 10, max: 80 },
   avatarBytes: 5 * 1024 * 1024,
 } as const;
 
@@ -62,6 +62,7 @@ export const text = {
     handleLabel: 'آیدی اختصاصی',
     handlePlaceholder: 'modern_gold',
     handleHelper: 'آیدی شما در نشانی فروشگاه استفاده می‌شود.',
+    handleTakenError: 'این نام کاربری قبلاً انتخاب شده است',
 
     bioSectionTitle: 'معرفی فروشگاه',
     bioLabel: 'متن معرفی',

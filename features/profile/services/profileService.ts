@@ -1,78 +1,72 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { http } from '@/lib/utils';
+import { http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 
-export interface UserProfile {
-  id?: string;
-  name?: string;
-  email?: string;
-  isVerifiedSeller?: boolean;
-  sellerActivatedAt?: string | null;
-  isAdmin?: boolean;
-  userId?: string;
-  username?: string;
-  shopName?: string;
+export interface SellerProfilePhone {
+  id: string;
+  sellerProfileId?: string;
+  phoneNumber: string;
+  label?: string | null;
+  createdAt?: string;
+}
+
+export interface SellerProfile {
+  id: string;
+  userId: string;
+  username: string;
+  shopName: string;
   bio?: string | null;
   profilePhotoUrl?: string | null;
   address?: string | null;
   addressProvince?: string | null;
   addressCity?: string | null;
   addressShow?: boolean;
-  phones?: Array<{
-    id?: string;
-    phoneNumber: string;
-    label?: string | null;
-  }>;
-  profile?: {
-    id: number;
-    phoneNumber: string;
-    firstName: string;
-    lastName: string;
-    nationalId: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-  businessData?: {
-    id: number;
-    preRegistrationId: number;
-    shopName: string;
-    instagramId?: string | null;
-    guildId: string;
-    address: string;
-    createdAt: string;
-    updatedAt: string;
-    bio?: string | null;
-    showAddress?: boolean | null;
-  };
-  sellerProfile?: {
-    id: string;
-    userId: string;
-    username: string;
-    shopName: string;
-    bio?: string | null;
-    profilePhotoUrl?: string | null;
-    address?: string | null;
-    addressProvince?: string | null;
-    addressCity?: string | null;
-    addressShow?: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-    phones?: Array<{
-      id: string;
-      phoneNumber: string;
-      label?: string | null;
-    }>;
-  } | null;
-  avatarUrl?: string | null;
+  phones?: SellerProfilePhone[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export type SellerProfile = UserProfile;
+export interface UserPreRegisterProfile {
+  id: number;
+  name: string;
+  lastName: string;
+  phoneNumber: string;
+  nationalIdNumber: string;
+  province: string;
+  city: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserPreRegisterBusinessData {
+  id: number;
+  preRegistrationId: number;
+  instagramId?: string | null;
+  followersCount?: string | null;
+  businessType?: string | null;
+  productCategory?: string | null;
+  bio?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserMe {
+  id: string;
+  name: string;
+  email: string;
+  isVerifiedSeller: boolean;
+  sellerActivatedAt: string | null;
+  isAdmin: boolean;
+  profile?: UserPreRegisterProfile | null;
+  businessData?: UserPreRegisterBusinessData | null;
+  sellerProfile: SellerProfile | null;
+}
+
+export type UserProfile = UserMe;
 
 export interface CheckUsernameResponse {
   username: string;
   available: boolean;
-  reason?: string;
 }
 
 export interface UseCheckUsernameOptions {
@@ -80,46 +74,55 @@ export interface UseCheckUsernameOptions {
 }
 
 export async function checkUsernameAvailability(username: string): Promise<CheckUsernameResponse> {
-  const trimmed = username.trim();
+  const trimmed = (username || '').trim();
 
-  const response = await http.get<CheckUsernameResponse>(
+  const res = await http.get<ApiResponse<CheckUsernameResponse>>(
     `/user/profile/check-username/${encodeURIComponent(trimmed)}`
   );
 
-  return {
-    ...response,
-    username: response.username || trimmed,
-  };
+  return res.data;
+}
+
+async function fetchMe(): Promise<UserProfile | null> {
+  const result = await Result.try(http.get<UserProfile>('/me'));
+  return result.ok ? result.value : null;
 }
 
 export const profileService = {
   useMe() {
-    return useQuery<UserProfile>({
+    return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserProfile>('/me'),
+      queryFn: fetchMe,
+      staleTime: Infinity,
+      retry: false,
     });
   },
 
   useSuspenseMe() {
-    return useSuspenseQuery<UserProfile>({
+    return useSuspenseQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
-      queryFn: async () => http.get<UserProfile>('/me'),
+      queryFn: fetchMe,
+      staleTime: Infinity,
+      retry: false,
     });
   },
 
-  useUserProfile(options?: { initialData?: UserProfile; enabled?: boolean }) {
-    return useQuery<UserProfile>({
+  useUserProfile(options?: { initialData?: SellerProfile; enabled?: boolean }) {
+    return useQuery<SellerProfile>({
       queryKey: queryKeys.user.profile,
-      queryFn: async () => http.get<UserProfile>('/user/profile'),
+      queryFn: async () => {
+        const res = await http.get<ApiResponse<SellerProfile>>('/user/profile');
+        return res.data;
+      },
       staleTime: 1000 * 60 * 5,
       retry: false,
       ...options,
     });
   },
 
-  useCheckUsername(username: string, options: UseCheckUsernameOptions = {}) {
+  useCheckUsername(username?: string, options: UseCheckUsernameOptions = {}) {
     const { enabled = true } = options;
-    const trimmed = username.trim();
+    const trimmed = (username || '').trim();
 
     return useQuery<CheckUsernameResponse>({
       queryKey: queryKeys.profile.checkUsername(trimmed),

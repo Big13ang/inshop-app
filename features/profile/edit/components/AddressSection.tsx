@@ -1,19 +1,15 @@
 'use client';
 
-import { Controller, useFormContext } from 'react-hook-form';
 import { MapPin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { PROFILE_LIMITS, text } from '../../constants';
-import type { ProfileFormValues } from '../../schemas/profileSchema';
 import FormSection from './FormSection';
+import { Controller, useFormContext } from 'react-hook-form';
+import { profileSchemaType } from '../editProfileSchema';
 
 export default function AddressSection() {
-  const {
-    register,
-    control,
-    formState: { errors },
-  } = useFormContext<ProfileFormValues>();
+  const { register, control, formState: { errors } } = useFormContext<profileSchemaType>();
 
   return (
     <FormSection.Root>
@@ -24,14 +20,13 @@ export default function AddressSection() {
       <FormSection.Field
         label={text.edit.addressLabel}
         htmlFor="profile-address"
-        error={errors.address?.message}
+        isRequired
+        error={errors.address?.message as string}
       >
         <Input
           id="profile-address"
           inputSize="sm"
           placeholder={text.edit.addressPlaceholder}
-          isError={!!errors.address}
-          aria-invalid={!!errors.address}
           maxLength={PROFILE_LIMITS.address.max}
           {...register('address')}
         />
@@ -43,15 +38,13 @@ export default function AddressSection() {
         </label>
 
         <Controller
+          name="addressShow"
           control={control}
-          name="showAddress"
-          render={({ field }) => (
+          render={({ field: { value, onChange } }) => (
             <Switch
               id="profile-show-address"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              onBlur={field.onBlur}
-              inputRef={field.ref}
+              checked={value}
+              onCheckedChange={onChange}
             />
           )}
         />

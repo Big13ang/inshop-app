@@ -4,49 +4,11 @@ import { http } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { text } from '../constants';
+import { profileSchemaType } from '../edit/editProfileSchema';
 
-export interface CreateProfileDto {
-  username: string;
-  shopName: string;
-  bio?: string;
-  address?: string;
-  addressShow?: boolean;
-  shopPhoneNumber: string;
-}
 
-export interface UpdateProfileDto {
-  username?: string;
-  shopName?: string;
-  bio?: string;
-  address?: string;
-  addressShow?: boolean;
-  shopPhoneNumber?: string;
-}
-
-export async function createProfile(dto: CreateProfileDto): Promise<void> {
-  const payload = {
-    username: dto.username,
-    shopName: dto.shopName,
-    bio: dto.bio,
-    address: dto.address,
-    addressShow: dto.addressShow,
-    shopPhoneNumber: dto.shopPhoneNumber,
-  };
-
+export async function createProfile(payload: profileSchemaType): Promise<void> {
   await http.post('/user/profile', payload);
-}
-
-export async function updateProfile(dto: UpdateProfileDto): Promise<void> {
-  const payload = {
-    ...(dto.username ? { username: dto.username } : {}),
-    ...(dto.shopName ? { shopName: dto.shopName } : {}),
-    ...(dto.bio !== undefined ? { bio: dto.bio } : {}),
-    ...(dto.address !== undefined ? { address: dto.address } : {}),
-    ...(dto.addressShow !== undefined ? { addressShow: dto.addressShow } : {}),
-    ...(dto.shopPhoneNumber ? { shopPhoneNumber: dto.shopPhoneNumber } : {}),
-  };
-
-  await http.patch('/user/profile', payload);
 }
 
 export async function uploadProfilePhoto(photo: File): Promise<void> {
@@ -60,72 +22,47 @@ export async function uploadProfilePhoto(photo: File): Promise<void> {
   });
 }
 
-export const profileMutationService = {
-  useCreateProfile(onSaved?: () => void) {
-    const queryClient = useQueryClient();
+export function useCreateProfile(onSaved?: () => void) {
+  const queryClient = useQueryClient();
 
-    const handleSuccess = async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
-      ]);
-      toast.success(text.edit.saveSuccess);
-      onSaved?.();
-    };
+  const handleSuccess = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+    ]);
+    toast.success(text.edit.saveSuccess);
+    onSaved?.();
+  };
 
-    const handleError = () => {
-      toast.error(ERROR_MESSAGES.profile.updateFailed);
-    };
+  const handleError = (error: Error) => {
+    toast.error(error?.message || ERROR_MESSAGES.profile.updateFailed);
+  };
 
-    return useMutation({
-      mutationFn: createProfile,
-      onSuccess: handleSuccess,
-      onError: handleError,
-    });
-  },
+  return useMutation({
+    mutationFn: createProfile,
+    onSuccess: handleSuccess,
+    onError: handleError,
+  });
+}
 
-  useUpdateProfile(onSaved?: () => void) {
-    const queryClient = useQueryClient();
+export function useUploadProfilePhoto() {
+  const queryClient = useQueryClient();
 
-    const handleSuccess = async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
-      ]);
-      toast.success(text.edit.saveSuccess);
-      onSaved?.();
-    };
+  const handleSuccess = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+    ]);
+    toast.success(text.edit.avatarSelected);
+  };
 
-    const handleError = () => {
-      toast.error(ERROR_MESSAGES.profile.updateFailed);
-    };
+  const handleError = (error: Error) => {
+    toast.error(error?.message || ERROR_MESSAGES.profile.updateFailed);
+  };
 
-    return useMutation({
-      mutationFn: updateProfile,
-      onSuccess: handleSuccess,
-      onError: handleError,
-    });
-  },
-
-  useUploadProfilePhoto() {
-    const queryClient = useQueryClient();
-
-    const handleSuccess = async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
-      ]);
-      toast.success(text.edit.avatarSelected);
-    };
-
-    const handleError = () => {
-      toast.error(ERROR_MESSAGES.profile.updateFailed);
-    };
-
-    return useMutation({
-      mutationFn: uploadProfilePhoto,
-      onSuccess: handleSuccess,
-      onError: handleError,
-    });
-  },
-};
+  return useMutation({
+    mutationFn: uploadProfilePhoto,
+    onSuccess: handleSuccess,
+    onError: handleError,
+  });
+}

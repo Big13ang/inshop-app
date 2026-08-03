@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
-import { http, Result } from '@/lib/utils';
-import type { UserProfile } from './profileService';
+import { http, Result, type ApiResponse } from '@/lib/utils';
+import type { UserMe } from './profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
 
 export const AUTH_COOKIE_KEYS = [
@@ -13,7 +13,7 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-export async function getServerProfile(): Promise<UserProfile | null> {
+export async function getServerProfile(): Promise<UserMe | null> {
   const cookieStore = await cookies();
 
   const sessionCookie = AUTH_COOKIE_KEYS.reduce<
@@ -35,7 +35,7 @@ export async function getServerProfile(): Promise<UserProfile | null> {
   });
 
   const resResult = await Result.try(
-    http.get<UserProfile>('/me', {
+    http.get<ApiResponse<UserMe>>('/me', {
       headers: {
         Cookie: `${sessionCookie.name}=${sessionCookie.value}`,
       },
@@ -53,5 +53,5 @@ export async function getServerProfile(): Promise<UserProfile | null> {
     hasUser: true,
   });
 
-  return resResult.value;
+  return resResult.value.data;
 }

@@ -11,10 +11,10 @@ import ProfileGridFeed from './components/ProfileGridFeed';
 import { useRouter } from 'next/navigation';
 import { PROFILE_ROUTES } from '../constants';
 import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
-import type { UserProfile } from '../services/profileService';
+import type { SellerProfile } from '../services/profileService';
 
-function getSellerProfile(userProfile?: UserProfile) {
-  return userProfile?.sellerProfile ?? userProfile;
+function getSellerProfile(userProfile?: SellerProfile, sellerProfileInMe?: SellerProfile | null): SellerProfile | undefined {
+  return userProfile ?? sellerProfileInMe ?? undefined;
 }
 
 export default function ProfileView() {
@@ -45,7 +45,7 @@ export default function ProfileView() {
   const approvedPosts = approvedInfiniteData
     ? approvedInfiniteData.pages.flatMap((page) => page.data)
     : [];
-  const sellerProfile = getSellerProfile(userProfile);
+  const sellerProfile = getSellerProfile(userProfile, me?.sellerProfile);
 
   if (!me || !me.sellerProfile) return null;
 
