@@ -1,16 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { UserProvider, useUser } from '../UserContext';
 import type { UserProfile } from '../../services/profileService';
 
-const mockReplace = jest.fn();
-let mockPathname = '/app/profile';
 let mockMe: UserProfile | null = null;
-
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn(), prefetch: jest.fn() }),
-  usePathname: () => mockPathname,
-}));
 
 jest.mock('../../services/profileService', () => ({
   profileService: {
@@ -23,15 +16,13 @@ function TestConsumer() {
   return (
     <div>
       <span data-testid="is-logged-in">{isLoggedIn ? 'yes' : 'no'}</span>
-      <span data-testid="username">{user?.username || 'none'}</span>
+      <span data-testid="username">{user?.sellerProfile?.username || 'none'}</span>
     </div>
   );
 }
 
 describe('UserContext', () => {
   beforeEach(() => {
-    mockReplace.mockClear();
-    mockPathname = '/app/profile';
     mockMe = {
       id: 'u-1',
       sellerProfile: {
@@ -43,7 +34,7 @@ describe('UserContext', () => {
     };
   });
 
-  it('provides user data to consumer components when logged in with seller profile', () => {
+  it('provides user data to consumer components when logged in', () => {
     render(
       <UserProvider>
         <TestConsumer />
@@ -51,10 +42,10 @@ describe('UserContext', () => {
     );
 
     expect(screen.getByTestId('is-logged-in')).toHaveTextContent('yes');
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(screen.getByTestId('username')).toHaveTextContent('test_shop');
   });
 
-  it('redirects to /app/profile/edit when logged in user has null sellerProfile', async () => {
+  it('provides user data when sellerProfile is null', () => {
     mockMe = {
       id: 'u-1',
       sellerProfile: null,
@@ -66,12 +57,10 @@ describe('UserContext', () => {
       </UserProvider>
     );
 
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/app/profile/edit');
-    });
+    expect(screen.getByTestId('is-logged-in')).toHaveTextContent('yes');
   });
 
-  it('redirects to /auth/login when user is unauthenticated on protected /app route', async () => {
+  it('indicates unauthenticated state when user is null', () => {
     mockMe = null;
 
     render(
@@ -80,25 +69,6 @@ describe('UserContext', () => {
       </UserProvider>
     );
 
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/auth/login');
-    });
-  });
-
-  it('does not redirect when user is already on /app/profile/edit page', async () => {
-    mockPathname = '/app/profile/edit';
-    mockMe = {
-      id: 'u-1',
-      sellerProfile: null,
-    };
-
-    render(
-      <UserProvider>
-        <TestConsumer />
-      </UserProvider>
-    );
-
-    expect(screen.getByTestId('is-logged-in')).toHaveTextContent('yes');
-    expect(mockReplace).not.toHaveBeenCalledWith('/app/profile/edit');
+    expect(screen.getByTestId('is-logged-in')).toHaveTextContent('no');
   });
 });

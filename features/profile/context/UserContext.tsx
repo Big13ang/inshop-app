@@ -1,8 +1,7 @@
 'use client';
 
-import { createContext, use, useEffect, ReactNode, Suspense } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { profileService, UserMe, UserProfile } from '../services/profileService';
+import { createContext, use, ReactNode, Suspense } from 'react';
+import { profileService, UserMe } from '../services/profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
 
 interface UserContextType {
@@ -19,42 +18,13 @@ interface UserProviderProps {
   initialUser?: UserMe | null;
 }
 
-function handleUserRedirection(
-  user: UserProfile | null,
-  pathname: string | null,
-  router: ReturnType<typeof useRouter>
-) {
-  if (!pathname) return;
-
-  const isAppRoute = pathname.startsWith('/app');
-  const isEditProfilePage = pathname === '/app/profile/edit';
-
-  if (isAppRoute) {
-    if (!user) {
-      router.replace('/auth/login');
-      return;
-    }
-
-    if (user.sellerProfile == null && !isEditProfilePage) {
-      router.replace('/app/profile/edit');
-    }
-  }
-}
-
 function UserInitializer({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
   const { data: user, error } = profileService.useSuspenseMe();
 
   const currentUser = user ?? null;
   const isLoggedIn = currentUser != null;
 
-  useEffect(() => {
-    handleUserRedirection(currentUser, pathname, router);
-  }, [currentUser, pathname, router]);
-
   debugAuth('user-context', 'state', {
-    pathname,
     isLoggedIn,
     hasSellerProfile: currentUser?.sellerProfile != null,
   });
