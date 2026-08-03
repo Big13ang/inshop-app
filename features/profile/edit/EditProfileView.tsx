@@ -14,7 +14,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema, profileSchemaType } from './editProfileSchema';
 import { useUser } from '../context/UserContext';
 import { UserMe } from '../services/profileService';
-import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
 
 import { useCreateProfile } from '../services/profileMutationService';
 
@@ -46,7 +45,7 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
 
 
 export default function EditProfileView() {
-  const { user, isLoading } = useUser();
+  const { user } = useUser();
   const router = useRouter();
 
   const createProfileMutation = useCreateProfile(() => {
@@ -66,10 +65,6 @@ export default function EditProfileView() {
   const handleSubmit = methods.handleSubmit((data: profileSchemaType) => {
     createProfileMutation.mutate(data);
   });
-
-  if (isLoading) {
-    return <ProfileEditSkeleton />;
-  }
 
   return (
     <FormProvider {...methods}>

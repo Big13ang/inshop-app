@@ -18,8 +18,10 @@ interface UserProviderProps {
   initialUser?: UserMe | null;
 }
 
-function UserInitializer({ children }: { children: ReactNode }) {
-  const { data: user, error } = profileService.useSuspenseMe();
+function UserInitializer({ children, initialUser }: UserProviderProps) {
+  const { data: user, error } = profileService.useSuspenseMe(
+    initialUser !== undefined ? { initialData: initialUser } : undefined
+  );
 
   const currentUser = user ?? null;
   const isLoggedIn = currentUser != null;
@@ -43,10 +45,10 @@ function UserInitializer({ children }: { children: ReactNode }) {
   );
 }
 
-export function UserProvider({ children }: UserProviderProps) {
+export function UserProvider({ children, initialUser }: UserProviderProps) {
   return (
     <Suspense fallback={<div className="h-full w-full bg-background" />}>
-      <UserInitializer>{children}</UserInitializer>
+      <UserInitializer initialUser={initialUser}>{children}</UserInitializer>
     </Suspense>
   );
 }
