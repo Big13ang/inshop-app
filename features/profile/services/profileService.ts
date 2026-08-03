@@ -93,7 +93,7 @@ export const profileService = {
     return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
-      staleTime: Infinity,
+      staleTime: 0,
       retry: false,
       ...options,
     });
@@ -103,7 +103,7 @@ export const profileService = {
     return useSuspenseQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
-      staleTime: Infinity,
+      staleTime: 0,
       retry: false,
       ...options,
     });
