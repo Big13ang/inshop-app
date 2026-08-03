@@ -1,5 +1,5 @@
 import ky, { Options } from 'ky';
-import { getBaseUrl, setLanguageHeader, parseBackendError } from './httpConfig';
+import { getBaseUrl, setLanguageHeader, parseBackendError, buildRequestOptions } from './httpConfig';
 import { Result } from './result';
 
 export function createAuthHttpClient(prefixUrl?: string) {
@@ -19,15 +19,15 @@ export function createAuthHttpClient(prefixUrl?: string) {
       ),
     post: async <T>(url: string, body?: unknown, options?: Options): Promise<T> =>
       Result.unwrap(
-        await Result.try(client.post(url.replace(/^\//, ''), { ...options, json: body }).json<T>())
+        await Result.try(client.post(url.replace(/^\//, ''), buildRequestOptions(body, options)).json<T>())
       ),
     put: async <T>(url: string, body?: unknown, options?: Options): Promise<T> =>
       Result.unwrap(
-        await Result.try(client.put(url.replace(/^\//, ''), { ...options, json: body }).json<T>())
+        await Result.try(client.put(url.replace(/^\//, ''), buildRequestOptions(body, options)).json<T>())
       ),
     patch: async <T>(url: string, body?: unknown, options?: Options): Promise<T> =>
       Result.unwrap(
-        await Result.try(client.patch(url.replace(/^\//, ''), { ...options, json: body }).json<T>())
+        await Result.try(client.patch(url.replace(/^\//, ''), buildRequestOptions(body, options)).json<T>())
       ),
     delete: async <T>(url: string, options?: Options): Promise<T> =>
       Result.unwrap(

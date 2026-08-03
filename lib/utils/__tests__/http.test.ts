@@ -79,3 +79,25 @@ describe('parseStandardBackendError', () => {
     expect(resultError.message).toBe('Validation failed');
   });
 });
+
+describe('buildRequestOptions', () => {
+  it('formats json body for regular objects', async () => {
+    const { buildRequestOptions } = await import('../httpConfig');
+    const opts = buildRequestOptions({ name: 'test' });
+    expect(opts).toEqual({ json: { name: 'test' } });
+  });
+
+  it('formats body for FormData and strips Content-Type header to allow fetch boundary generation', async () => {
+    const { buildRequestOptions } = await import('../httpConfig');
+    const formData = new FormData();
+    formData.append('photo', 'fake-file');
+
+    const opts = buildRequestOptions(formData, {
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    });
+
+    expect(opts.body).toBe(formData);
+    expect(opts.json).toBeUndefined();
+    expect(opts.headers).toEqual({ Accept: 'application/json' });
+  });
+});

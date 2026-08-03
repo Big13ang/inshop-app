@@ -1,6 +1,7 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { http } from '@/lib/utils';
+import type { PaginatedApiResponse } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
@@ -76,9 +77,19 @@ export async function deleteUploadSessionPhoto({
   );
 }
 
+function toCursorPaginatedResult(res: PaginatedApiResponse<BackendPost>): CursorPaginatedResult<BackendPost> {
+  return {
+    data: res.data,
+    pagination: {
+      nextCursor: res.pagination?.nextCursor ?? null,
+      hasNext: res.pagination?.hasNext ?? false,
+    },
+  };
+}
+
 async function fetchSellerPosts(user: UserProfile | null): Promise<BackendPost[]> {
   if (!user) return [];
-  const res = await http.get<CursorPaginatedResult<BackendPost>>('/seller/posts');
+  const res = await http.get<PaginatedApiResponse<BackendPost>>('/seller/posts');
   return res.data;
 }
 
@@ -95,7 +106,8 @@ async function fetchSellerPostsPaginated(
     params.set('cursor', cursor);
   }
   const endpoint = `/seller/posts?${params.toString()}`;
-  return http.get<CursorPaginatedResult<BackendPost>>(endpoint);
+  const res = await http.get<PaginatedApiResponse<BackendPost>>(endpoint);
+  return toCursorPaginatedResult(res);
 }
 
 export async function fetchApprovedPostsBySeller(
@@ -108,7 +120,8 @@ export async function fetchApprovedPostsBySeller(
     params.set('cursor', cursor);
   }
   const endpoint = `/posts/seller/${encodeURIComponent(sellerId)}?${params.toString()}`;
-  return http.get<CursorPaginatedResult<BackendPost>>(endpoint);
+  const res = await http.get<PaginatedApiResponse<BackendPost>>(endpoint);
+  return toCursorPaginatedResult(res);
 }
 
 export const postsQueryService = {

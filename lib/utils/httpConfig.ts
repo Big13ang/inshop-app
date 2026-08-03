@@ -1,4 +1,4 @@
-import type { BeforeErrorState } from 'ky';
+import type { BeforeErrorState, Options } from 'ky';
 import { Result } from './result';
 
 export function getBaseUrl(overrideUrl?: string): string {
@@ -12,6 +12,27 @@ export function setLanguageHeader({ request }: { request?: Request }): void {
       request.headers.set('Accept-Language', 'fa');
     }
   }
+}
+
+export function isFormData(value: unknown): value is FormData {
+  return typeof FormData !== 'undefined' && value instanceof FormData;
+}
+
+export function buildRequestOptions(body?: unknown, options?: Options): Options {
+  if (body === undefined) {
+    return options || {};
+  }
+
+  if (!isFormData(body)) {
+    return { ...options, json: body };
+  }
+
+  const { headers, ...restOptions } = options || {};
+  const cleanHeaders = { ...(headers as Record<string, string> | undefined) };
+  delete cleanHeaders['Content-Type'];
+  delete cleanHeaders['content-type'];
+
+  return { ...restOptions, headers: cleanHeaders, body };
 }
 
 export async function parseBackendError({ error }: BeforeErrorState): Promise<Error> {
@@ -52,3 +73,4 @@ export async function parseStandardBackendError({ error }: BeforeErrorState): Pr
   }
   return error;
 }
+

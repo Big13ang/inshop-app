@@ -43,6 +43,7 @@ export default function AvatarField() {
       <div className="relative">
         <div className="size-24 overflow-hidden rounded-pill border-2 border-container-base bg-surface-l1 shadow-float">
           {displayImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={displayImage} alt={text.edit.avatarAlt} className="size-full object-cover" referrerPolicy="no-referrer" />
           ) : (
             <div className="flex size-full items-center justify-center text-secondary">
