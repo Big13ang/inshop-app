@@ -5,8 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { PROFILE_LIMITS, text } from '../../constants';
 import FormSection from './FormSection';
+import { Controller, useFormContext } from 'react-hook-form';
+import { profileSchemaType } from '../editProfileSchema';
 
 export default function AddressSection() {
+  const { register, control, formState: { errors } } = useFormContext<profileSchemaType>();
+
   return (
     <FormSection.Root>
       <FormSection.Title icon={<MapPin className="size-4" />}>
@@ -16,12 +20,14 @@ export default function AddressSection() {
       <FormSection.Field
         label={text.edit.addressLabel}
         htmlFor="profile-address"
+        error={errors.address?.message as string}
       >
         <Input
           id="profile-address"
           inputSize="sm"
           placeholder={text.edit.addressPlaceholder}
           maxLength={PROFILE_LIMITS.address.max}
+          {...register('address')}
         />
       </FormSection.Field>
 
@@ -30,7 +36,17 @@ export default function AddressSection() {
           {text.edit.showAddressLabel}
         </label>
 
-        <Switch id="profile-show-address" defaultChecked />
+        <Controller
+          name="addressShow"
+          control={control}
+          render={({ field: { value, onChange } }) => (
+            <Switch
+              id="profile-show-address"
+              checked={value}
+              onCheckedChange={onChange}
+            />
+          )}
+        />
       </div>
     </FormSection.Root>
   );
