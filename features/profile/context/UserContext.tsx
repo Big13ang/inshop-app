@@ -19,18 +19,22 @@ interface UserProviderProps {
 }
 
 function UserInitializer({ children, initialUser }: UserProviderProps) {
-  const { data: user, error, isFetching } = profileService.useSuspenseMe(
-    initialUser !== undefined ? { initialData: initialUser } : undefined
+  const { data: user, error, dataUpdatedAt } = profileService.useSuspenseMe(
+    initialUser !== undefined
+      ? { initialData: initialUser, initialDataUpdatedAt: 0 }
+      : undefined
   );
 
   const currentUser = user ?? null;
   const isLoggedIn = currentUser != null;
   // With initialData seeded from SSR, this first render's isLoggedIn reflects
-  // the server's cookie check, not the browser's. staleTime: 0 always kicks
-  // off a client-side refetch of /me on mount, so isFetching here means that
-  // verification is still in flight — callers must not redirect on
-  // isLoggedIn=false until isVerifying goes false.
-  const isVerifying = isFetching;
+  // the server's cookie check, not the browser's. initialDataUpdatedAt: 0
+  // marks that seed as unverified; dataUpdatedAt only becomes non-zero once
+  // a real client-side /me request has completed. We derive isVerifying from
+  // this instead of isFetching, since isFetching depends on react-query's
+  // internal effect having run, which can fire after a consuming component's
+  // own effect (e.g. a redirect-on-logged-out check) on the same mount.
+  const isVerifying = dataUpdatedAt === 0;
 
   debugAuth('user-context', 'state', {
     isLoggedIn,

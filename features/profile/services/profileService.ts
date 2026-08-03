@@ -99,7 +99,7 @@ async function fetchMe(): Promise<UserProfile | null> {
 }
 
 export const profileService = {
-  useMe(options?: { initialData?: UserProfile | null }) {
+  useMe(options?: { initialData?: UserProfile | null; initialDataUpdatedAt?: number }) {
     return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
@@ -109,7 +109,7 @@ export const profileService = {
     });
   },
 
-  useSuspenseMe(options?: { initialData?: UserProfile | null }) {
+  useSuspenseMe(options?: { initialData?: UserProfile | null; initialDataUpdatedAt?: number }) {
     return useSuspenseQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
