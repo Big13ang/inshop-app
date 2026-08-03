@@ -1,5 +1,5 @@
 import ky, { KyInstance, Options, HTTPError } from 'ky';
-import { getBaseUrl, setLanguageHeader, handleUnauthorizedRedirect, parseStandardBackendError } from './httpConfig';
+import { getBaseUrl, setLanguageHeader, parseStandardBackendError } from './httpConfig';
 import { Result } from './result';
 
 export type { KyInstance, Options as HttpRequestOptions, HTTPError };
@@ -36,7 +36,6 @@ export function createHttpClient(prefixUrl?: string) {
     credentials: 'include',
     hooks: {
       beforeRequest: [setLanguageHeader],
-      afterResponse: [handleUnauthorizedRedirect],
       beforeError: [parseStandardBackendError],
     },
   });

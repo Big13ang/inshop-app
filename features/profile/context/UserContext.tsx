@@ -6,7 +6,6 @@ import { debugAuth } from '@/lib/utils/authDebug';
 
 interface UserContextType {
   user: UserMe | null;
-  isLoading: boolean;
   error: Error | null;
   isLoggedIn: boolean;
 }
@@ -31,7 +30,6 @@ function UserInitializer({ children }: { children: ReactNode }) {
 
   const contextValue: UserContextType = {
     user: currentUser,
-    isLoading: false,
     error: (error as Error) || null,
     isLoggedIn,
   };

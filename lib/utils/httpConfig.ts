@@ -14,12 +14,6 @@ export function setLanguageHeader({ request }: { request?: Request }): void {
   }
 }
 
-export function handleUnauthorizedRedirect({ response }: { response?: Response }): void {
-  if (response && response.status === 401 && typeof window !== 'undefined') {
-    window.location.href = '/auth/login';
-  }
-}
-
 export async function parseBackendError({ error }: BeforeErrorState): Promise<Error> {
   if (error && typeof error === 'object' && 'response' in error) {
     const errObj = error as Record<string, unknown>;
