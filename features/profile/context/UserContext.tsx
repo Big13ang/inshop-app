@@ -8,6 +8,7 @@ interface UserContextType {
   user: UserMe | null;
   error: Error | null;
   isLoggedIn: boolean;
+  isVerifying: boolean;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -18,15 +19,22 @@ interface UserProviderProps {
 }
 
 function UserInitializer({ children, initialUser }: UserProviderProps) {
-  const { data: user, error } = profileService.useSuspenseMe(
+  const { data: user, error, isFetching } = profileService.useSuspenseMe(
     initialUser !== undefined ? { initialData: initialUser } : undefined
   );
 
   const currentUser = user ?? null;
   const isLoggedIn = currentUser != null;
+  // With initialData seeded from SSR, this first render's isLoggedIn reflects
+  // the server's cookie check, not the browser's. staleTime: 0 always kicks
+  // off a client-side refetch of /me on mount, so isFetching here means that
+  // verification is still in flight — callers must not redirect on
+  // isLoggedIn=false until isVerifying goes false.
+  const isVerifying = isFetching;
 
   debugAuth('user-context', 'state', {
     isLoggedIn,
+    isVerifying,
     hasSellerProfile: currentUser?.sellerProfile != null,
   });
 
@@ -34,6 +42,7 @@ function UserInitializer({ children, initialUser }: UserProviderProps) {
     user: currentUser,
     error: (error as Error) || null,
     isLoggedIn,
+    isVerifying,
   };
 
   return (
