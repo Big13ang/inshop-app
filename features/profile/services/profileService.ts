@@ -84,26 +84,28 @@ export async function checkUsernameAvailability(username: string): Promise<Check
 }
 
 async function fetchMe(): Promise<UserProfile | null> {
-  const result = await Result.try(http.get<UserProfile>('/me'));
-  return result.ok ? result.value : null;
+  const result = await Result.try(http.get<ApiResponse<UserProfile>>('/me'));
+  return result.ok ? result.value.data : null;
 }
 
 export const profileService = {
-  useMe() {
+  useMe(options?: { initialData?: UserProfile | null }) {
     return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
       staleTime: Infinity,
       retry: false,
+      ...options,
     });
   },
 
-  useSuspenseMe() {
+  useSuspenseMe(options?: { initialData?: UserProfile | null }) {
     return useSuspenseQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
       staleTime: Infinity,
       retry: false,
+      ...options,
     });
   },
 

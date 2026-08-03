@@ -79,7 +79,14 @@ export default function SignInForm() {
         break;
 
       case AUTH_FORMS.SIGN_UP_FINALIZE:
-        verifyMutation.mutate({ phoneNumber, otp, newPassword: password }, { onSuccess: navigateToDestination });
+        verifyMutation.mutate(
+          { phoneNumber, otp, newPassword: password },
+          {
+            onSuccess: () => {
+              signInMutation.mutate({ phoneNumber, password, rememberMe: true }, { onSuccess: navigateToDestination });
+            },
+          }
+        );
         break;
 
       case AUTH_FORMS.FORGOT_PASS_INIT:

@@ -30,7 +30,7 @@ export default function BioSection() {
           maxLength={PROFILE_LIMITS.bio.max}
           {...register('bio')}
         />
-        <span className="px-1 text-left text-[10px] text-secondary/70">
+        <span className="px-1 text-left text-[10px] text-secondary/70" suppressHydrationWarning>
           {text.edit.bioCounter(bio?.length || 0, PROFILE_LIMITS.bio.max)}
         </span>
       </FormSection.Field>
