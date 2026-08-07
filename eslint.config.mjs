@@ -35,6 +35,7 @@ const eslintConfig = defineConfig([
     ".claude/**",
     ".agents/**",
     ".codex/**",
+    "scripts/**",
 
   ]),
 ]);
