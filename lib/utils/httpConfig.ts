@@ -38,19 +38,30 @@ export function buildRequestOptions(body?: unknown, options?: Options): Options 
 export async function parseBackendError({ error }: BeforeErrorState): Promise<Error> {
   if (error && typeof error === 'object' && 'response' in error) {
     const errObj = error as Record<string, unknown>;
-    let data = errObj.data as { message?: string; error?: string; detail?: string; code?: string } | undefined;
+    type ErrorBody = { message?: string; error?: { message?: string } | string; detail?: string; code?: string };
+    let data = errObj.data as ErrorBody | undefined;
 
-    if (!data && errObj.response && typeof (errObj.response as Response).clone === 'function') {
-      const res = await Result.try<{ message?: string; error?: string; detail?: string; code?: string }>(
-        (errObj.response as Response).clone().json()
-      );
-      if (res.ok && res.value) {
-        data = res.value;
+    if (!data && errObj.response) {
+      const response = errObj.response as Response;
+      if (typeof response.clone === 'function' && !response.bodyUsed) {
+        try {
+          const clonedRes = response.clone();
+          const res = await Result.try<ErrorBody>(clonedRes.json());
+          if (res.ok && res.value) {
+            data = res.value;
+          }
+        } catch {
+          // Ignore clone or body consumption errors
+        }
       }
     }
 
     if (data && typeof data === 'object') {
-      const backendMessage = data.message || data.error || data.detail;
+      const backendMessage =
+        data.message ||
+        (typeof data.error === 'object' && data.error?.message) ||
+        (typeof data.error === 'string' && data.error) ||
+        data.detail;
       if (backendMessage && typeof backendMessage === 'string') {
         error.message = backendMessage;
       }
@@ -63,14 +74,45 @@ export async function parseBackendError({ error }: BeforeErrorState): Promise<Er
 }
 
 export async function parseStandardBackendError({ error }: BeforeErrorState): Promise<Error> {
-  if (error && 'response' in error && error.response) {
-    const res = await Result.try<{ error?: { message?: string } }>(
-      (error.response as Response).clone().json()
-    );
-    if (res.ok && res.value?.error?.message) {
-      error.message = res.value.error.message;
+  if (error && typeof error === 'object' && 'response' in error) {
+    const errObj = error as Record<string, unknown>;
+    type StandardErrorBody = {
+      success?: boolean;
+      error?: { message?: string; code?: string } | string;
+      message?: string;
+      detail?: string;
+    };
+
+    let data = errObj.data as StandardErrorBody | undefined;
+
+    if (!data && errObj.response) {
+      const response = errObj.response as Response;
+      if (typeof response.clone === 'function' && !response.bodyUsed) {
+        try {
+          const clonedRes = response.clone();
+          const res = await Result.try<StandardErrorBody>(clonedRes.json());
+          if (res.ok && res.value) {
+            data = res.value;
+          }
+        } catch {
+          // Ignore clone or body consumption errors
+        }
+      }
+    }
+
+    if (data && typeof data === 'object') {
+      const backendMessage =
+        (typeof data.error === 'object' && data.error?.message) ||
+        (typeof data.error === 'string' && data.error) ||
+        data.message ||
+        data.detail;
+
+      if (backendMessage && typeof backendMessage === 'string') {
+        error.message = backendMessage;
+      }
     }
   }
   return error;
 }
+
 

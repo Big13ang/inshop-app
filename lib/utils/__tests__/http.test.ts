@@ -78,6 +78,47 @@ describe('parseStandardBackendError', () => {
 
     expect(resultError.message).toBe('Validation failed');
   });
+
+  it('parses error message from error.data when Ky has already consumed response body', async () => {
+    const mockError = new Error('Request failed with status code 400 Bad Request');
+    (mockError as unknown as Record<string, unknown>).response = { bodyUsed: true } as Response;
+    (mockError as unknown as Record<string, unknown>).data = {
+      success: false,
+      error: {
+        code: 'BAD_REQUEST',
+        message: 'Image resolution is too small. Minimum required resolution is 1080x1080, but got 220x346.',
+      },
+    };
+
+    const { parseStandardBackendError } = await import('../httpConfig');
+    const resultError = await parseStandardBackendError({ error: mockError } as unknown as Parameters<typeof parseStandardBackendError>[0]);
+
+    expect(resultError.message).toBe('Image resolution is too small. Minimum required resolution is 1080x1080, but got 220x346.');
+  });
+
+  it('safely handles responses where bodyUsed is true or clone throws TypeError', async () => {
+    const mockResponseConsumed = {
+      bodyUsed: true,
+      clone: () => {
+        throw new TypeError('Response.clone: Body has already been consumed.');
+      },
+    } as unknown as Response;
+
+    const mockError = new Error('HTTPError 401 Unauthorized');
+    (mockError as unknown as Record<string, unknown>).response = mockResponseConsumed;
+
+    const { parseStandardBackendError, parseBackendError } = await import('../httpConfig');
+    
+    await expect(
+      parseStandardBackendError({ error: mockError } as unknown as Parameters<typeof parseStandardBackendError>[0])
+    ).resolves.toBe(mockError);
+
+    await expect(
+      parseBackendError({ error: mockError } as unknown as Parameters<typeof parseBackendError>[0])
+    ).resolves.toBe(mockError);
+
+    expect(mockError.message).toBe('HTTPError 401 Unauthorized');
+  });
 });
 
 describe('buildRequestOptions', () => {

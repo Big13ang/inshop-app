@@ -20,7 +20,21 @@ const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
   reactCompiler: true,
+  partialPrefetching: true,
+  experimental: {
+    useTypeScriptCli: true,
+    turbopackRustReactCompiler: true,
+  },
   allowedDevOrigins: getLocalIPs(),
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/app/profile',
+        permanent: false,
+      },
+    ];
+  },
   images: {
     qualities: [75, 100]
   }
