@@ -48,6 +48,7 @@ export default function RootLayout({
       lang="FA-IR"
       dir="rtl"
       className="overflow-hidden w-full max-w-full"
+      suppressHydrationWarning
     >
       <body className="flex flex-col overflow-hidden w-full max-w-full md:items-center bg-background">
         <div className="safe-area h-full w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden">

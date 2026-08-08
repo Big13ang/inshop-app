@@ -1,5 +1,5 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { http, Result, type ApiResponse } from '@/lib/utils';
+import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
 
@@ -85,13 +85,22 @@ export async function checkUsernameAvailability(username: string): Promise<Check
 }
 
 async function fetchMe(): Promise<UserProfile | null> {
-  const result = await Result.try(http.get<ApiResponse<UserProfile>>('/me'));
+  const result = await Result.try(authHttp.get<ApiResponse<UserProfile>>('/me'));
 
   if (!result.ok) {
-    debugAuth('profile', 'clientFetchMe:error', {
+    const isUnauthorized =
+      result.error &&
+      typeof result.error === 'object' &&
+      'response' in result.error &&
+      (result.error as { response?: { status?: number } }).response?.status === 401;
+
+    debugAuth('profile', isUnauthorized ? 'clientFetchMe:unauthenticated' : 'clientFetchMe:error', {
       errorMessage: result.error instanceof Error ? result.error.message : String(result.error),
     });
-    console.error('[auth] /me request failed on client:', result.error);
+
+    if (!isUnauthorized) {
+      console.error('[auth] /me request failed on client:', result.error);
+    }
     return null;
   }
 

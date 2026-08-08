@@ -78,6 +78,23 @@ describe('parseStandardBackendError', () => {
 
     expect(resultError.message).toBe('Validation failed');
   });
+
+  it('safely handles bodyUsed responses or clone errors without throwing', async () => {
+    const mockResponse = {
+      bodyUsed: true,
+      clone: () => {
+        throw new TypeError('Response.clone: Body has already been consumed.');
+      },
+    } as unknown as Response;
+
+    const mockError = new Error('HTTPError 401 Unauthorized');
+    (mockError as unknown as Record<string, unknown>).response = mockResponse;
+
+    const { parseStandardBackendError } = await import('../httpConfig');
+    const resultError = await parseStandardBackendError({ error: mockError } as unknown as Parameters<typeof parseStandardBackendError>[0]);
+
+    expect(resultError.message).toBe('HTTPError 401 Unauthorized');
+  });
 });
 
 describe('buildRequestOptions', () => {

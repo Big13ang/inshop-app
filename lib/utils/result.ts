@@ -9,8 +9,9 @@ export const Result = {
   err<E>(error: E): Result<never, E> {
     return { ok: false, error };
   },
-  async try<T, E = Error>(promise: Promise<T>): Promise<Result<T, E>> {
+  async try<T, E = Error>(task: Promise<T> | (() => Promise<T> | T)): Promise<Result<T, E>> {
     try {
+      const promise = typeof task === 'function' ? task() : task;
       return Result.ok(await promise);
     } catch (e) {
       return Result.err(e as E);

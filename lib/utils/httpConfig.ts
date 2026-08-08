@@ -40,12 +40,15 @@ export async function parseBackendError({ error }: BeforeErrorState): Promise<Er
     const errObj = error as Record<string, unknown>;
     let data = errObj.data as { message?: string; error?: string; detail?: string; code?: string } | undefined;
 
-    if (!data && errObj.response && typeof (errObj.response as Response).clone === 'function') {
-      const res = await Result.try<{ message?: string; error?: string; detail?: string; code?: string }>(
-        (errObj.response as Response).clone().json()
-      );
-      if (res.ok && res.value) {
-        data = res.value;
+    if (!data && errObj.response) {
+      const resObj = errObj.response as Response;
+      if (!resObj.bodyUsed && typeof resObj.clone === 'function') {
+        const res = await Result.try<{ message?: string; error?: string; detail?: string; code?: string }>(
+          () => resObj.clone().json()
+        );
+        if (res.ok && res.value) {
+          data = res.value;
+        }
       }
     }
 
@@ -64,11 +67,14 @@ export async function parseBackendError({ error }: BeforeErrorState): Promise<Er
 
 export async function parseStandardBackendError({ error }: BeforeErrorState): Promise<Error> {
   if (error && 'response' in error && error.response) {
-    const res = await Result.try<{ error?: { message?: string } }>(
-      (error.response as Response).clone().json()
-    );
-    if (res.ok && res.value?.error?.message) {
-      error.message = res.value.error.message;
+    const resObj = error.response as Response;
+    if (!resObj.bodyUsed && typeof resObj.clone === 'function') {
+      const res = await Result.try<{ error?: { message?: string } }>(
+        () => resObj.clone().json()
+      );
+      if (res.ok && res.value?.error?.message) {
+        error.message = res.value.error.message;
+      }
     }
   }
   return error;
