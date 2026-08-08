@@ -6,6 +6,11 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    languageOptions: {
+      parserOptions: {
+        warnOnUnsupportedTypeScriptVersion: false,
+      },
+    },
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "warn",
@@ -30,6 +35,7 @@ const eslintConfig = defineConfig([
     ".claude/**",
     ".agents/**",
     ".codex/**",
+    "scripts/**",
 
   ]),
 ]);

@@ -25,6 +25,11 @@ describe('UserContext', () => {
   beforeEach(() => {
     mockMe = {
       id: 'u-1',
+      name: 'Test User',
+      email: 'test@example.com',
+      isVerifiedSeller: true,
+      sellerActivatedAt: '2026-01-01T00:00:00Z',
+      isAdmin: false,
       sellerProfile: {
         id: 'sp-1',
         userId: 'u-1',
@@ -48,6 +53,11 @@ describe('UserContext', () => {
   it('provides user data when sellerProfile is null', () => {
     mockMe = {
       id: 'u-1',
+      name: 'Test User',
+      email: 'test@example.com',
+      isVerifiedSeller: false,
+      sellerActivatedAt: null,
+      isAdmin: false,
       sellerProfile: null,
     };
 

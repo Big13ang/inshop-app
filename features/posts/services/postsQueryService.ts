@@ -129,7 +129,7 @@ export const postsQueryService = {
     const { user } = useUser();
 
     return useQuery<BackendPost[]>({
-      queryKey: queryKeys.posts.pending(),
+      queryKey: queryKeys.posts.seller(),
       queryFn: () => fetchSellerPosts(user),
       enabled: !!user,
     });
@@ -154,7 +154,7 @@ export const postsQueryService = {
     const { user } = useUser();
 
     return useQuery<BackendPost[], Error, BackendPost[]>({
-      queryKey: queryKeys.posts.pending(),
+      queryKey: queryKeys.posts.seller(),
       queryFn: () => fetchSellerPosts(user),
       enabled: !!user,
       select: (posts) => posts.filter((post) => post.status === status),
@@ -170,7 +170,7 @@ export const postsQueryService = {
     const { user } = useUser();
 
     return useInfiniteQuery({
-      queryKey: [...queryKeys.posts.pending(), 'infinite', status, limit, user?.id],
+      queryKey: [...queryKeys.posts.seller(), 'infinite', status, limit, user?.id],
       queryFn: ({ pageParam }) => {
         if (status === POST_STATUS.APPROVED && user?.id) {
           return fetchApprovedPostsBySeller(user.id, pageParam as string | null, limit);
@@ -192,6 +192,8 @@ export const postsQueryService = {
   },
 
   useSubmitPost(onSuccess: () => void) {
+    const queryClient = useQueryClient();
+
     return useMutation({
       mutationFn: async (payload: SubmitPostPayload) => {
         await http.post(
@@ -199,7 +201,11 @@ export const postsQueryService = {
           payload
         );
       },
-      onSuccess,
+      onSuccess: () => {
+        queryCacheFactory.posts.invalidateSeller(queryClient);
+
+        onSuccess?.();
+      },
       onError: () => {
         toast.error(ERROR_MESSAGES.posts.submitFailed);
       },
@@ -215,11 +221,11 @@ export const postsQueryService = {
       },
       ...optimistic.deleteList({
         queryClient,
-        queryKey: queryKeys.posts.pending(),
+        queryKey: queryKeys.posts.seller(),
         idSelector: (id: string) => id,
         onSuccess: () => toast.success('پست با موفقیت حذف شد'),
         onError: () => toast.error(ERROR_MESSAGES.posts.deleteFailed),
-        onSettled: () => queryCacheFactory.posts.invalidatePending(queryClient),
+        onSettled: () => queryCacheFactory.posts.invalidateSeller(queryClient),
       }),
     });
   },
