@@ -1,7 +1,6 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
-import type { PaginatedApiResponse } from '@/lib/utils';
+import { http, type ApiResponse, type PaginatedApiResponse } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
@@ -128,6 +127,18 @@ export async function fetchApprovedPostsBySeller(
 }
 
 export const postsQueryService = {
+  usePublicPostById(id: string, initialData?: BackendPost | null) {
+    return useQuery<BackendPost>({
+      queryKey: ['posts', 'public-detail', id],
+      queryFn: async () => {
+        const res = await http.get<ApiResponse<BackendPost>>(`/seller/posts/${id}`);
+        return res.data ?? (res as unknown as BackendPost);
+      },
+      enabled: !!id,
+      initialData: initialData ?? undefined,
+    });
+  },
+
   usePendingPosts() {
     const { user } = useUser();
 

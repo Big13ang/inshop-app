@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import Link from 'next/link';
 import type { BackendPost, BackendMedia } from '@/features/posts/services/postsQueryService';
 import { getMediaUrl } from '@/features/posts/utils/media';
 
@@ -11,21 +12,8 @@ export default function ProfileGridItem({ post, onClick }: Props) {
     const images = getImages(post);
     const image = images[0];
 
-    return (
-        <button
-            type="button"
-            onClick={() => onClick?.(String(post.id))}
-            className="
-        aspect-square
-        overflow-hidden
-        bg-surface
-        relative
-        cursor-pointer
-        outline-none
-        focus:ring-1
-        focus:ring-zinc-800
-      "
-        >
+    const content = (
+        <>
             {image ? (
                 <img
                     src={image}
@@ -37,7 +25,27 @@ export default function ProfileGridItem({ post, onClick }: Props) {
             )}
 
             {images.length > 1 && <MultipleImagesBadge />}
-        </button>
+        </>
+    );
+
+    const className = "aspect-square overflow-hidden bg-surface relative block cursor-pointer outline-none focus:ring-1 focus:ring-zinc-800";
+
+    if (onClick) {
+        return (
+            <button
+                type="button"
+                onClick={() => onClick(String(post.id))}
+                className={className}
+            >
+                {content}
+            </button>
+        );
+    }
+
+    return (
+        <Link href={`/p/${post.id}`} className={className}>
+            {content}
+        </Link>
     );
 }
 

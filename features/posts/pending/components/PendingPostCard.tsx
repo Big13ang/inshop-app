@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Clock, AlertOctagon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Post, usePostContext } from '@/features/posts/components/Post';
@@ -72,27 +73,29 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
       <Post.Root>
         <Post.Header>
           <Post.HeaderInfo>
-            <Post.Avatar />
-            <Post.AuthorBlock>
-              <Post.AuthorNameRow>
-                <Post.AuthorName />
-                <Post.VerifiedBadge />
-              </Post.AuthorNameRow>
-              <Post.Timestamp />
-            </Post.AuthorBlock>
+            <Link href={`/${post.sellerId}`} className="flex items-center gap-3">
+              <Post.Avatar />
+              <Post.AuthorBlock>
+                <Post.AuthorNameRow>
+                  <Post.AuthorName />
+                  <Post.VerifiedBadge />
+                </Post.AuthorNameRow>
+                <Post.Timestamp />
+              </Post.AuthorBlock>
+            </Link>
           </Post.HeaderInfo>
 
           <Post.MenuButton />
         </Post.Header>
 
         <Post.Media>
-          <PendingStatusOverlay
-            status={post.status}
-            rejectReason={post.rejectReason} />
+          <PendingStatusOverlay status={post.status} rejectReason={post.rejectReason} />
         </Post.Media>
 
         <Post.Body>
-          <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
+          <Link href={`/${post.sellerId}`}>
+            <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
+          </Link>
           <Post.Caption />
         </Post.Body>
       </Post.Root>
