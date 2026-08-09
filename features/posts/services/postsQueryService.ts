@@ -105,22 +105,25 @@ async function fetchSellerPostsPaginated(
   if (cursor) {
     params.set('cursor', cursor);
   }
-  const endpoint = `/seller/posts?${params.toString()}`;
-  const res = await http.get<PaginatedApiResponse<BackendPost>>(endpoint);
+  const res = await http.get<PaginatedApiResponse<BackendPost>>('/seller/posts', {
+    searchParams: params,
+  });
   return toCursorPaginatedResult(res);
 }
 
 export async function fetchApprovedPostsBySeller(
   sellerId: string,
   cursor?: string | null,
-  limit: number = 20
+  limit: number = 12
 ): Promise<CursorPaginatedResult<BackendPost>> {
   const params = new URLSearchParams({ limit: String(limit) });
   if (cursor) {
     params.set('cursor', cursor);
   }
-  const endpoint = `/posts/seller/${encodeURIComponent(sellerId)}?${params.toString()}`;
-  const res = await http.get<PaginatedApiResponse<BackendPost>>(endpoint);
+  const res = await http.get<PaginatedApiResponse<BackendPost>>(
+    `/posts/seller/${encodeURIComponent(sellerId)}`,
+    { searchParams: params }
+  );
   return toCursorPaginatedResult(res);
 }
 
