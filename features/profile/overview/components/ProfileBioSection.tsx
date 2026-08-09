@@ -7,12 +7,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
 import PendingPostsBanner from './PendingPostsBanner';
-import type { SellerProfile } from '../../services/profileService';
+import type { SellerProfile, PublicSellerProfile } from '../../services/profileService';
 import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 
 interface ProfileBioSectionProps {
-  sellerProfile?: SellerProfile;
+  sellerProfile?: PublicSellerProfile | SellerProfile;
   publishedCount: number;
   pendingCount?: number;
 }
@@ -26,7 +26,9 @@ export default function ProfileBioSection({
   const router = useRouter();
 
   const handleCall = () => {
-    const phoneText = sellerProfile?.phones?.[0]?.phoneNumber || '';
+    const publicProfile = sellerProfile as PublicSellerProfile | undefined;
+    const legacyProfile = sellerProfile as SellerProfile | undefined;
+    const phoneText = publicProfile?.shopPhoneNumber || legacyProfile?.phones?.[0]?.phoneNumber || '';
 
     if (phoneText) {
       window.location.href = `tel:${phoneText}`;
@@ -78,7 +80,7 @@ export default function ProfileBioSection({
       </div>
 
       {/* Location Address */}
-      {sellerProfile?.addressShow && sellerProfile?.address ? (
+      {sellerProfile?.address && (!('addressShow' in sellerProfile) || sellerProfile.addressShow) ? (
         <div className="mt-2.5 flex items-center justify-start gap-1 text-secondary text-[11px] self-start" dir="rtl">
           <MapPin className="w-3.5 h-3.5 text-secondary/70 shrink-0" />
           <span className="truncate">{sellerProfile?.address}</span>

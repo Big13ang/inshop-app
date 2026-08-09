@@ -11,6 +11,15 @@ export interface SellerProfilePhone {
   createdAt?: string;
 }
 
+export interface PublicSellerProfile {
+  username: string;
+  shopName: string;
+  bio?: string | null;
+  profilePhotoUrl?: string | null;
+  shopPhoneNumber?: string | null;
+  address?: string | null;
+}
+
 export interface SellerProfile {
   id: string;
   userId: string;
@@ -128,16 +137,25 @@ export const profileService = {
     });
   },
 
-  useUserProfile(options?: { initialData?: SellerProfile; enabled?: boolean }) {
-    return useQuery<SellerProfile>({
-      queryKey: queryKeys.user.profile,
+  useUserProfile(
+    username?: string,
+    options?: { initialData?: PublicSellerProfile; enabled?: boolean }
+  ) {
+    const trimmed = (username || '').trim();
+    const { enabled = true, ...restOptions } = options || {};
+
+    return useQuery<PublicSellerProfile>({
+      queryKey: queryKeys.user.byUsername(trimmed),
       queryFn: async () => {
-        const res = await http.get<ApiResponse<SellerProfile>>('/user/profile');
+        const res = await http.get<ApiResponse<PublicSellerProfile>>(
+          `/user/profile/${encodeURIComponent(trimmed)}`
+        );
         return res.data;
       },
+      enabled: enabled && trimmed.length > 0,
       staleTime: 1000 * 60 * 5,
       retry: false,
-      ...options,
+      ...restOptions,
     });
   },
 

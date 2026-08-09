@@ -18,6 +18,7 @@ export const queryKeys = {
   },
   user: {
     profile: ['user', 'profile'] as const,
+    byUsername: (username: string) => ['user', 'profile', username] as const,
   },
 } as const;
 

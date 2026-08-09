@@ -11,9 +11,12 @@ import ProfileGridFeed from './components/ProfileGridFeed';
 import { useRouter } from 'next/navigation';
 import { PROFILE_ROUTES } from '../constants';
 import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
-import type { SellerProfile } from '../services/profileService';
+import type { SellerProfile, PublicSellerProfile } from '../services/profileService';
 
-function getSellerProfile(userProfile?: SellerProfile, sellerProfileInMe?: SellerProfile | null): SellerProfile | undefined {
+function getSellerProfile(
+  userProfile?: PublicSellerProfile | SellerProfile,
+  sellerProfileInMe?: SellerProfile | null
+): PublicSellerProfile | SellerProfile | undefined {
   return userProfile ?? sellerProfileInMe ?? undefined;
 }
 
@@ -21,7 +24,11 @@ export default function ProfileView() {
   const router = useRouter();
   const { data: me } = profileService.useSuspenseMe();
 
-  const { data: userProfile, isLoading } = profileService.useUserProfile({ enabled: me?.sellerProfile != null });
+  const username = me?.sellerProfile?.username;
+
+  const { data: userProfile, isLoading } = profileService.useUserProfile(username, {
+    enabled: me?.sellerProfile != null && Boolean(username),
+  });
 
   const isMissingSellerProfile = me != null && me.sellerProfile == null;
 
