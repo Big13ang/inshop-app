@@ -55,6 +55,10 @@ export interface BackendPost {
   reviewedBy: string | null;
   reviewedAt: string | null;
   media?: BackendMedia[];
+  sellerName?: string;
+  shopName?: string;
+  sellerAvatar?: string;
+  isVerified?: boolean;
 }
 
 interface CursorPaginatedResult<T> {

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
 import PublicPostView from '@/features/posts/public/PublicPostView';
 import { getMediaUrl } from '@/features/posts/utils/media';
-import { constructMetadata, truncateText } from '@/lib/utils/metadata';
+import { constructMetadata } from '@/lib/utils/metadata';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -20,14 +20,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
-  const postAny = post as unknown as Record<string, unknown>;
-  const shopName = (postAny.sellerName as string) || (postAny.shopName as string) || undefined;
-  const title = post.description ? truncateText(post.description, 60) : undefined;
+  const rawShopName = post.sellerName || post.shopName || undefined;
+  const shopName = rawShopName
+    ? rawShopName.startsWith('فروشگاه')
+      ? rawShopName
+      : `فروشگاه ${rawShopName}`
+    : undefined;
   const coverMedia = post.media?.[0];
   const image = coverMedia ? getMediaUrl(coverMedia) : null;
 
   return constructMetadata({
-    title,
+    title: undefined,
     description: post.description,
     image,
     shopName,

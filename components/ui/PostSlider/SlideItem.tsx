@@ -45,7 +45,7 @@ export function SlideItem({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.url}
-        alt={`Product showcase ${idx + 1}`}
+        alt={item.alt || `Product showcase ${idx + 1}`}
         className={cn(
           objectFit === 'contain' ? 'object-contain' : 'object-cover',
           'w-full h-full select-none relative z-10'

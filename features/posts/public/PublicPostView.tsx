@@ -99,15 +99,14 @@ export default function PublicPostView({ postId, initialPost }: Props) {
     );
   }
 
-  const postAny = post as unknown as Record<string, unknown>;
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
     media: post.media,
     createdAt: post.createdAt,
-    sellerName: (postAny.sellerName as string) || '',
-    sellerAvatar: (postAny.sellerAvatar as string) || '',
-    isVerified: typeof postAny.isVerified === 'boolean' ? postAny.isVerified : false,
+    sellerName: post.sellerName || '',
+    sellerAvatar: post.sellerAvatar || '',
+    isVerified: post.isVerified ?? false,
   };
 
   return (

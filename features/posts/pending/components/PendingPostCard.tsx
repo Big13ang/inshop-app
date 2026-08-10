@@ -56,16 +56,15 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
     // Rendered outside UserProvider in unit tests
   }
 
-  const postAny = post as unknown as Record<string, unknown>;
-  const sellerName = (postAny.sellerName as string) || user?.sellerProfile?.shopName || '';
+  const sellerName = post.sellerName || user?.sellerProfile?.shopName || '';
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
     media: post.media,
     createdAt: post.createdAt,
     sellerName,
-    sellerAvatar: (postAny.sellerAvatar as string) || user?.sellerProfile?.profilePhotoUrl || '',
-    isVerified: typeof postAny.isVerified === 'boolean' ? postAny.isVerified : !!user?.isVerifiedSeller,
+    sellerAvatar: post.sellerAvatar || user?.sellerProfile?.profilePhotoUrl || '',
+    isVerified: post.isVerified ?? !!user?.isVerifiedSeller,
   };
 
   return (

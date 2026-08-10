@@ -31,9 +31,10 @@ const formatTitle = (title?: string, shopName?: string | null) => {
  * - formatDescription('دانه‌های تازه برشته شده', 'فروشگاه راین') => 'دانه‌های تازه برشته شده - فروشگاه راین در این‌شاپ'
  * - formatDescription('دانه‌های تازه برشته شده')                   => 'دانه‌های تازه برشته شده - این‌شاپ'
  */
-const formatDescription = (desc: string, shopName?: string | null) => {
-  if (desc.endsWith('این‌شاپ')) return desc;
-  return shopName ? `${desc} - ${shopName} در این‌شاپ` : `${desc} - این‌شاپ`;
+const formatDescription = (desc?: string, shopName?: string | null) => {
+  const trimmed = desc?.trim();
+  if (trimmed) return trimmed;
+  return shopName ? `${DEFAULT_DESCRIPTION} - ${shopName}` : DEFAULT_DESCRIPTION;
 };
 
 export function constructMetadata({
