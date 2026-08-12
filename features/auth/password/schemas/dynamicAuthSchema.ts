@@ -7,12 +7,7 @@ export const dynamicAuthValidationSchema = z.object({
   otp: z.string().optional(),
   authForm: z.string(),
 }).superRefine((data, ctx) => {
-  if (data.authForm === AUTH_FORMS.SIGN_IN) {
-    const result = passwordSchema.safeParse(data.password);
-    if (!result.success) {
-      result.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ['password'] }));
-    }
-  } else if (
+  if (
     data.authForm === AUTH_FORMS.SIGN_UP_FINALIZE ||
     data.authForm === AUTH_FORMS.FORGOT_PASS_FINALIZE
   ) {

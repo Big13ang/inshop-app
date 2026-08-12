@@ -15,12 +15,14 @@ export default function PasswordInput() {
     authForm === AUTH_FORMS.SIGN_UP_FINALIZE ||
     authForm === AUTH_FORMS.FORGOT_PASS_FINALIZE;
 
+  const isSignIn = authForm === AUTH_FORMS.SIGN_IN;
+
   const displayLabel = isNewPasswordStep ? "رمز عبور جدید" : "رمز عبور";
 
   const toggleHidePassword = () => setHide(prev => !prev);
 
-  const errorMessage = errors.password?.message as string | undefined;
-  const isError = !!errorMessage;
+  const errorMessage = isSignIn ? undefined : (errors.password?.message as string | undefined);
+  const isError = !isSignIn && !!errorMessage;
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -56,7 +58,7 @@ export default function PasswordInput() {
         </button>
       </div>
 
-      {errorMessage && (
+      {!isSignIn && errorMessage && (
         <ErrorMessage message={errorMessage} />
       )}
     </div>
