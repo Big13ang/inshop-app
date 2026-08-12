@@ -6,7 +6,6 @@ import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
 import type { UserProfile } from '@/features/profile/services/profileService';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
-import { useMediaStore } from '../new/services/mediaStore';
 
 export interface UploadSessionData {
   uploadSessionId: string;
@@ -251,8 +250,7 @@ export const postsQueryService = {
   useDeleteUploadSessionPhoto() {
     return useMutation({
       mutationFn: deleteUploadSessionPhoto,
-      onSuccess: (_data, { mediaId }) => {
-        useMediaStore.getState().removeItem(mediaId);
+      onSuccess: () => {
         toast.success(ERROR_MESSAGES.posts.imageDeleteSuccess);
       },
       onError: () => {

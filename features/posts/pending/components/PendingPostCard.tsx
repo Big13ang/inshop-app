@@ -70,9 +70,10 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
   return (
     <Post.Provider post={basePostData} onOpenMenu={onOpenMenu}>
       <Post.Root>
+        {/* TODO: Username should be added after the API update */}
         <Post.Header>
           <Post.HeaderInfo>
-            <Link href={`/${post.sellerId}`} className="flex items-center gap-3">
+            <Link href={`/username_should_be_added`} className="flex items-center gap-3">
               <Post.Avatar />
               <Post.AuthorBlock>
                 <Post.AuthorNameRow>

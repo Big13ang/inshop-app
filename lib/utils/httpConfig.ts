@@ -115,4 +115,16 @@ export async function parseStandardBackendError({ error }: BeforeErrorState): Pr
   return error;
 }
 
+export async function handleJsonResponse<T>(responsePromise: Promise<Response>): Promise<T> {
+  const response = await responsePromise;
+  if (response.status === 204 || response.status === 205) {
+    return undefined as unknown as T;
+  }
+  const text = await response.text();
+  if (!text || !text.trim()) {
+    return undefined as unknown as T;
+  }
+  return JSON.parse(text) as T;
+}
+
 
