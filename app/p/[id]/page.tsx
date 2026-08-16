@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
 import PublicPostView from '@/features/posts/public/PublicPostView';
-import { getMediaUrl } from '@/features/posts/utils/media';
+import { getMediaUrl } from '@/lib/utils';
 import { constructMetadata } from '@/lib/utils/metadata';
 
 interface PageProps {
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
-  const rawShopName = post.sellerName || post.shopName || undefined;
+  const rawShopName = post.shop?.shopName || undefined;
   const shopName = rawShopName
     ? rawShopName.startsWith('فروشگاه')
       ? rawShopName

@@ -1,35 +1,17 @@
 import { cache } from 'react';
-import { cookies } from 'next/headers';
 import { http, Result, type ApiResponse } from '@/lib/utils';
-import type { BackendPost } from './postsQueryService';
+import type { PublicPost } from './publicPostService';
 
-export const AUTH_COOKIE_KEYS = [
-  'session_token',
-  'better-auth.session_token',
-  '__Secure-better-auth.session_token',
-] as const;
+export type { PublicPost, PublicPostProduct, PublicPostShop, PublicPostMedia } from './publicPostService';
 
-export const fetchPublicPostServer = cache(async (id: string): Promise<BackendPost | null> => {
-  const cookieStore = await cookies();
-  const sessionCookie = AUTH_COOKIE_KEYS.reduce<
-    { name: string; value: string } | undefined
-  >(
-    (acc, key) => acc || cookieStore.get(key),
-    undefined
+export const fetchPublicPostServer = cache(async (id: string): Promise<PublicPost | null> => {
+  const resResult = await Result.try(() =>
+    http.get<ApiResponse<PublicPost>>(`/posts/${id}`)
   );
 
-  const headers: Record<string, string> = sessionCookie
-    ? { Cookie: `${sessionCookie.name}=${sessionCookie.value}` }
-    : {};
-
-  const resResult = await Result.try(
-    http.get<ApiResponse<BackendPost>>(`/seller/posts/${id}`, { headers })
-  );
-
-  if (!resResult.ok || !resResult.value) {
+  if (!resResult.ok || !resResult.value?.data) {
     return null;
   }
 
-  const res = resResult.value;
-  return res.data ?? (res as unknown as BackendPost);
+  return resResult.value.data;
 });

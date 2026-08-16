@@ -7,15 +7,15 @@ import MainFooter from '@/components/layout/MainFooter';
 import { Button } from '@/components/ui/button';
 import { Post } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
-import { postsQueryService, type BackendPost } from '@/features/posts/services/postsQueryService';
+import { usePublicPostById, type PublicPost } from '@/features/posts/services/publicPostService';
 
 interface Props {
   postId: string;
-  initialPost?: BackendPost | null;
+  initialPost?: PublicPost | null;
 }
 
 export default function PublicPostView({ postId, initialPost }: Props) {
-  const { data: post, isLoading } = postsQueryService.usePublicPostById(postId, initialPost);
+  const { data: post, isLoading } = usePublicPostById(postId, initialPost);
 
   if (isLoading && !post) {
     return (
@@ -99,14 +99,16 @@ export default function PublicPostView({ postId, initialPost }: Props) {
     );
   }
 
+  const shopHref = post.shop.username ? `/${post.shop.username}` : '#';
+
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
     media: post.media,
-    createdAt: post.createdAt,
-    sellerName: post.sellerName || '',
-    sellerAvatar: post.sellerAvatar || '',
-    isVerified: post.isVerified ?? false,
+    createdAt: post.publishedAt,
+    sellerName: post.shop.shopName,
+    sellerAvatar: post.shop.profilePhotoUrl || '',
+    isVerified: false,
   };
 
   return (
@@ -123,7 +125,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
             <Post.Root>
               <Post.Header>
                 <Post.HeaderInfo>
-                  <Link href={`/${post.sellerId}`} className="flex items-center gap-3">
+                  <Link href={shopHref} className="flex items-center gap-3">
                     <Post.Avatar />
                     <Post.AuthorBlock>
                       <Post.AuthorNameRow>
@@ -139,7 +141,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
               <Post.Media />
 
               <Post.Body>
-                <Link href={`/${post.sellerId}`}>
+                <Link href={shopHref}>
                   <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
                 </Link>
                 <Post.Caption />
