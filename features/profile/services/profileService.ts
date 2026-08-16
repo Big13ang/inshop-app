@@ -2,6 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
+import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
 
 export interface SellerProfilePhone {
   id: string;
@@ -139,16 +140,16 @@ export const profileService = {
 
   useUserProfile(
     username?: string,
-    options?: { initialData?: PublicSellerProfile; enabled?: boolean }
+    options?: { initialData?: SellerPostsByUsernameData; enabled?: boolean }
   ) {
     const trimmed = (username || '').trim();
     const { enabled = true, ...restOptions } = options || {};
 
-    return useQuery<PublicSellerProfile>({
+    return useQuery<SellerPostsByUsernameData>({
       queryKey: queryKeys.user.byUsername(trimmed),
       queryFn: async () => {
-        const res = await http.get<ApiResponse<PublicSellerProfile>>(
-          `/user/profile/${encodeURIComponent(trimmed)}`
+        const res = await http.get<ApiResponse<SellerPostsByUsernameData>>(
+          `/posts/seller/username/${encodeURIComponent(trimmed)}`
         );
         return res.data;
       },

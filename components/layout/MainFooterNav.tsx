@@ -5,7 +5,7 @@ import { useTransition, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { User, LogOut, PlusSquare, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { profileService } from '@/features/profile/services/profileService';
+import { useUser } from '@/features/profile/context/UserContext';
 import { cn, getMediaUrl } from '@/lib/utils';
 import Footer, { type FooterTabConfig } from './Footer';
 import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet';
@@ -20,7 +20,7 @@ export default function MainFooterNav() {
     const pathname = usePathname();
     const router = useRouter();
     const [, startTransition] = useTransition();
-    const { data: meData } = profileService.useMe();
+    const { user: meData } = useUser();
     const [isConfirmLogoutOpen, setIsConfirmLogoutOpen] = useState(false);
 
     const rawPhoto = meData?.sellerProfile?.profilePhotoUrl;
