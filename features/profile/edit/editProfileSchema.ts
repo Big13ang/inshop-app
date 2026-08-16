@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const USERNAME_REGEX = /^(?!.*\.\.)(?!^\.)[a-zA-Z0-9._]{1,30}(?<!\.)$/;
+
 export const profileSchema = z.object({
     shopName: z
         .string()
@@ -14,10 +16,7 @@ export const profileSchema = z.object({
         .min(1, 'نام کاربری الزامی است')
         .min(3, 'نام کاربری باید حداقل ۳ کاراکتر باشد')
         .max(30, 'نام کاربری نباید بیشتر از ۳۰ کاراکتر باشد')
-        .regex(
-            /^(?!.*\.\.)(?!^\.)[a-zA-Z0-9._]{1,30}(?<!\.)$/,
-            'نام کاربری فرمت معتبر ندارد'
-        ),
+        .regex(USERNAME_REGEX, 'نام کاربری فرمت معتبر ندارد'),
     address: z
         .string()
         .min(1, 'آدرس الزامی است')

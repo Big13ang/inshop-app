@@ -99,7 +99,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
     );
   }
 
-  const shopHref = post.shop.username ? `/${post.shop.username}` : '#';
+  const shopHref = post.shop.username ? `/@${post.shop.username}` : '#';
 
   const basePostData: BasePostData = {
     id: post.id,

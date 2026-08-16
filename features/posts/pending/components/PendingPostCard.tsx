@@ -56,6 +56,9 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
   }
 
   const sellerName = post.sellerName || user?.sellerProfile?.shopName || '';
+  const username = post.username || user?.sellerProfile?.username || '';
+  const profileHref = username ? `/@${username}` : '#';
+
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
@@ -69,10 +72,9 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
   return (
     <Post.Provider post={basePostData} onOpenMenu={onOpenMenu}>
       <Post.Root>
-        {/* TODO: Username should be added after the API update */}
         <Post.Header>
           <Post.HeaderInfo>
-            <Link href={`/username_should_be_added`} className="flex items-center gap-3">
+            <Link href={profileHref} className="flex items-center gap-3">
               <Post.Avatar />
               <Post.AuthorBlock>
                 <Post.AuthorNameRow>
@@ -92,7 +94,7 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
         </Post.Media>
 
         <Post.Body>
-          <Link href={`/${post.sellerId}`}>
+          <Link href={profileHref}>
             <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
           </Link>
           <Post.Caption />
