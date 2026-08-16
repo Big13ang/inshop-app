@@ -57,6 +57,7 @@ export interface SellerPost {
   sellerName?: string;
   shopName?: string;
   sellerAvatar?: string;
+  username?: string;
   isVerified?: boolean;
 }
 
