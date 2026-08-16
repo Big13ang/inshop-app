@@ -1,10 +1,10 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http, type PaginatedApiResponse } from '@/lib/utils';
+import { http, type ApiResponse, type PaginatedApiResponse } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
-import type { UserProfile } from '@/features/profile/services/profileService';
+import type { PublicSellerProfile } from '@/features/profile/services/profileService';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 
 export interface UploadSessionData {
@@ -60,6 +60,16 @@ export interface SellerPost {
   isVerified?: boolean;
 }
 
+export interface SellerPostsByUsernameData {
+  shop: PublicSellerProfile;
+  products: SellerPost[];
+  pagination?: {
+    total?: number;
+    nextCursor?: string | null;
+    hasNext?: boolean;
+  };
+}
+
 interface CursorPaginatedResult<T> {
   data: T[];
   pagination: { nextCursor: string | null; hasNext: boolean };
@@ -79,38 +89,11 @@ export async function deleteUploadSessionPhoto({
   );
 }
 
-function toCursorPaginatedResult(res: PaginatedApiResponse<SellerPost>): CursorPaginatedResult<SellerPost> {
-  return {
-    data: res.data,
-    pagination: {
-      nextCursor: res.pagination?.nextCursor ?? null,
-      hasNext: res.pagination?.hasNext ?? false,
-    },
-  };
-}
-
-async function fetchSellerPosts(user: UserProfile | null): Promise<SellerPost[]> {
-  if (!user) return [];
-  const res = await http.get<PaginatedApiResponse<SellerPost>>('/seller/posts');
-  return res.data;
-}
-
-async function fetchSellerPostsPaginated(
-  user: UserProfile | null,
-  cursor?: string | null,
-  limit: number = 6
-): Promise<CursorPaginatedResult<SellerPost>> {
-  if (!user) {
-    return { data: [], pagination: { nextCursor: null, hasNext: false } };
-  }
-  const params = new URLSearchParams({ limit: String(limit) });
-  if (cursor) {
-    params.set('cursor', cursor);
-  }
-  const res = await http.get<PaginatedApiResponse<SellerPost>>('/seller/posts', {
-    searchParams: params,
-  });
-  return toCursorPaginatedResult(res);
+async function fetchPendingRejectedPosts(): Promise<SellerPost[]> {
+  const res = await http.get<ApiResponse<SellerPost[]>>(
+    '/seller/posts/pending-rejected'
+  );
+  return res.data || [];
 }
 
 export async function fetchApprovedPostsBySeller(
@@ -126,18 +109,50 @@ export async function fetchApprovedPostsBySeller(
     `/posts/seller/${encodeURIComponent(sellerId)}`,
     { searchParams: params }
   );
-  return toCursorPaginatedResult(res);
+  return {
+    data: res.data || [],
+    pagination: {
+      nextCursor: res.pagination?.nextCursor ?? null,
+      hasNext: res.pagination?.hasNext ?? false,
+    },
+  };
+}
+
+export async function fetchApprovedPostsByUsername(
+  username: string,
+  cursor?: string | null,
+  limit: number = 12
+): Promise<CursorPaginatedResult<SellerPost>> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) {
+    params.set('cursor', cursor);
+  }
+  const res = await http.get<ApiResponse<SellerPostsByUsernameData>>(
+    `/posts/seller/username/${encodeURIComponent(username)}`,
+    { searchParams: params }
+  );
+  return {
+    data: res.data?.products || [],
+    pagination: {
+      nextCursor: res.data?.pagination?.nextCursor ?? null,
+      hasNext: res.data?.pagination?.hasNext ?? false,
+    },
+  };
 }
 
 export const postsQueryService = {
 
-  usePendingPosts() {
+  /**
+   * Fetch pending and rejected posts for the authenticated seller using GET /seller/posts/pending-rejected.
+   */
+  usePendingRejectedPosts(options?: { enabled?: boolean }) {
     const { user } = useUser();
+    const isEnabled = (options?.enabled ?? true) && !!user;
 
     return useQuery<SellerPost[]>({
-      queryKey: queryKeys.posts.seller(),
-      queryFn: () => fetchSellerPosts(user),
-      enabled: !!user,
+      queryKey: [...queryKeys.posts.seller(), 'pending-rejected'],
+      queryFn: () => fetchPendingRejectedPosts(),
+      enabled: isEnabled,
     });
   },
 
@@ -153,47 +168,19 @@ export const postsQueryService = {
   },
 
   /**
-   * Reads the same `/seller/posts` cache entry as `usePendingPosts` and narrows
-   * it by status, so the profile page adds no extra request.
+   * Infinite cursor query for approved seller posts by username (/posts/seller/username/:username).
    */
-  useSellerPostsByStatus(status: PostStatus) {
-    const { user } = useUser();
-
-    return useQuery<SellerPost[], Error, SellerPost[]>({
-      queryKey: queryKeys.posts.seller(),
-      queryFn: () => fetchSellerPosts(user),
-      enabled: !!user,
-      select: (posts) => posts.filter((post) => post.status === status),
-    });
-  },
-
-  /**
-   * Infinite cursor query for seller posts filtered by status.
-   * For APPROVED status, fetches directly from /posts/seller/:sellerId.
-   * Enables infinite scrolling on profile grids (default page size limit = 6).
-   */
-  useInfiniteSellerPostsByStatus(status: PostStatus, limit: number = 6) {
-    const { user } = useUser();
+  useInfinitePostsByUsername(username?: string, limit: number = 6) {
+    const trimmed = (username || '').trim();
 
     return useInfiniteQuery({
-      queryKey: [...queryKeys.posts.seller(), 'infinite', status, limit, user?.id],
-      queryFn: ({ pageParam }) => {
-        if (status === POST_STATUS.APPROVED && user?.id) {
-          return fetchApprovedPostsBySeller(user.id, pageParam as string | null, limit);
-        }
-        return fetchSellerPostsPaginated(user, pageParam as string | null, limit);
-      },
+      queryKey: [...queryKeys.posts.all, 'seller-username-infinite', trimmed, limit],
+      queryFn: ({ pageParam }) =>
+        fetchApprovedPostsByUsername(trimmed, pageParam as string | null, limit),
       initialPageParam: null as string | null,
       getNextPageParam: (lastPage) =>
         lastPage.pagination?.hasNext ? lastPage.pagination.nextCursor : undefined,
-      enabled: !!user,
-      select: (data) => ({
-        pages: data.pages.map((page) => ({
-          ...page,
-          data: page.data.filter((post) => post.status === status),
-        })),
-        pageParams: data.pageParams,
-      }),
+      enabled: Boolean(trimmed),
     });
   },
 

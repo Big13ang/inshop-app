@@ -7,23 +7,39 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
 import PendingPostsBanner from './PendingPostsBanner';
-import type { SellerProfile, PublicSellerProfile } from '../../services/profileService';
+import { profileService, type SellerProfile, type PublicSellerProfile } from '../../services/profileService';
+import { postsQueryService } from '@/features/posts/services/postsQueryService';
 import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 
 interface ProfileBioSectionProps {
   sellerProfile?: PublicSellerProfile | SellerProfile;
-  publishedCount: number;
-  pendingCount?: number;
 }
 
 
 export default function ProfileBioSection({
   sellerProfile,
-  publishedCount,
-  pendingCount = 0,
 }: ProfileBioSectionProps) {
   const router = useRouter();
+  const { data: me } = profileService.useMe();
+
+  const isOwner = Boolean(
+    me?.sellerProfile?.username &&
+    sellerProfile?.username &&
+    me.sellerProfile.username.toLowerCase() === sellerProfile.username.toLowerCase()
+  );
+
+  const { data: pendingPosts = [] } = postsQueryService.usePendingRejectedPosts({
+    enabled: isOwner,
+  });
+
+  const { data: infiniteData } = postsQueryService.useInfinitePostsByUsername(
+    sellerProfile?.username
+  );
+
+  const publishedCount = infiniteData
+    ? infiniteData.pages.flatMap((page) => page.data).length
+    : 0;
 
   const handleCall = () => {
     const publicProfile = sellerProfile as PublicSellerProfile | undefined;
@@ -38,7 +54,7 @@ export default function ProfileBioSection({
   };
 
   const handleShare = async () => {
-    const storeUrl = `${window.location.origin}/${sellerProfile?.username || ''}`;
+    const storeUrl = `${window.location.origin}/@${sellerProfile?.username || ''}`;
 
     await copyToClipboard(storeUrl, {
       onSuccess: () => toast.success(text.overview.shareCopied),
@@ -88,8 +104,8 @@ export default function ProfileBioSection({
       ) : null}
 
       {/* Pending Banner */}
-      {pendingCount > 0 ? (
-        <PendingPostsBanner pendingCount={pendingCount} />
+      {isOwner && pendingPosts.length > 0 ? (
+        <PendingPostsBanner pendingCount={pendingPosts.length} />
       ) : null}
 
       {/* Action Buttons */}
@@ -104,17 +120,19 @@ export default function ProfileBioSection({
           <span>{text.overview.callAction}</span>
         </Button>
 
-        <Button
-          id="profile-edit-btn"
-          variant="secondary"
-          onClick={handleEditProfile}
-          title={text.overview.editActionTitle}
-          aria-label={text.overview.editActionTitle}
-          className="px-3 h-12 font-bold text-xs rounded-xl gap-1.5 shrink-0 border border-zinc-200 active:scale-98"
-        >
-          <Settings className="w-4 h-4" />
-          <span className="hidden sm:inline">{text.overview.editAction}</span>
-        </Button>
+        {isOwner && (
+          <Button
+            id="profile-edit-btn"
+            variant="secondary"
+            onClick={handleEditProfile}
+            title={text.overview.editActionTitle}
+            aria-label={text.overview.editActionTitle}
+            className="px-3 h-12 font-bold text-xs rounded-xl gap-1.5 shrink-0 border border-zinc-200 active:scale-98"
+          >
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">{text.overview.editAction}</span>
+          </Button>
+        )}
 
         <Button
           id="profile-share-btn"

@@ -15,7 +15,7 @@ interface PendingPostsViewProps {
 }
 
 export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
-  const { data: posts = [] } = postsQueryService.usePendingPosts();
+  const { data: posts = [] } = postsQueryService.usePendingRejectedPosts();
   const deletePost = postsQueryService.useDeletePendingPost();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const activePost = posts.find((post) => post.id === activeMenuId);

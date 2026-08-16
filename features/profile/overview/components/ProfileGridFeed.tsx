@@ -1,32 +1,37 @@
 'use client';
 
 import { useInView } from 'react-intersection-observer';
-import type { SellerPost } from '@/features/posts/services/postsQueryService';
+import { postsQueryService } from '@/features/posts/services/postsQueryService';
 import { ProfileEmptyState } from './ProfileGridEmptyState';
 import ProfileGridItem from './ProfileGridItem';
 
 interface ProfileGridFeedProps {
-  posts?: SellerPost[];
+  username?: string;
   onPostClick?: (id: string) => void;
-  onLoadMore?: () => void;
-  hasNextPage?: boolean;
-  isFetchingNextPage?: boolean;
 }
 
 export default function ProfileGridFeed({
-  posts = [],
+  username,
   onPostClick,
-  onLoadMore,
-  hasNextPage = false,
-  isFetchingNextPage = false,
 }: ProfileGridFeedProps) {
+  const {
+    data: infiniteData,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = postsQueryService.useInfinitePostsByUsername(username);
+
+  const posts = infiniteData
+    ? infiniteData.pages.flatMap((page) => page.data)
+    : [];
+
   const { ref } = useInView({
     threshold: 0.1,
     onChange: (visible) => {
       if (!visible) return;
 
       if (hasNextPage && !isFetchingNextPage) {
-        onLoadMore?.();
+        fetchNextPage();
       }
     },
   });
@@ -60,7 +65,6 @@ export default function ProfileGridFeed({
     </div>
   );
 }
-
 
 function LoadingSpinner() {
   return (
