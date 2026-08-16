@@ -17,6 +17,9 @@ export const getPublicSellerProfile = cache(
     );
 
     if (!resResult.ok || !resResult.value?.data) {
+      if (!resResult.ok) {
+        console.warn(`[getPublicSellerProfile] Server fetch failed for "${trimmed}":`, resResult.error);
+      }
       return null;
     }
 

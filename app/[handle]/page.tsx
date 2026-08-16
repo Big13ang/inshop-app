@@ -53,9 +53,6 @@ async function ProfileHandleContent({ params }: ProfilePageProps) {
     }
 
     const initialData = await getPublicSellerProfile(username);
-    if (!initialData?.shop) {
-        notFound();
-    }
 
     return <PublicProfileView username={username} initialData={initialData} />;
 }

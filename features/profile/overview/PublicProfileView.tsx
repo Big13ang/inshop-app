@@ -28,7 +28,8 @@ export default function PublicProfileView({ username, initialData }: PublicProfi
   const activeData = profileData ?? initialData;
 
   if (isLoading && !activeData) return <ProfileOverviewSkeleton />;
-  if (!activeData?.shop) notFound();
+  if (!isLoading && !activeData?.shop) notFound();
+  if (!activeData?.shop) return <ProfileOverviewSkeleton />;
 
   return <ProfileView profile={activeData.shop} isOwner={isOwner} />;
 }
