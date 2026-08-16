@@ -17,6 +17,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "inShop | اینشاپ ",
+  // enamad validation
+  other: {
+    enamad: "26426690",
+  },
   icons: {
     icon: [
       { url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
@@ -50,6 +54,10 @@ export default function RootLayout({
       className="overflow-hidden w-full max-w-full"
       suppressHydrationWarning
     >
+      <head>
+        {/* enamad validation */}
+        <meta name="enamad" content="26426690" />
+      </head>
       <body className="flex flex-col overflow-hidden w-full max-w-full md:items-center bg-background">
         <div className="safe-area h-full w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden">
           <div className="app-shell flex flex-col h-full w-full overflow-x-hidden overflow-y-hidden md:bg-background">
