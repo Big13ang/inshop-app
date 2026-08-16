@@ -1,6 +1,6 @@
 import PostSlider from '@/components/ui/PostSlider';
 import { usePostContext } from './PostContext';
-import { getMediaUrl } from '../../utils/media';
+import { getMediaUrl } from '@/lib/utils';
 
 interface PostMediaProps {
   children?: React.ReactNode;

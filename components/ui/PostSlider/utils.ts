@@ -7,7 +7,7 @@ export const CONTAINER_CLASSES =
   'relative w-full h-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-50 overflow-hidden';
 
 export const slideContainer = cva(
-  'keen-slider__slide relative flex items-center justify-center',
+  'keen-slider__slide relative flex items-center justify-center w-full h-full min-h-full',
   {
     variants: {
       objectFit: {

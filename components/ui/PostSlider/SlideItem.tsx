@@ -16,6 +16,10 @@ export function SlideItem({
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
+  if (!item?.url) {
+    return null;
+  }
+
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     setIsLoaded(true);
     const img = e.currentTarget;

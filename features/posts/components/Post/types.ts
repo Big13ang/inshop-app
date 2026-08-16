@@ -1,11 +1,15 @@
-import type { BackendMedia } from '../../services/postsQueryService';
+export interface PostMediaItem {
+  url?: string | null;
+  storageKey?: string | null;
+}
 
 export interface BasePostData {
   id: string;
   description: string;
-  media?: BackendMedia[];
+  media?: PostMediaItem[];
   createdAt: string;
   sellerName: string;
   sellerAvatar: string;
   isVerified: boolean;
 }
+

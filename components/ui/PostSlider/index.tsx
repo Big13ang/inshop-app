@@ -141,7 +141,7 @@ export default function PostSlider({
       <div ref={sliderRef} className="keen-slider h-full w-full">
         {items.map((item, idx) => (
           <SlideItem
-            key={item.url}
+            key={item?.url || idx}
             item={item}
             idx={idx}
             objectFit={objectFit}
