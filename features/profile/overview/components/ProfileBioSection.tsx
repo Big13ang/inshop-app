@@ -7,27 +7,22 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
 import PendingPostsBanner from './PendingPostsBanner';
-import { profileService, type SellerProfile, type PublicSellerProfile } from '../../services/profileService';
+import { type SellerProfile, type PublicSellerProfile } from '../../services/profileService';
 import { postsQueryService } from '@/features/posts/services/postsQueryService';
 import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 
 interface ProfileBioSectionProps {
   sellerProfile?: PublicSellerProfile | SellerProfile;
+  isOwner?: boolean;
 }
 
 
 export default function ProfileBioSection({
   sellerProfile,
+  isOwner = false,
 }: ProfileBioSectionProps) {
   const router = useRouter();
-  const { data: me } = profileService.useMe();
-
-  const isOwner = Boolean(
-    me?.sellerProfile?.username &&
-    sellerProfile?.username &&
-    me.sellerProfile.username.toLowerCase() === sellerProfile.username.toLowerCase()
-  );
 
   const { data: pendingPosts = [] } = postsQueryService.usePendingRejectedPosts({
     enabled: isOwner,
