@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
-import type { BackendPost, BackendMedia } from '@/features/posts/services/postsQueryService';
-import { getMediaUrl } from '@/features/posts/utils/media';
+import type { SellerPost, BackendMedia } from '@/features/posts/services/postsQueryService';
+import { getMediaUrl } from '@/lib/utils';
 
 interface Props {
-    post: BackendPost;
+    post: SellerPost;
     onClick?: (id: string) => void;
 }
 
@@ -49,7 +49,7 @@ export default function ProfileGridItem({ post, onClick }: Props) {
     );
 }
 
-function getImages(post: BackendPost) {
+function getImages(post: SellerPost) {
     return (
         post.media
             ?.map((media: BackendMedia) => getMediaUrl(media))

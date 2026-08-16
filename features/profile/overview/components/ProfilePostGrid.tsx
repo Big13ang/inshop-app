@@ -2,8 +2,8 @@
 
 import { Images, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getMediaUrl } from '@/features/posts/utils/media';
-import type { PendingPost } from '@/features/posts/pending/types';
+import { getMediaUrl } from '@/lib/utils';
+import type { SellerPost } from '@/features/posts/services/postsQueryService';
 import { text } from '../../constants';
 
 /** First sentence of the caption — enough to label a thumbnail without dumping the whole post. */
@@ -12,7 +12,7 @@ function getCaptionLabel(description: string): string {
 }
 
 interface ProfileGridCellProps {
-  post: PendingPost;
+  post: SellerPost;
 }
 
 function ProfileGridCell({ post }: ProfileGridCellProps) {
@@ -56,7 +56,7 @@ function ProfileGridCell({ post }: ProfileGridCellProps) {
 }
 
 interface ProfilePostGridProps {
-  posts: PendingPost[];
+  posts: SellerPost[];
   onAddPost: () => void;
 }
 

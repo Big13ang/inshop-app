@@ -8,15 +8,14 @@ import type { BasePostData } from '@/features/posts/components/Post/types';
 import { useUser } from '@/features/profile/context/UserContext';
 import { text } from '../constants';
 import RejectionOverlay from './RejectionOverlay';
-import type { PendingPost } from '../types';
-import { POST_STATUS } from '../../services/postsQueryService';
+import { POST_STATUS, type SellerPost } from '../../services/postsQueryService';
 
 interface PendingPostCardProps {
-  post: PendingPost;
+  post: SellerPost;
   onOpenMenu: (id: string) => void;
 }
 
-function PendingStatusOverlay({ status, rejectReason }: { status: PendingPost['status']; rejectReason?: string | null }) {
+function PendingStatusOverlay({ status, rejectReason }: { status: SellerPost['status']; rejectReason?: string | null }) {
   const { state, actions } = usePostContext();
   const isRejected = status === POST_STATUS.REJECTED;
 

@@ -1,12 +1,12 @@
 'use client';
 
 import { useInView } from 'react-intersection-observer';
-import type { BackendPost } from '@/features/posts/services/postsQueryService';
+import type { SellerPost } from '@/features/posts/services/postsQueryService';
 import { ProfileEmptyState } from './ProfileGridEmptyState';
 import ProfileGridItem from './ProfileGridItem';
 
 interface ProfileGridFeedProps {
-  posts?: BackendPost[];
+  posts?: SellerPost[];
   onPostClick?: (id: string) => void;
   onLoadMore?: () => void;
   hasNextPage?: boolean;
