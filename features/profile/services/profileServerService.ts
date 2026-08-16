@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { http, Result, type ApiResponse } from '@/lib/utils';
-import type { PublicSellerProfile, UserMe } from './profileService';
+import type { UserMe } from './profileService';
 import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
 import { debugAuth } from '@/lib/utils/authDebug';
 
