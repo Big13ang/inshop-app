@@ -370,6 +370,32 @@ export const handlers = [
       ...(isTaken ? { reason: 'USERNAME_TAKEN' } : {}),
     });
   }),
+  http.get('http://localhost:3000/user/profile/:username', ({ params }) => {
+    return HttpResponse.json({
+      success: true,
+      data: {
+        username: params.username,
+        shopName: 'Test Seller',
+        bio: 'Bio text',
+        profilePhotoUrl: null,
+        shopPhoneNumber: '09121111111',
+        address: 'Tehran',
+      },
+    });
+  }),
+  http.get('/user/profile/:username', ({ params }) => {
+    return HttpResponse.json({
+      success: true,
+      data: {
+        username: params.username,
+        shopName: 'Test Seller',
+        bio: 'Bio text',
+        profilePhotoUrl: null,
+        shopPhoneNumber: '09121111111',
+        address: 'Tehran',
+      },
+    });
+  }),
   http.get('http://localhost:3000/seller-profile/check-username/:username', ({ params }) => {
     const isTaken = params.username === 'taken';
     return HttpResponse.json({

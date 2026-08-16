@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 import os from "os";
-import "./env.ts";
+import "./env";
 
 const getLocalIPs = () => {
   const interfaces = os.networkInterfaces();

@@ -1,8 +1,8 @@
-import type { PendingPost } from '../features/posts/pending/types';
+import type { SellerPost } from '../features/posts/services/postsQueryService';
 
 // Shared seed data for the dev-only /api/posts mock route and the MSW test
 // handlers, so both surfaces describe the same fixture instead of drifting.
-export function createPendingPostsFixture(): PendingPost[] {
+export function createPendingPostsFixture(): SellerPost[] {
   return [
     {
       id: 'pending-1',

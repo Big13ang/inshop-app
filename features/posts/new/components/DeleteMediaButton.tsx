@@ -32,15 +32,19 @@ export default function DeleteMediaButton({ mediaId }: DeleteMediaButtonProps) {
   }
 
   function handleConfirmDelete() {
-    if (!session?.uploadSessionId) return;
-
     const mediaItem = useMediaStore.getState().mediaList.find((i) => i.id === mediaId);
-    if (!mediaItem?.serverMediaId) return;
+    const isUploadedToServer = Boolean(mediaItem?.serverMediaId && session?.uploadSessionId);
+
+    if (!isUploadedToServer) {
+      useMediaStore.getState().removeItem(mediaId);
+      setIsDialogOpen(false);
+      return;
+    }
 
     deletePhotoMutation(
       {
-        mediaId: mediaItem.serverMediaId,
-        uploadSessionId: session.uploadSessionId,
+        mediaId: mediaItem!.serverMediaId!,
+        uploadSessionId: session!.uploadSessionId,
       },
       {
         onSettled: () => setIsDialogOpen(false),

@@ -16,6 +16,10 @@ export function SlideItem({
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
+  if (!item?.url) {
+    return null;
+  }
+
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     setIsLoaded(true);
     const img = e.currentTarget;
@@ -45,7 +49,7 @@ export function SlideItem({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={item.url}
-        alt={`Product showcase ${idx + 1}`}
+        alt={item.alt || `Product showcase ${idx + 1}`}
         className={cn(
           objectFit === 'contain' ? 'object-contain' : 'object-cover',
           'w-full h-full select-none relative z-10'

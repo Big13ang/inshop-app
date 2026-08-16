@@ -6,8 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { User, LogOut, PlusSquare, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { profileService } from '@/features/profile/services/profileService';
-import { getMediaUrl } from '@/features/posts/utils/media';
-import { cn } from '@/lib/utils';
+import { cn, getMediaUrl } from '@/lib/utils';
 import Footer, { type FooterTabConfig } from './Footer';
 import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet';
 

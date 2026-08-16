@@ -18,6 +18,30 @@ describe('Ky-backed HTTP client instances', () => {
   });
 });
 
+describe('handleJsonResponse', () => {
+  it('returns undefined for 204 No Content response without calling json()', async () => {
+    const { handleJsonResponse } = await import('../httpConfig');
+    const mockResponse = {
+      status: 204,
+      text: jest.fn().mockResolvedValue(''),
+    } as unknown as Response;
+
+    const result = await handleJsonResponse(Promise.resolve(mockResponse));
+    expect(result).toBeUndefined();
+  });
+
+  it('returns undefined for empty text response', async () => {
+    const { handleJsonResponse } = await import('../httpConfig');
+    const mockResponse = {
+      status: 200,
+      text: jest.fn().mockResolvedValue('  '),
+    } as unknown as Response;
+
+    const result = await handleJsonResponse(Promise.resolve(mockResponse));
+    expect(result).toBeUndefined();
+  });
+});
+
 describe('parseBackendError', () => {
   it('updates error.message and error.code from response JSON', async () => {
     const mockResponse = {

@@ -4,6 +4,7 @@
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
+import { cn } from '@/lib/utils';
 
 const DEFAULT_EASING = (t: number) => 1 - Math.pow(1 - t, 4);
 const emptySubscribe = () => () => {};
@@ -12,7 +13,7 @@ const getServerSnapshot = () => false;
 
 interface PostSliderProps {
   images?: string[];
-  media?: { url: string; type?: 'image' | 'video' }[];
+  media?: { url: string; type?: 'image' | 'video'; alt?: string }[];
   activeSlide?: number;
   onSlideChange?: (index: number) => void;
   objectFit?: 'cover' | 'contain';
@@ -23,15 +24,18 @@ function SlideItem({
   idx,
   objectFit,
 }: {
-  item: { url: string; type: 'image' | 'video' };
+  item: { url: string; type: 'image' | 'video'; alt?: string };
   idx: number;
   objectFit: 'cover' | 'contain';
 }) {
+  const isContain = objectFit === 'contain';
+
   return (
     <div
-      className={`keen-slider__slide relative flex items-center justify-center ${
-        objectFit === 'contain' ? 'bg-black' : 'bg-neutral-100 dark:bg-zinc-900'
-      }`}
+      className={cn(
+        'keen-slider__slide relative flex items-center justify-center',
+        isContain ? 'bg-black' : 'bg-neutral-100 dark:bg-zinc-900'
+      )}
       id={`slide-${idx}`}
     >
       {item.type === 'video' ? (
@@ -42,18 +46,20 @@ function SlideItem({
           playsInline
           loop
           muted
-          className={`w-full h-full ${
-            objectFit === 'contain' ? 'object-contain' : 'object-cover'
-          } select-none`}
+          className={cn(
+            'h-full w-full select-none',
+            isContain ? 'object-contain' : 'object-cover'
+          )}
           id={`slide-video-${idx}`}
         />
       ) : (
         <img
           src={item.url}
-          alt={`Product showcase ${idx + 1}`}
-          className={`w-full h-full ${
-            objectFit === 'contain' ? 'object-contain' : 'object-cover'
-          } select-none`}
+          alt={item.alt || `Product showcase ${idx + 1}`}
+          className={cn(
+            'h-full w-full select-none',
+            isContain ? 'object-contain' : 'object-cover'
+          )}
           id={`slide-img-${idx}`}
           loading="lazy"
           referrerPolicy="no-referrer"
@@ -73,23 +79,24 @@ function BulletDot({
   onClick: (idx: number) => void;
 }) {
   const distance = Math.abs(currentSlide - idx);
-  let scaleClass = 'scale-100';
-  if (distance > 2) scaleClass = 'scale-50 opacity-20';
-  else if (distance === 2) scaleClass = 'scale-75 opacity-40';
-  else if (distance === 1) scaleClass = 'scale-90 opacity-70';
-
   const isCurrent = currentSlide === idx;
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick(idx);
+  };
 
   return (
     <button
       type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick(idx);
-      }}
-      className={`w-1.5 h-1.5 rounded-full bg-white transition-all duration-200 pointer-events-auto cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.35)] ${
-        isCurrent ? 'w-2.5 bg-white opacity-100' : 'bg-white/60'
-      } ${scaleClass}`}
+      onClick={handleClick}
+      className={cn(
+        'h-1.5 w-1.5 rounded-full bg-white transition-all duration-200 pointer-events-auto cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.35)]',
+        isCurrent ? 'w-2.5 opacity-100' : 'bg-white/60',
+        distance === 1 && 'scale-90 opacity-70',
+        distance === 2 && 'scale-75 opacity-40',
+        distance > 2 && 'scale-50 opacity-20'
+      )}
       aria-label={`Go to slide ${idx + 1}`}
       id={`slider-dot-${idx}`}
     />

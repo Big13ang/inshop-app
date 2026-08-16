@@ -1,13 +1,11 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
-import type { PaginatedApiResponse } from '@/lib/utils';
+import { http, type PaginatedApiResponse } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
 import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
 import type { UserProfile } from '@/features/profile/services/profileService';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
-import { useMediaStore } from '../new/services/mediaStore';
 
 export interface UploadSessionData {
   uploadSessionId: string;
@@ -45,7 +43,7 @@ export const POST_STATUS = {
 
 export type PostStatus = typeof POST_STATUS[keyof typeof POST_STATUS];
 
-export interface BackendPost {
+export interface SellerPost {
   id: string;
   sellerId: string;
   description: string;
@@ -56,6 +54,10 @@ export interface BackendPost {
   reviewedBy: string | null;
   reviewedAt: string | null;
   media?: BackendMedia[];
+  sellerName?: string;
+  shopName?: string;
+  sellerAvatar?: string;
+  isVerified?: boolean;
 }
 
 interface CursorPaginatedResult<T> {
@@ -77,7 +79,7 @@ export async function deleteUploadSessionPhoto({
   );
 }
 
-function toCursorPaginatedResult(res: PaginatedApiResponse<BackendPost>): CursorPaginatedResult<BackendPost> {
+function toCursorPaginatedResult(res: PaginatedApiResponse<SellerPost>): CursorPaginatedResult<SellerPost> {
   return {
     data: res.data,
     pagination: {
@@ -87,9 +89,9 @@ function toCursorPaginatedResult(res: PaginatedApiResponse<BackendPost>): Cursor
   };
 }
 
-async function fetchSellerPosts(user: UserProfile | null): Promise<BackendPost[]> {
+async function fetchSellerPosts(user: UserProfile | null): Promise<SellerPost[]> {
   if (!user) return [];
-  const res = await http.get<PaginatedApiResponse<BackendPost>>('/seller/posts');
+  const res = await http.get<PaginatedApiResponse<SellerPost>>('/seller/posts');
   return res.data;
 }
 
@@ -97,7 +99,7 @@ async function fetchSellerPostsPaginated(
   user: UserProfile | null,
   cursor?: string | null,
   limit: number = 6
-): Promise<CursorPaginatedResult<BackendPost>> {
+): Promise<CursorPaginatedResult<SellerPost>> {
   if (!user) {
     return { data: [], pagination: { nextCursor: null, hasNext: false } };
   }
@@ -105,30 +107,34 @@ async function fetchSellerPostsPaginated(
   if (cursor) {
     params.set('cursor', cursor);
   }
-  const endpoint = `/seller/posts?${params.toString()}`;
-  const res = await http.get<PaginatedApiResponse<BackendPost>>(endpoint);
+  const res = await http.get<PaginatedApiResponse<SellerPost>>('/seller/posts', {
+    searchParams: params,
+  });
   return toCursorPaginatedResult(res);
 }
 
 export async function fetchApprovedPostsBySeller(
   sellerId: string,
   cursor?: string | null,
-  limit: number = 20
-): Promise<CursorPaginatedResult<BackendPost>> {
+  limit: number = 12
+): Promise<CursorPaginatedResult<SellerPost>> {
   const params = new URLSearchParams({ limit: String(limit) });
   if (cursor) {
     params.set('cursor', cursor);
   }
-  const endpoint = `/posts/seller/${encodeURIComponent(sellerId)}?${params.toString()}`;
-  const res = await http.get<PaginatedApiResponse<BackendPost>>(endpoint);
+  const res = await http.get<PaginatedApiResponse<SellerPost>>(
+    `/posts/seller/${encodeURIComponent(sellerId)}`,
+    { searchParams: params }
+  );
   return toCursorPaginatedResult(res);
 }
 
 export const postsQueryService = {
+
   usePendingPosts() {
     const { user } = useUser();
 
-    return useQuery<BackendPost[]>({
+    return useQuery<SellerPost[]>({
       queryKey: queryKeys.posts.seller(),
       queryFn: () => fetchSellerPosts(user),
       enabled: !!user,
@@ -139,7 +145,7 @@ export const postsQueryService = {
    * Fetch approved posts for a specific seller by sellerId using GET /posts/seller/:sellerId.
    */
   useApprovedPostsBySeller(sellerId?: string, limit: number = 20) {
-    return useQuery<CursorPaginatedResult<BackendPost>>({
+    return useQuery<CursorPaginatedResult<SellerPost>>({
       queryKey: [...queryKeys.posts.all, 'seller-approved', sellerId, limit],
       queryFn: () => fetchApprovedPostsBySeller(sellerId!, null, limit),
       enabled: !!sellerId,
@@ -153,7 +159,7 @@ export const postsQueryService = {
   useSellerPostsByStatus(status: PostStatus) {
     const { user } = useUser();
 
-    return useQuery<BackendPost[], Error, BackendPost[]>({
+    return useQuery<SellerPost[], Error, SellerPost[]>({
       queryKey: queryKeys.posts.seller(),
       queryFn: () => fetchSellerPosts(user),
       enabled: !!user,
@@ -233,8 +239,7 @@ export const postsQueryService = {
   useDeleteUploadSessionPhoto() {
     return useMutation({
       mutationFn: deleteUploadSessionPhoto,
-      onSuccess: (_data, { mediaId }) => {
-        useMediaStore.getState().removeItem(mediaId);
+      onSuccess: () => {
         toast.success(ERROR_MESSAGES.posts.imageDeleteSuccess);
       },
       onError: () => {

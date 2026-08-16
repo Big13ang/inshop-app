@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
 export const profileSchema = z.object({
-    shopName: z.string().min(1, 'نام فروشگاه الزامی است'),
+    shopName: z
+        .string()
+        .min(1, 'نام فروشگاه الزامی است')
+        .max(45, 'نام فروشگاه باید کمتر از 45 کاراکتر باشد'),
     shopPhoneNumber: z
         .string()
         .length(11, 'شماره تلفن فروشگاه الزامی است')

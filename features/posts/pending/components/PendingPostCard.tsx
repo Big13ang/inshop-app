@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Clock, AlertOctagon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Post, usePostContext } from '@/features/posts/components/Post';
@@ -7,15 +8,14 @@ import type { BasePostData } from '@/features/posts/components/Post/types';
 import { useUser } from '@/features/profile/context/UserContext';
 import { text } from '../constants';
 import RejectionOverlay from './RejectionOverlay';
-import type { PendingPost } from '../types';
-import { POST_STATUS } from '../../services/postsQueryService';
+import { POST_STATUS, type SellerPost } from '../../services/postsQueryService';
 
 interface PendingPostCardProps {
-  post: PendingPost;
+  post: SellerPost;
   onOpenMenu: (id: string) => void;
 }
 
-function PendingStatusOverlay({ status, rejectReason }: { status: PendingPost['status']; rejectReason?: string | null }) {
+function PendingStatusOverlay({ status, rejectReason }: { status: SellerPost['status']; rejectReason?: string | null }) {
   const { state, actions } = usePostContext();
   const isRejected = status === POST_STATUS.REJECTED;
 
@@ -55,44 +55,46 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
     // Rendered outside UserProvider in unit tests
   }
 
-  const postAny = post as unknown as Record<string, unknown>;
-  const sellerName = (postAny.sellerName as string) || user?.sellerProfile?.shopName || '';
+  const sellerName = post.sellerName || user?.sellerProfile?.shopName || '';
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
     media: post.media,
     createdAt: post.createdAt,
     sellerName,
-    sellerAvatar: (postAny.sellerAvatar as string) || user?.sellerProfile?.profilePhotoUrl || '',
-    isVerified: typeof postAny.isVerified === 'boolean' ? postAny.isVerified : !!user?.isVerifiedSeller,
+    sellerAvatar: post.sellerAvatar || user?.sellerProfile?.profilePhotoUrl || '',
+    isVerified: post.isVerified ?? !!user?.isVerifiedSeller,
   };
 
   return (
     <Post.Provider post={basePostData} onOpenMenu={onOpenMenu}>
       <Post.Root>
+        {/* TODO: Username should be added after the API update */}
         <Post.Header>
           <Post.HeaderInfo>
-            <Post.Avatar />
-            <Post.AuthorBlock>
-              <Post.AuthorNameRow>
-                <Post.AuthorName />
-                <Post.VerifiedBadge />
-              </Post.AuthorNameRow>
-              <Post.Timestamp />
-            </Post.AuthorBlock>
+            <Link href={`/username_should_be_added`} className="flex items-center gap-3">
+              <Post.Avatar />
+              <Post.AuthorBlock>
+                <Post.AuthorNameRow>
+                  <Post.AuthorName />
+                  <Post.VerifiedBadge />
+                </Post.AuthorNameRow>
+                <Post.Timestamp />
+              </Post.AuthorBlock>
+            </Link>
           </Post.HeaderInfo>
 
           <Post.MenuButton />
         </Post.Header>
 
         <Post.Media>
-          <PendingStatusOverlay
-            status={post.status}
-            rejectReason={post.rejectReason} />
+          <PendingStatusOverlay status={post.status} rejectReason={post.rejectReason} />
         </Post.Media>
 
         <Post.Body>
-          <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
+          <Link href={`/${post.sellerId}`}>
+            <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
+          </Link>
           <Post.Caption />
         </Post.Body>
       </Post.Root>
