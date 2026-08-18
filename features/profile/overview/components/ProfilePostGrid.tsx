@@ -1,6 +1,6 @@
 'use client';
 
-import { Images, ImageOff } from 'lucide-react';
+import { ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getMediaUrl } from '@/lib/utils';
 import type { SellerPost } from '@/features/posts/services/postsQueryService';
@@ -17,7 +17,6 @@ interface ProfileGridCellProps {
 
 function ProfileGridCell({ post }: ProfileGridCellProps) {
   const cover = post.media?.[0];
-  const hasMultipleMedia = (post.media?.length ?? 0) > 1;
   const captionLabel = getCaptionLabel(post.description);
 
   return (
@@ -42,15 +41,6 @@ function ProfileGridCell({ post }: ProfileGridCellProps) {
           <ImageOff className="size-5" aria-hidden="true" />
         </span>
       )}
-
-      {hasMultipleMedia ? (
-        <span
-          className="absolute top-1.5 right-1.5 rounded-chip bg-black/60 p-1.5 text-white"
-          title={text.overview.gridMultiMediaLabel}
-        >
-          <Images className="size-3" aria-hidden="true" />
-        </span>
-      ) : null}
     </figure>
   );
 }
