@@ -18,6 +18,19 @@ export function goBackSafely(router: AppRouterInstance) {
   }
 }
 
+/**
+ * Constructs a login URL with an optional callback URL target.
+ *
+ * @param targetUrl Optional target path or full URL to redirect back to after login.
+ * @returns Encoded login URL string with callbackUrl query param if targetUrl is valid.
+ */
+export function getLoginUrlWithCallback(targetUrl?: string | null): string {
+  if (!targetUrl || targetUrl.startsWith('/auth')) {
+    return '/auth/login';
+  }
+  return `/auth/login?callbackUrl=${encodeURIComponent(targetUrl)}`;
+}
+
 // Export helpers for tests
 export function getIsInternal() {
   return isInternal;
@@ -26,3 +39,4 @@ export function getIsInternal() {
 export function setIsInternal(val: boolean) {
   isInternal = val;
 }
+

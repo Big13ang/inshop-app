@@ -6,6 +6,7 @@ import { PostAuthorName } from './PostAuthorName';
 import { PostTimestamp } from './PostTimestamp';
 import { PostMenuButton } from './PostMenuButton';
 import { PostMedia } from './PostMedia';
+import { PostActions } from './PostActions';
 import { PostStatusBadge } from './PostStatusBadge';
 import { PostBody } from './PostBody';
 import { PostCaption } from './PostCaption';
@@ -23,11 +24,13 @@ export const Post = {
   Timestamp: PostTimestamp,
   MenuButton: PostMenuButton,
   Media: PostMedia,
+  Actions: PostActions,
   StatusBadge: PostStatusBadge,
   Body: PostBody,
   Caption: PostCaption,
   VerifiedBadge: PostVerifiedBadge,
 };
 
+export { PostActions };
 export { usePostContext } from './PostContext';
 export type { BasePostData } from './types';

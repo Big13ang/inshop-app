@@ -3,7 +3,7 @@
 
 import { useTransition, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, LogOut, PlusSquare, Send } from 'lucide-react';
+import { User, PlusSquare, Send, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/features/profile/context/UserContext';
 import { cn, getMediaUrl } from '@/lib/utils';
@@ -11,6 +11,7 @@ import Footer, { type FooterTabConfig } from './Footer';
 import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet';
 
 const ROUTES = {
+    home: '/',
     profile: '/app/profile',
     newPost: '/app/posts/new',
     login: '/auth/login',
@@ -33,7 +34,6 @@ export default function MainFooterNav() {
         });
     }
 
-    const handleOpenConfirmLogout = () => setIsConfirmLogoutOpen(true);
     const handleCloseConfirmLogoutModal = () => setIsConfirmLogoutOpen(false);
 
     function handleMessageClick() {
@@ -113,11 +113,10 @@ export default function MainFooterNav() {
             onPress: navigate,
         },
         {
-            id: 'logout',
-            icon: LogOut,
-            label: 'خروج',
-            isActionButton: true,
-            onPress: handleOpenConfirmLogout,
+            id: ROUTES.home,
+            icon: Home,
+            label: 'خانه',
+            onPress: navigate,
         },
     ];
 

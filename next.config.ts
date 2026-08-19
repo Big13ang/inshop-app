@@ -26,15 +26,6 @@ const nextConfig: NextConfig = {
     turbopackRustReactCompiler: true,
   },
   allowedDevOrigins: getLocalIPs(),
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/app/profile',
-        permanent: false,
-      },
-    ];
-  },
   images: {
     qualities: [75, 100]
   }
