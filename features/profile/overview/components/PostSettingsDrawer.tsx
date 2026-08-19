@@ -3,6 +3,8 @@
 import { Copy, Share2, Bookmark, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Menu } from '@/components/ui/Menu';
+import { copyToClipboard } from '@/lib/utils/copyToClipboard';
+import { canShare, shareContent } from '@/lib/utils/shareContent';
 
 export interface DrawerPostItem {
   id: string;
@@ -37,24 +39,30 @@ export default function PostSettingsDrawer({
   const isBookmarked = !!post.isBookmarked;
   const shareUrl = `https://inshop.ir/post/${post.id}`;
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (onCopyLink) {
       onCopyLink(post);
     } else {
-      navigator.clipboard.writeText(shareUrl).then(() => {
-        toast.success('لینک پست با موفقیت کپی شد! 📋');
+      await copyToClipboard(shareUrl, {
+        onSuccess: () => toast.success('لینک پست با موفقیت کپی شد!'),
       });
     }
     onClose();
   };
 
-  const handleShareMessage = () => {
+  const handleShareMessage = async () => {
     if (onSharePost) {
       onSharePost(post);
+    } else if (canShare()) {
+      await shareContent({
+        title: shopName,
+        text: `سلام! این پست فوق‌العاده از فروشگاه "${shopName}" رو توی inShop ببینید`,
+        url: shareUrl,
+      });
     } else {
       const shareMessage = `سلام! این پست فوق‌العاده از فروشگاه "${shopName}" رو توی inShop ببینید: ${shareUrl}`;
-      navigator.clipboard.writeText(shareMessage).then(() => {
-        toast.success('پیام اشتراک‌گذاری کپی شد! 🚀');
+      await copyToClipboard(shareMessage, {
+        onSuccess: () => toast.success('پیام اشتراک‌گذاری کپی شد!'),
       });
     }
     onClose();
