@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
-import { text } from '../constants';
+import { text, PROFILE_ROUTES } from '../constants';
 import AvatarField from './components/AvatarField';
 import ShopSection from './components/ShopSection';
 import BioSection from './components/BioSection';
@@ -45,8 +46,15 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
 
 
 export default function EditProfileView() {
-  const { user } = useUser();
+  const { user, isVerifying } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    if (isVerifying || !user) return;
+    if (!user.isVerifiedSeller) {
+      router.replace(PROFILE_ROUTES.unverified);
+    }
+  }, [user, isVerifying, router]);
 
   const createProfileMutation = useCreateProfile(() => {
     router.push('/app/profile');
