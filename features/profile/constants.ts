@@ -11,6 +11,7 @@ export const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] a
 export const PROFILE_ROUTES = {
   overview: '/app/profile',
   edit: '/app/profile/edit',
+  unverified: '/app/profile/unverified',
   pendingPosts: '/app/posts/pending',
   newPost: '/app/posts/new',
 } as const;
@@ -85,5 +86,12 @@ export const text = {
     cancelAction: 'انصراف',
     saveSuccess: 'تغییرات پروفایل با موفقیت ذخیره شد.',
     noChanges: 'تغییری برای ذخیره وجود ندارد.',
+  },
+
+  unverified: {
+    title: 'شما فروشنده تأیید شده نیستید',
+    badge: 'دسترسی محدود',
+    description: 'برای ایجاد و مشاهده پروفایل فروشگاه، حساب کاربری شما باید به عنوان فروشنده تأیید شده ثبت شده باشد.',
+    homeAction: 'صفحه اصلی',
   },
 } as const;
