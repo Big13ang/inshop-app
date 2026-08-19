@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/features/profile/context/UserContext';
+import { getLoginUrlWithCallback } from '@/lib/utils/navigation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { isLoggedIn, isVerifying } = useUser();
 
   useEffect(() => {
@@ -14,9 +16,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // check; redirecting on that alone bounces users who are actually
     // logged in right after login/reset/signup.
     if (!isVerifying && !isLoggedIn) {
-      router.replace('/auth/login');
+      router.replace(getLoginUrlWithCallback(pathname));
     }
-  }, [isLoggedIn, isVerifying, router]);
+  }, [isLoggedIn, isVerifying, pathname, router]);
 
   return children;
 }
+

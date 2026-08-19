@@ -1,5 +1,5 @@
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { goBackSafely, getIsInternal, setIsInternal } from '../navigation';
+import { goBackSafely, getIsInternal, setIsInternal, getLoginUrlWithCallback } from '../navigation';
 
 describe('navigation utility', () => {
   let mockRouter: { back: jest.Mock; replace: jest.Mock };
@@ -35,4 +35,23 @@ describe('navigation utility', () => {
       expect(mockRouter.replace).not.toHaveBeenCalled();
     });
   });
+
+  describe('getLoginUrlWithCallback', () => {
+    it('returns default login URL when targetUrl is null, undefined, or empty', () => {
+      expect(getLoginUrlWithCallback()).toBe('/auth/login');
+      expect(getLoginUrlWithCallback(null)).toBe('/auth/login');
+      expect(getLoginUrlWithCallback('')).toBe('/auth/login');
+    });
+
+    it('returns default login URL when targetUrl starts with /auth', () => {
+      expect(getLoginUrlWithCallback('/auth/login')).toBe('/auth/login');
+      expect(getLoginUrlWithCallback('/auth/otp')).toBe('/auth/login');
+    });
+
+    it('appends URI-encoded callbackUrl when a valid target path is provided', () => {
+      expect(getLoginUrlWithCallback('/app/profile')).toBe('/auth/login?callbackUrl=%2Fapp%2Fprofile');
+      expect(getLoginUrlWithCallback('/app/posts/new?draft=1')).toBe('/auth/login?callbackUrl=%2Fapp%2Fposts%2Fnew%3Fdraft%3D1');
+    });
+  });
 });
+
