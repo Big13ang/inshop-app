@@ -100,3 +100,51 @@ To run the pre-push check manually:
 ```bash
 rtk npx lefthook run pre-push
 ```
+
+---
+
+## State Colocation & Minimal Prop Passing
+
+- **Colocate State as Close to Usage as Possible**: Always place React state (`useState`, `useReducer`, etc.) in the lowest possible component tree node where it is actually used. Do NOT hoist state to parent or top-level view components unless multiple sibling components strictly require shared access to that state.
+- **No Unnecessary Prop Passing**: Never pass props, state values, or setter callbacks down to a child component unless it is strictly necessary and required across multiple consuming components. Avoid unnecessary prop lifting and prop drilling.
+
+### ❌ Bad Example (Hoisted state & redundant prop drilling)
+```tsx
+// Bad: View page hoists drawer state & handles handlers unnecessarily
+export default function PostView({ post }: Props) {
+  const [isOpen, setIsOpen] = useState(false);
+  const handleOpen = () => setIsOpen(true);
+  const handleClose = () => setIsOpen(false);
+
+  return (
+    <div>
+      <PostHeader onOpenMenu={handleOpen} />
+      <PostMenuDrawer
+        post={post}
+        isOpen={isOpen}
+        onClose={handleClose}
+        onOpen={handleOpen}
+      />
+    </div>
+  );
+}
+```
+
+### ✅ Good Example (Colocated state & encapsulated context)
+```tsx
+// Good: View page is clean; state and drawer consume PostContext internally
+export default function PostView({ post }: Props) {
+  return (
+    <Post.Provider post={post}>
+      <PostHeader />
+      <PostMenuDrawer post={post} />
+    </Post.Provider>
+  );
+}
+
+// Inside PostMenuDrawer: reads state & actions directly from PostContext/hooks
+export function PostMenuDrawer({ post }: Props) {
+  const { state, actions } = usePostContext();
+  return <Menu.Root isOpen={state.isMenuOpen} onClose={actions.closeMenu}>...</Menu.Root>;
+}
+```
