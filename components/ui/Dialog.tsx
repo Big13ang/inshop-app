@@ -263,7 +263,7 @@ function DialogClose({ children, className, onClick, ref, ...props }: DialogClos
 }
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />
+  <div className={cn('flex flex-col space-y-1.5 text-center', className)} {...props} />
 );
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
@@ -275,7 +275,7 @@ interface DialogTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
 }
 
 function DialogTitle({ className, ref, ...props }: DialogTitleProps) {
-  return <h3 ref={ref} className={cn('text-lg font-semibold leading-none tracking-tight', className)} {...props} />;
+  return <h3 ref={ref} className={cn('text-lg font-semibold leading-none tracking-tight text-center', className)} {...props} />;
 }
 
 interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {

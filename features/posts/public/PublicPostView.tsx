@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Post } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
 import { usePublicPostById, type PublicPost } from '@/features/posts/services/publicPostService';
+import PublicPostMenuDrawer from './components/PublicPostMenuDrawer';
 
 interface Props {
   postId: string;
@@ -121,7 +122,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
 
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="flex flex-col">
-          <Post.Provider post={basePostData} onOpenMenu={() => { }}>
+          <Post.Provider post={basePostData}>
             <Post.Root>
               <Post.Header>
                 <Post.HeaderInfo>
@@ -136,6 +137,8 @@ export default function PublicPostView({ postId, initialPost }: Props) {
                     </Post.AuthorBlock>
                   </Link>
                 </Post.HeaderInfo>
+
+                <Post.MenuButton />
               </Post.Header>
 
               <Post.Media />
@@ -147,6 +150,8 @@ export default function PublicPostView({ postId, initialPost }: Props) {
                 <Post.Caption />
               </Post.Body>
             </Post.Root>
+
+            <PublicPostMenuDrawer post={post} />
           </Post.Provider>
         </div>
       </main>
@@ -155,3 +160,4 @@ export default function PublicPostView({ postId, initialPost }: Props) {
     </div>
   );
 }
+

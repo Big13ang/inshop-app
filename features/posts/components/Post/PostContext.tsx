@@ -6,10 +6,13 @@ import type { BasePostData } from './types';
 export interface PostContextState {
   post: BasePostData;
   isOverlayDismissed: boolean;
+  isMenuOpen: boolean;
 }
 
 export interface PostContextActions {
   openMenu: () => void;
+  closeMenu: () => void;
+  toggleMenu: () => void;
   dismissOverlay: () => void;
   restoreOverlay: () => void;
 }

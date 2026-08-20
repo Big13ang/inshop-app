@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Hourglass, Trash2 } from 'lucide-react';
+import { Hourglass } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import MainFooter from '@/components/layout/MainFooter';
-import { Menu } from '@/components/ui/Menu';
 import { Button } from '@/components/ui/button';
-import { postsQueryService, POST_STATUS } from '../services/postsQueryService';
+import { PostMenu } from '../components/PostMenu';
+import { postsQueryService } from '../services/postsQueryService';
+import DeletePostConfirmationBottomSheet from '../components/DeletePostConfirmationBottomSheet';
 import PendingPostCard from './components/PendingPostCard';
 import { text } from './constants';
 
@@ -18,7 +19,25 @@ export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
   const { data: posts = [] } = postsQueryService.usePendingRejectedPosts();
   const deletePost = postsQueryService.useDeletePendingPost();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const activePost = posts.find((post) => post.id === activeMenuId);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
+  function handleCloseMenu() {
+    setActiveMenuId(null);
+  }
+
+  function handleOpenConfirm(id: string) {
+    setActiveMenuId(null);
+    setDeletingPostId(id);
+  }
+
+  function handleConfirmDelete() {
+    if (!deletingPostId) return;
+    deletePost.mutate(deletingPostId, {
+      onSuccess: () => {
+        setDeletingPostId(null);
+      },
+    });
+  }
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
@@ -51,20 +70,28 @@ export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
 
       <MainFooter />
 
-      <Menu.Root isOpen={activeMenuId !== null} onClose={() => setActiveMenuId(null)}>
-        <Menu.Title right={activePost?.status === POST_STATUS.REJECTED ? text.statusRejectedShort : text.statusPending}>
+      <PostMenu.Root isOpen={activeMenuId !== null} onClose={handleCloseMenu}>
+        <PostMenu.Title>
           {text.menuTitle}
-        </Menu.Title>
-        <Menu.Item
-          icon={<Trash2 className="h-4 w-4" />}
-          label={text.deleteLabel}
-          hint={text.deleteHint}
-          onClick={() => {
-            if (activeMenuId) deletePost.mutate(activeMenuId);
-            setActiveMenuId(null);
-          }}
-        />
-      </Menu.Root>
+        </PostMenu.Title>
+        {activeMenuId ? (
+          <PostMenu.DeleteItem
+            postId={activeMenuId}
+            label={text.deleteLabel}
+            hint={text.deleteHint}
+            onClick={() => handleOpenConfirm(activeMenuId)}
+          />
+        ) : null}
+      </PostMenu.Root>
+
+      <DeletePostConfirmationBottomSheet
+        isOpen={deletingPostId !== null}
+        onClose={() => setDeletingPostId(null)}
+        onConfirm={handleConfirmDelete}
+        isPending={deletePost.isPending}
+        title={text.deleteLabel}
+      />
     </div>
   );
 }
+
