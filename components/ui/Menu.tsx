@@ -28,9 +28,13 @@ interface MenuTitleProps {
 
 function MenuTitle({ children, right, className }: MenuTitleProps) {
   return (
-    <div className={cn('mb-4 flex items-center justify-between border-b border-zinc-100 px-5 pb-4 select-none', className)} dir="rtl">
-      <span className="text-[13px] font-bold text-zinc-500">{children}</span>
-      {right ? <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold text-zinc-500">{right}</span> : null}
+    <div className={cn('relative mb-3 flex items-center justify-center border-b border-primary/10 px-6 py-6 text-center select-none', className)} dir="rtl">
+      <span className="w-full text-center text-sm font-bold text-foreground leading-tight px-12">{children}</span>
+      {right ? (
+        <span className="absolute left-6 rounded-full bg-secondary/80 px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+          {right}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -47,16 +51,18 @@ function MenuItem({ icon, label, hint, onClick, tone = 'default' }: MenuItemProp
   return (
     <button
       onClick={onClick}
-      className="tap-card flex w-full cursor-pointer items-center justify-between px-5 py-4 transition-colors hover:bg-zinc-50"
+      className="tap-card flex w-full cursor-pointer items-center justify-between px-6 py-4 transition-colors hover:bg-accent/60 active:bg-accent"
       dir="rtl"
     >
-      <div className="flex items-center gap-3">
-        <span className={cn('text-zinc-500', tone === 'danger' && 'text-red-500')}>{icon}</span>
-        <span className={cn('text-xs font-semibold text-zinc-900', tone === 'danger' && 'text-red-600')}>
+      <div className="flex items-center gap-3.5">
+        <span className={cn('flex size-5 shrink-0 items-center justify-center text-secondary', tone === 'danger' && 'text-error')}>
+          {icon}
+        </span>
+        <span className={cn('text-sm font-medium leading-none text-foreground', tone === 'danger' && 'text-error font-semibold')}>
           {label}
         </span>
       </div>
-      {hint ? <span className="text-[10px] font-medium text-zinc-400">{hint}</span> : null}
+      {hint ? <span className={cn('text-xs text-secondary/80', tone === 'danger' && 'text-error/80')}>{hint}</span> : null}
     </button>
   );
 }

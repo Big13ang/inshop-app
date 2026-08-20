@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { Copy, Share2, Bookmark, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Menu } from '@/components/ui/Menu';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 import { canShare, shareContent } from '@/lib/utils/shareContent';
+import DeletePostConfirmationBottomSheet from '@/features/posts/components/DeletePostConfirmationBottomSheet';
 
 export interface DrawerPostItem {
   id: string;
@@ -33,13 +35,16 @@ export default function PostSettingsDrawer({
   onDeletePost,
   showReport = !onDeletePost,
 }: PostSettingsDrawerProps) {
-  if (!post) return null;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const shopName = post.shopName || post.sellerName || 'فروشگاه';
-  const isBookmarked = !!post.isBookmarked;
-  const shareUrl = `https://inshop.ir/post/${post.id}`;
+  if (!post && !showDeleteConfirm) return null;
+
+  const shopName = post?.shopName || post?.sellerName || 'فروشگاه';
+  const isBookmarked = !!post?.isBookmarked;
+  const shareUrl = post ? `https://inshop.ir/post/${post.id}` : '';
 
   const handleCopyLink = async () => {
+    if (!post) return;
     if (onCopyLink) {
       onCopyLink(post);
     } else {
@@ -51,6 +56,7 @@ export default function PostSettingsDrawer({
   };
 
   const handleShareMessage = async () => {
+    if (!post) return;
     if (onSharePost) {
       onSharePost(post);
     } else if (canShare()) {
@@ -69,6 +75,7 @@ export default function PostSettingsDrawer({
   };
 
   const handleBookmarkClick = () => {
+    if (!post) return;
     onBookmarkToggle?.(post.id);
     toast.success(isBookmarked ? 'پست از نشان‌شده‌ها حذف شد.' : 'پست با موفقیت نشان شد.');
     onClose();
@@ -79,49 +86,64 @@ export default function PostSettingsDrawer({
     onClose();
   };
 
-  const handleDeletePost = () => {
-    onDeletePost?.(post.id);
+  const handleOpenDeleteConfirm = () => {
     onClose();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (post) {
+      onDeletePost?.(post.id);
+    }
+    setShowDeleteConfirm(false);
   };
 
   return (
-    <Menu.Root isOpen={post !== null} onClose={onClose}>
-      <Menu.Title className="justify-center text-center">تنظیمات پست</Menu.Title>
+    <>
+      <Menu.Root isOpen={post !== null} onClose={onClose}>
+        <Menu.Title className="justify-center text-center">تنظیمات پست</Menu.Title>
 
-      <Menu.Item
-        icon={<Copy className="w-4 h-4" />}
-        label="کپی لینک پست"
-        onClick={handleCopyLink}
-      />
-
-      <Menu.Item
-        icon={<Share2 className="w-4 h-4" />}
-        label="اشتراک‌گذاری پست"
-        onClick={handleShareMessage}
-      />
-
-      <Menu.Item
-        icon={<Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />}
-        label={isBookmarked ? 'حذف از نشان‌شده‌ها' : 'افزودن به نشان‌شده‌ها'}
-        onClick={handleBookmarkClick}
-      />
-
-      {onDeletePost ? (
         <Menu.Item
-          icon={<Trash2 className="w-4 h-4" />}
-          label="حذف پست"
-          tone="danger"
-          onClick={handleDeletePost}
+          icon={<Copy className="w-4 h-4" />}
+          label="کپی لینک پست"
+          onClick={handleCopyLink}
         />
-      ) : null}
 
-      {showReport ? (
         <Menu.Item
-          icon={<AlertTriangle className="w-4 h-4" />}
-          label="گزارش تخلف پست"
-          onClick={handleReport}
+          icon={<Share2 className="w-4 h-4" />}
+          label="اشتراک‌گذاری پست"
+          onClick={handleShareMessage}
         />
-      ) : null}
-    </Menu.Root>
+
+        <Menu.Item
+          icon={<Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />}
+          label={isBookmarked ? 'حذف از نشان‌شده‌ها' : 'افزودن به نشان‌شده‌ها'}
+          onClick={handleBookmarkClick}
+        />
+
+        {onDeletePost ? (
+          <Menu.Item
+            icon={<Trash2 className="w-4 h-4" />}
+            label="حذف پست"
+            tone="danger"
+            onClick={handleOpenDeleteConfirm}
+          />
+        ) : null}
+
+        {showReport ? (
+          <Menu.Item
+            icon={<AlertTriangle className="w-4 h-4" />}
+            label="گزارش تخلف پست"
+            onClick={handleReport}
+          />
+        ) : null}
+      </Menu.Root>
+
+      <DeletePostConfirmationBottomSheet
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+      />
+    </>
   );
 }

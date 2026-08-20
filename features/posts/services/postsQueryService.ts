@@ -1,8 +1,7 @@
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { http, type ApiResponse, type PaginatedApiResponse } from '@/lib/utils';
 import { queryCacheFactory, queryKeys } from '@/lib/query-keys';
-import { optimistic } from '@/lib/optimistic';
 import { useUser } from '@/features/profile/context/UserContext';
 import type { PublicSellerProfile } from '@/features/profile/services/profileService';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
@@ -141,6 +140,22 @@ export async function fetchApprovedPostsByUsername(
   };
 }
 
+function removePostFromFeedCache(queryClient: QueryClient, deletedId: string) {
+  queryClient.setQueriesData<{ pages: { data: { id: string }[] }[] }>(
+    { queryKey: ['posts', 'feed'] },
+    (oldData) => {
+      if (!oldData?.pages) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => ({
+          ...page,
+          data: page.data.filter((post) => post.id !== deletedId),
+        })),
+      };
+    }
+  );
+}
+
 export const postsQueryService = {
 
   /**
@@ -213,14 +228,17 @@ export const postsQueryService = {
       mutationFn: async (id: string) => {
         await http.delete(`/seller/posts/${id}`);
       },
-      ...optimistic.deleteList({
-        queryClient,
-        queryKey: queryKeys.posts.seller(),
-        idSelector: (id: string) => id,
-        onSuccess: () => toast.success('پست با موفقیت حذف شد'),
-        onError: () => toast.error(ERROR_MESSAGES.posts.deleteFailed),
-        onSettled: () => queryCacheFactory.posts.invalidateSeller(queryClient),
-      }),
+      onSuccess: (_data, deletedId) => {
+        removePostFromFeedCache(queryClient, deletedId);
+
+        // Invalidate pending posts page query
+        queryClient.invalidateQueries({
+          queryKey: [...queryKeys.posts.seller(), 'pending-rejected'],
+        });
+
+        toast.success('پست با موفقیت حذف شد');
+      },
+      onError: () => toast.error(ERROR_MESSAGES.posts.deleteFailed),
     });
   },
 

@@ -47,13 +47,7 @@ function PendingStatusOverlay({ status, rejectReason }: { status: SellerPost['st
 }
 
 export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardProps) {
-  let user = null;
-  try {
-    const userCtx = useUser();
-    user = userCtx.user;
-  } catch {
-    // Rendered outside UserProvider in unit tests
-  }
+  const { user } = useUser();
 
   const sellerName = post.sellerName || user?.sellerProfile?.shopName || '';
   const username = post.username || user?.sellerProfile?.username || '';

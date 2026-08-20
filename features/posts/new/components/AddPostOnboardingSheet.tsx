@@ -43,7 +43,7 @@ export default function AddPostOnboardingSheet() {
       <Dialog.Portal>
         <Dialog.Backdrop />
         <Dialog.Content variant="drawer" className="pt-2">
-          <div className="px-6 pt-4 pb-2 text-right" dir="rtl">
+          <div className="px-6 pt-4 pb-2 text-center" dir="rtl">
             <h2 className="text-xl font-bold text-foreground leading-snug">
               فروشنده گرامی، خوش آمدید.
             </h2>

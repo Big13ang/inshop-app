@@ -71,7 +71,7 @@ export function PostMenuDrawer({
 
   return (
     <Menu.Root isOpen={isOpen} onClose={onClose}>
-      <Menu.Title>تنظیمات پست {post.sellerName}</Menu.Title>
+      <Menu.Title>تنظیمات پست</Menu.Title>
       
       <Menu.Item
         icon={<Copy className="h-4 w-4" />}
