@@ -25,7 +25,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
   }, [error]);
 
   const handleGoHome = () => {
-    window.location.href = "/";
+    window.location.assign(window.location.origin);
   };
 
   return (

@@ -136,4 +136,11 @@ describe("errorTracking telemetry", () => {
       );
     });
   });
+
+  describe("setTrackingTag", () => {
+    it("sets custom tag in Sentry", () => {
+      setTrackingTag("release_channel", "beta");
+      expect(Sentry.setTag).toHaveBeenCalledWith("release_channel", "beta");
+    });
+  });
 });

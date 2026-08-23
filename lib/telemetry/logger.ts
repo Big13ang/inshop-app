@@ -1,5 +1,5 @@
 import { addBreadcrumb, captureError } from "./errorTracking";
-import { LogDomain, LogLevel, TelemetryContext } from "./types";
+import { LogDomain, TelemetryContext } from "./types";
 
 export interface LogEntryContext extends Omit<TelemetryContext, "domain"> {
   [key: string]: unknown;

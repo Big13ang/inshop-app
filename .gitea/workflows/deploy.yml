@@ -194,14 +194,19 @@ jobs:
           set -euo pipefail
           echo "Monitoring deployment health for service: ${SERVICE}..."
           for i in $(seq 1 30); do
-            desired=$(docker service inspect "${SERVICE}" --format '${{ '{{' }}if .Spec.Mode.Replicated{{ '}}' }}${{ '{{' }}.Spec.Mode.Replicated.Replicas{{ '}}' }}${{ '{{' }}else{{ '}}' }}1${{ '{{' }}end{{ '}}' }}' 2>/dev/null || echo "1")
-            running=$(docker service ps "${SERVICE}" --filter "desired-state=running" --format '${{ '{{' }}.CurrentState{{ '}}' }}' 2>/dev/null | grep -ic "Running" || echo "0")
-            echo "Attempt $i/30: Current service replicas state: $running/$desired running"
-            if [ "$running" -ge "$desired" ] && [ "$running" -gt 0 ]; then
-              echo "=========================================================="
-              echo "SUCCESS: Frontend deployment is healthy and all $running/$desired replicas are running!"
-              echo "=========================================================="
-              exit 0
+            state=$(docker service ls --filter "name=^${SERVICE}$" --format '${{ '{{' }} .Replicas ${{ '}}' }}' | head -n 1)
+            if [ -n "${state}" ] && [[ "${state}" =~ ^([0-9]+)/([0-9]+)$ ]]; then
+              running="${BASH_REMATCH[1]}"
+              desired="${BASH_REMATCH[2]}"
+              echo "Attempt $i/30: Current service replicas state: $running/$desired running"
+              if [ "$running" -eq "$desired" ] && [ "$running" -gt 0 ]; then
+                echo "=========================================================="
+                echo "SUCCESS: Frontend deployment is healthy and all $running/$desired replicas are running!"
+                echo "=========================================================="
+                exit 0
+              fi
+            else
+              echo "Attempt $i/30: Waiting for service state... ($state)"
             fi
             sleep 5
           done
