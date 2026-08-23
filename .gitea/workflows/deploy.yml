@@ -132,10 +132,18 @@ jobs:
             -t "${IMAGE}:${{ steps.env_info.outputs.image_tag }}" .
           echo "Docker image build completed."
 
+      - name: Check GlitchTip Auth Token
+        if: ${{ secrets.GLITCHTIP_AUTH_TOKEN == '' && secrets.SENTRY_AUTH_TOKEN == '' }}
+        run: |
+          echo "=========================================================="
+          echo "::warning:: Neither GLITCHTIP_AUTH_TOKEN nor SENTRY_AUTH_TOKEN is set in Gitea repository secrets!"
+          echo "Source maps will NOT be uploaded to GlitchTip until you add GLITCHTIP_AUTH_TOKEN to Repo Settings -> Actions -> Secrets."
+          echo "=========================================================="
+
       - name: Upload Source Maps to GlitchTip
-        if: ${{ secrets.GLITCHTIP_AUTH_TOKEN != '' }}
+        if: ${{ secrets.GLITCHTIP_AUTH_TOKEN != '' || secrets.SENTRY_AUTH_TOKEN != '' }}
         env:
-          GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN }}"
+          GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN || secrets.SENTRY_AUTH_TOKEN }}"
         run: |
           echo "=========================================================="
           echo "Uploading source maps to GlitchTip..."
@@ -156,7 +164,7 @@ jobs:
             --dns 185.51.200.2 \
             -v "${CLI_PATH}:/usr/local/bin/glitchtip-cli:ro" \
             -e SENTRY_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
-            -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
+            -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN || secrets.SENTRY_AUTH_TOKEN }}" \
             -e SENTRY_ORG="${{ vars.GLITCHTIP_ORG || 'inshop' }}" \
             -e SENTRY_PROJECT="${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}" \
             frontend-builder \
@@ -174,19 +182,23 @@ jobs:
               echo "SERVER_MAPS_CNT: $(find .next/server -name "*.map" 2>/dev/null | wc -l)"
               echo "==================================="
 
+              echo "--- 1. Testing Organization & Projects API ---"
+              curl -s -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" "${SENTRY_URL}/api/0/organizations/${SENTRY_ORG}/projects/" || echo "Could not query projects"
+              echo ""
+
               if command -v glitchtip-cli >/dev/null 2>&1 && glitchtip-cli --version >/dev/null 2>&1; then
                 echo "Using GlitchTip CLI: $(glitchtip-cli --version)"
 
-                echo "--- 1. Testing GlitchTip Connection ---"
+                echo "--- 2. Testing GlitchTip Connection ---"
                 glitchtip-cli info || echo "[WARN] glitchtip-cli info returned non-zero (continuing)..."
 
-                echo "--- 2. Creating Release: ${RELEASE} ---"
+                echo "--- 3. Creating Release: ${RELEASE} ---"
                 glitchtip-cli releases new "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Release create returned non-zero (continuing)..."
 
-                echo "--- 3. Injecting Debug IDs into .next ---"
+                echo "--- 4. Injecting Debug IDs into .next ---"
                 glitchtip-cli sourcemaps inject .next
 
-                echo "--- 4. Uploading Client Static Source Maps (~/_next/static) ---"
+                echo "--- 5. Uploading Client Static Source Maps (~/_next/static) ---"
                 glitchtip-cli sourcemaps upload .next/static \
                   --release "${RELEASE}" \
                   --url-prefix "~/_next/static" \
@@ -194,7 +206,7 @@ jobs:
                   --project "${SENTRY_PROJECT}" \
                   --validate || echo "[WARN] Client sourcemap upload returned non-zero (continuing)..."
 
-                echo "--- 5. Uploading Server Source Maps (~/_next/server) ---"
+                echo "--- 6. Uploading Server Source Maps (~/_next/server) ---"
                 glitchtip-cli sourcemaps upload .next/server \
                   --release "${RELEASE}" \
                   --url-prefix "~/_next/server" \
@@ -202,11 +214,11 @@ jobs:
                   --project "${SENTRY_PROJECT}" \
                   --validate || echo "[WARN] Server sourcemap upload returned non-zero (continuing)..."
 
-                echo "--- 6. Finalizing Release in GlitchTip ---"
+                echo "--- 7. Finalizing Release in GlitchTip ---"
                 glitchtip-cli releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Finalize returned non-zero (continuing)..."
               fi
 
-              echo "--- 7. Uploading Direct Release Files for GlitchTip UI ---"
+              echo "--- 8. Uploading Direct Release Files for GlitchTip UI ---"
               CLI="./node_modules/.bin/sentry-cli"
               $CLI releases files "${RELEASE}" upload-sourcemaps .next/static \
                 --url-prefix "~/_next/static" \
@@ -220,7 +232,10 @@ jobs:
 
               $CLI releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
 
-              echo "--- 8. Verifying Release Status ---"
+              echo "--- 9. Listing Uploaded Release Files in GlitchTip ---"
+              $CLI releases files "${RELEASE}" list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Could not list release files"
+
+              echo "--- 10. Verifying Release Status ---"
               $CLI releases list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
               echo "=========================================================="
             '
