@@ -197,7 +197,7 @@ jobs:
           echo "=========================================================="
           docker service ps "${SERVICE}" --filter "desired-state=running" --no-trunc
 
-          running_count=$(docker service ps "${SERVICE}" --filter "desired-state=running" --format '${{ '{{' }}.CurrentState{{ '}}' }}' | grep -c "^Running" || true)
+          running_count=$(docker service ps "${SERVICE}" --filter "desired-state=running" -q | wc -l | tr -d ' ')
           echo "Active running tasks: ${running_count}"
 
           if [ "${running_count}" -gt 0 ]; then
