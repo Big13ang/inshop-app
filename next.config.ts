@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import os from "os";
+import { withSentryConfig } from "@sentry/nextjs";
 import "./env";
 
 const getLocalIPs = () => {
@@ -18,6 +19,7 @@ const getLocalIPs = () => {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  productionBrowserSourceMaps: true,
   cacheComponents: true,
   reactCompiler: true,
   partialPrefetching: true,
@@ -31,4 +33,7 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+});
+

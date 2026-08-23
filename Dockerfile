@@ -22,6 +22,14 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_CDN_URL
 ENV NEXT_PUBLIC_CDN_URL=$NEXT_PUBLIC_CDN_URL
 
+ARG NEXT_PUBLIC_GLITCHTIP_DSN
+ENV NEXT_PUBLIC_GLITCHTIP_DSN=$NEXT_PUBLIC_GLITCHTIP_DSN
+
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
+
+ARG SENTRY_ENVIRONMENT
+ENV SENTRY_ENVIRONMENT=$SENTRY_ENVIRONMENT
 
 # Build Next.js
 RUN --mount=type=cache,target=/app/.next/cache npm run build
@@ -44,6 +52,10 @@ RUN chown nextjs:nodejs .next tmp
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Security hardening: Strip all .map source map files from the public runtime container.
+# GlitchTip already received the source maps during CI; public users/attackers cannot access them.
+RUN find ./.next -name "*.map" -type f -delete
 
 USER nextjs
 
