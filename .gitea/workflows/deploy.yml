@@ -73,6 +73,19 @@ jobs:
           } >> .npmrc.ci
           echo "Configured npm auth for $npm_host."
 
+      - name: Configure Shecan Anti-Sanction DNS
+        run: |
+          echo "=========================================================="
+          echo "Configuring Shecan Anti-Sanction DNS..."
+          echo "=========================================================="
+          if command -v sudo >/dev/null 2>&1; then
+            printf "nameserver 178.22.122.100\nnameserver 185.51.200.2\nnameserver 8.8.8.8\n" | sudo tee /etc/resolv.conf >/dev/null || true
+          elif [ -w /etc/resolv.conf ]; then
+            printf "nameserver 178.22.122.100\nnameserver 185.51.200.2\nnameserver 8.8.8.8\n" > /etc/resolv.conf || true
+          fi
+          cat /etc/resolv.conf || true
+          echo "=========================================================="
+
       - name: Diagnostic DNS and Registry Network Check
         run: |
           echo "=========================================================="
@@ -125,21 +138,22 @@ jobs:
           GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN }}"
         run: |
           echo "=========================================================="
-          echo "Downloading GlitchTip CLI and uploading source maps..."
+          echo "Uploading source maps to GlitchTip..."
           echo "=========================================================="
-          mkdir -p "$HOME/.local/bin"
-          if ! command -v glitchtip-cli >/dev/null 2>&1; then
-            echo "Fetching glitchtip-cli binary..."
+          CLI_PATH="$PWD/bin/glitchtip-cli"
+          if [ ! -f "$CLI_PATH" ]; then
+            mkdir -p "$HOME/.local/bin"
             curl -fsSL -A "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0" \
               "https://gitlab.com/glitchtip/glitchtip-cli/-/jobs/artifacts/v1.0.0/raw/artifacts/glitchtip-cli-linux-x86_64?job=build-linux-x86_64" \
               -o "$HOME/.local/bin/glitchtip-cli" && chmod +x "$HOME/.local/bin/glitchtip-cli" || true
+            CLI_PATH="$(command -v glitchtip-cli || echo "$HOME/.local/bin/glitchtip-cli")"
           fi
-          export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
-
-          CLI_PATH="$(command -v glitchtip-cli || echo "$HOME/.local/bin/glitchtip-cli")"
+          chmod +x "${CLI_PATH}" 2>/dev/null || true
           echo "GlitchTip CLI located at: ${CLI_PATH}"
 
           docker run --rm \
+            --dns 178.22.122.100 \
+            --dns 185.51.200.2 \
             -v "${CLI_PATH}:/usr/local/bin/glitchtip-cli:ro" \
             -e SENTRY_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
             -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
@@ -190,18 +204,24 @@ jobs:
 
                 echo "--- 6. Finalizing Release in GlitchTip ---"
                 glitchtip-cli releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Finalize returned non-zero (continuing)..."
-
-                echo "--- 7. Verifying Releases in GlitchTip ---"
-                glitchtip-cli releases list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Could not list releases"
-              else
-                echo "Using Sentry CLI fallback..."
-                CLI="./node_modules/.bin/sentry-cli"
-                $CLI releases new "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
-                $CLI sourcemaps inject .next || true
-                $CLI sourcemaps upload .next/static --release "${RELEASE}" --url-prefix "~/_next/static" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
-                $CLI sourcemaps upload .next/server --release "${RELEASE}" --url-prefix "~/_next/server" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
-                $CLI releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
               fi
+
+              echo "--- 7. Uploading Direct Release Files for GlitchTip UI ---"
+              CLI="./node_modules/.bin/sentry-cli"
+              $CLI releases files "${RELEASE}" upload-sourcemaps .next/static \
+                --url-prefix "~/_next/static" \
+                --org "${SENTRY_ORG}" \
+                --project "${SENTRY_PROJECT}" || echo "[WARN] Release files static upload returned non-zero (continuing)..."
+
+              $CLI releases files "${RELEASE}" upload-sourcemaps .next/server \
+                --url-prefix "~/_next/server" \
+                --org "${SENTRY_ORG}" \
+                --project "${SENTRY_PROJECT}" || echo "[WARN] Release files server upload returned non-zero (continuing)..."
+
+              $CLI releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
+
+              echo "--- 8. Verifying Release Status ---"
+              $CLI releases list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
               echo "=========================================================="
             '
           docker rmi frontend-builder || true
