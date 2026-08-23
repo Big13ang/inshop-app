@@ -1,5 +1,6 @@
 'use client';
 
+import '@/sentry.client.config';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '@/lib/query-client';
 import { UserProvider } from '@/features/profile/context/UserContext';

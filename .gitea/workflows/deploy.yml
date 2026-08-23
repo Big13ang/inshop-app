@@ -14,11 +14,11 @@ on:
     branches:
       - master
       - main
+      - develop
   workflow_dispatch: {}
 
 env:
   IMAGE: "${{ vars.REGISTRY_HOST }}/inshop/frontend"
-  SERVICE: application_frontend
   DOCKER_BUILDKIT: "1"
 
 jobs:
@@ -26,9 +26,29 @@ jobs:
     runs-on: docker
     outputs:
       digest: "${{ steps.push.outputs.digest }}"
+      service: "${{ steps.env_info.outputs.service }}"
+      release_name: "${{ steps.env_info.outputs.release_name }}"
+      env_name: "${{ steps.env_info.outputs.env_name }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Determine Environment & Release Metadata
+        id: env_info
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/master" ] || [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "env_name=production" >> "$GITHUB_OUTPUT"
+            echo "release_name=prod-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "service=application_frontend" >> "$GITHUB_OUTPUT"
+            echo "image_tag=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "glitchtip_dsn=${{ vars.NEXT_PUBLIC_GLITCHTIP_DSN_PROD || vars.NEXT_PUBLIC_GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5' }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "env_name=develop" >> "$GITHUB_OUTPUT"
+            echo "release_name=develop-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "service=develop_application_frontend" >> "$GITHUB_OUTPUT"
+            echo "image_tag=develop-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "glitchtip_dsn=${{ vars.NEXT_PUBLIC_GLITCHTIP_DSN_DEV || vars.NEXT_PUBLIC_GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5' }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Configure npm client for container build
         env:
@@ -75,28 +95,70 @@ jobs:
 
       - name: Build image (Next.js standalone)
         run: |
-          echo "Starting Docker image build for tag ${IMAGE}:${GITHUB_SHA}..."
+          echo "Building builder stage to capture source maps for GlitchTip..."
+          docker build \
+            --target builder \
+            --secret id=npmrc,src=.npmrc.ci \
+            --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
+            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
+            --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
+            --build-arg SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
+            --build-arg SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            -t frontend-builder .
+
+          echo "Building hardened production image (stripping all .map files for security)..."
           docker build \
             --secret id=npmrc,src=.npmrc.ci \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
             --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
-            -t "${IMAGE}:${GITHUB_SHA}" .
+            --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
+            --build-arg SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
+            --build-arg SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            -t "${IMAGE}:${{ steps.env_info.outputs.image_tag }}" .
           echo "Docker image build completed."
+
+      - name: Upload Source Maps to GlitchTip
+        if: ${{ secrets.GLITCHTIP_AUTH_TOKEN != '' }}
+        env:
+          GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN }}"
+        run: |
+          echo "Extracting source maps from builder stage..."
+          container_id=$(docker create frontend-builder)
+          mkdir -p .next-extracted
+          docker cp "$container_id:/app/.next" .next-extracted/ || true
+          docker rm -v "$container_id"
+          docker rmi frontend-builder || true
+
+          if [ -d ".next-extracted/.next" ]; then
+            echo "Injecting debug IDs and uploading source maps to GlitchTip..."
+            npx --yes @sentry/cli sourcemaps inject .next-extracted/.next || true
+            npx --yes @sentry/cli sourcemaps upload .next-extracted/.next \
+              --url "${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
+              --org "${{ vars.GLITCHTIP_ORG || 'inshop' }}" \
+              --project "${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}" \
+              --release "${{ steps.env_info.outputs.release_name }}" \
+              --auth-token "${{ secrets.GLITCHTIP_AUTH_TOKEN }}" || echo "GlitchTip source maps upload failed (non-fatal)"
+            echo "GlitchTip source maps step finished."
+          fi
+          rm -rf .next-extracted
 
       - name: Push and capture digest
         id: push
         run: |
           echo "Pushing built image to registry..."
-          docker push "${IMAGE}:${GITHUB_SHA}"
+          docker push "${IMAGE}:${{ steps.env_info.outputs.image_tag }}"
           echo "Image pushed successfully. Capturing repo digest..."
-          digest=$(docker inspect --format='${{ '{{' }} index .RepoDigests 0 ${{ '}}' }}' "${IMAGE}:${GITHUB_SHA}")
+          digest=$(docker inspect --format='${{ '{{' }} index .RepoDigests 0 ${{ '}}' }}' "${IMAGE}:${{ steps.env_info.outputs.image_tag }}")
           echo "Captured Repo Digest: ${digest}"
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: build-test-push
     runs-on: swarm-deploy
+    env:
+      SERVICE: "${{ needs.build-test-push.outputs.service }}"
     steps:
       - name: Log in to the internal registry (so --with-registry-auth can pull)
         run: |
