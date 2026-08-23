@@ -124,7 +124,9 @@ jobs:
         env:
           GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN }}"
         run: |
+          echo "=========================================================="
           echo "Uploading source maps and registering release artifacts in GlitchTip..."
+          echo "=========================================================="
           docker run --rm \
             -e SENTRY_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
             -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
@@ -132,31 +134,47 @@ jobs:
             -e SENTRY_PROJECT="${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}" \
             frontend-builder \
             sh -c '
+              set -uo pipefail
               RELEASE="${{ steps.env_info.outputs.release_name }}"
               CLI="./node_modules/.bin/sentry-cli"
 
-              echo "--- 1. Creating GlitchTip Release: ${RELEASE} ---"
-              $CLI releases new "${RELEASE}" || echo "Release create failed (non-fatal)"
+              echo "=== GLITCHTIP DIAGNOSTIC CONFIG ==="
+              echo "SENTRY_URL:      ${SENTRY_URL}"
+              echo "SENTRY_ORG:      ${SENTRY_ORG}"
+              echo "SENTRY_PROJECT:  ${SENTRY_PROJECT}"
+              echo "RELEASE:         ${RELEASE}"
+              echo "AUTH_TOKEN_LEN:  ${#SENTRY_AUTH_TOKEN}"
+              echo "SENTRY_CLI_VER:  $($CLI --version)"
+              echo "STATIC_MAPS_CNT: $(find .next/static -name "*.map" 2>/dev/null | wc -l)"
+              echo "SERVER_MAPS_CNT: $(find .next/server -name "*.map" 2>/dev/null | wc -l)"
+              echo "==================================="
 
-              echo "--- 2. Uploading Client Static Source Maps (~/_next/static) ---"
-              $CLI releases files "${RELEASE}" upload-sourcemaps .next/static \
+              echo "--- 1. Testing Authentication with GlitchTip ---"
+              $CLI --log-level=info info || echo "[WARN] CLI info check returned non-zero (continuing)..."
+
+              echo "--- 2. Creating GlitchTip Release: ${RELEASE} ---"
+              $CLI --log-level=info releases new "${RELEASE}" || echo "[WARN] Release create returned non-zero (continuing)..."
+
+              echo "--- 3. Uploading Client Static Source Maps (~/_next/static) ---"
+              $CLI --log-level=info releases files "${RELEASE}" upload-sourcemaps .next/static \
                 --url-prefix "~/_next/static" \
-                --validate || echo "Static source maps upload failed (non-fatal)"
+                --validate || echo "[WARN] Static source maps upload failed (continuing)..."
 
-              echo "--- 3. Uploading Server Source Maps (~/_next/server) ---"
-              $CLI releases files "${RELEASE}" upload-sourcemaps .next/server \
+              echo "--- 4. Uploading Server Source Maps (~/_next/server) ---"
+              $CLI --log-level=info releases files "${RELEASE}" upload-sourcemaps .next/server \
                 --url-prefix "~/_next/server" \
-                --validate || echo "Server source maps upload failed (non-fatal)"
+                --validate || echo "[WARN] Server source maps upload failed (continuing)..."
 
-              echo "--- 4. Injecting & Uploading Debug IDs ---"
+              echo "--- 5. Injecting & Uploading Debug IDs ---"
               $CLI sourcemaps inject .next || true
-              $CLI sourcemaps upload .next --release "${RELEASE}" || true
+              $CLI --log-level=info sourcemaps upload .next --release "${RELEASE}" || true
 
-              echo "--- 5. Finalizing GlitchTip Release ---"
-              $CLI releases finalize "${RELEASE}" || true
+              echo "--- 6. Finalizing GlitchTip Release ---"
+              $CLI --log-level=info releases finalize "${RELEASE}" || echo "[WARN] Finalize returned non-zero (continuing)..."
 
-              echo "--- 6. Uploaded Release Files in GlitchTip ---"
-              $CLI releases files "${RELEASE}" list || echo "Could not list release files"
+              echo "--- 7. Verifying Uploaded Artifacts in GlitchTip ---"
+              $CLI releases files "${RELEASE}" list || echo "[WARN] Could not list release files"
+              echo "=========================================================="
             '
           docker rmi frontend-builder || true
           echo "GlitchTip release artifacts step completed."
