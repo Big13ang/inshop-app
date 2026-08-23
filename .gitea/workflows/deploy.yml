@@ -124,22 +124,42 @@ jobs:
         env:
           GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN }}"
         run: |
-          echo "Injecting debug IDs and uploading source maps to GlitchTip via builder container..."
+          echo "Uploading source maps and registering release artifacts in GlitchTip..."
           docker run --rm \
+            -e SENTRY_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
             -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
-            -e GLITCHTIP_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
+            -e SENTRY_ORG="${{ vars.GLITCHTIP_ORG || 'inshop' }}" \
+            -e SENTRY_PROJECT="${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}" \
             frontend-builder \
-            sh -c "
-              ./node_modules/.bin/sentry-cli sourcemaps inject ./.next || true
-              ./node_modules/.bin/sentry-cli sourcemaps upload ./.next \
-                --url '${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}' \
-                --org '${{ vars.GLITCHTIP_ORG || 'inshop' }}' \
-                --project '${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}' \
-                --release '${{ steps.env_info.outputs.release_name }}' \
-                --auth-token '${{ secrets.GLITCHTIP_AUTH_TOKEN }}' || echo 'GlitchTip source maps upload failed (non-fatal)'
-            "
+            sh -c '
+              RELEASE="${{ steps.env_info.outputs.release_name }}"
+              CLI="./node_modules/.bin/sentry-cli"
+
+              echo "--- 1. Creating GlitchTip Release: ${RELEASE} ---"
+              $CLI releases new "${RELEASE}" || echo "Release create failed (non-fatal)"
+
+              echo "--- 2. Uploading Client Static Source Maps (~/_next/static) ---"
+              $CLI releases files "${RELEASE}" upload-sourcemaps .next/static \
+                --url-prefix "~/_next/static" \
+                --validate || echo "Static source maps upload failed (non-fatal)"
+
+              echo "--- 3. Uploading Server Source Maps (~/_next/server) ---"
+              $CLI releases files "${RELEASE}" upload-sourcemaps .next/server \
+                --url-prefix "~/_next/server" \
+                --validate || echo "Server source maps upload failed (non-fatal)"
+
+              echo "--- 4. Injecting & Uploading Debug IDs ---"
+              $CLI sourcemaps inject .next || true
+              $CLI sourcemaps upload .next --release "${RELEASE}" || true
+
+              echo "--- 5. Finalizing GlitchTip Release ---"
+              $CLI releases finalize "${RELEASE}" || true
+
+              echo "--- 6. Uploaded Release Files in GlitchTip ---"
+              $CLI releases files "${RELEASE}" list || echo "Could not list release files"
+            '
           docker rmi frontend-builder || true
-          echo "GlitchTip source maps step finished."
+          echo "GlitchTip release artifacts step completed."
 
       - name: Push and capture digest
         id: push
