@@ -124,25 +124,22 @@ jobs:
         env:
           GLITCHTIP_AUTH_TOKEN: "${{ secrets.GLITCHTIP_AUTH_TOKEN }}"
         run: |
-          echo "Extracting source maps from builder stage..."
-          container_id=$(docker create frontend-builder)
-          mkdir -p .next-extracted
-          docker cp "$container_id:/app/.next" .next-extracted/ || true
-          docker rm -v "$container_id"
+          echo "Injecting debug IDs and uploading source maps to GlitchTip via builder container..."
+          docker run --rm \
+            -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
+            -e GLITCHTIP_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN }}" \
+            frontend-builder \
+            sh -c "
+              ./node_modules/.bin/sentry-cli sourcemaps inject ./.next || true
+              ./node_modules/.bin/sentry-cli sourcemaps upload ./.next \
+                --url '${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}' \
+                --org '${{ vars.GLITCHTIP_ORG || 'inshop' }}' \
+                --project '${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}' \
+                --release '${{ steps.env_info.outputs.release_name }}' \
+                --auth-token '${{ secrets.GLITCHTIP_AUTH_TOKEN }}' || echo 'GlitchTip source maps upload failed (non-fatal)'
+            "
           docker rmi frontend-builder || true
-
-          if [ -d ".next-extracted/.next" ]; then
-            echo "Injecting debug IDs and uploading source maps to GlitchTip..."
-            npx --yes @sentry/cli sourcemaps inject .next-extracted/.next || true
-            npx --yes @sentry/cli sourcemaps upload .next-extracted/.next \
-              --url "${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
-              --org "${{ vars.GLITCHTIP_ORG || 'inshop' }}" \
-              --project "${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}" \
-              --release "${{ steps.env_info.outputs.release_name }}" \
-              --auth-token "${{ secrets.GLITCHTIP_AUTH_TOKEN }}" || echo "GlitchTip source maps upload failed (non-fatal)"
-            echo "GlitchTip source maps step finished."
-          fi
-          rm -rf .next-extracted
+          echo "GlitchTip source maps step finished."
 
       - name: Push and capture digest
         id: push
