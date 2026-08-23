@@ -153,27 +153,32 @@ jobs:
               $CLI --log-level=info info || echo "[WARN] CLI info check returned non-zero (continuing)..."
 
               echo "--- 2. Creating GlitchTip Release: ${RELEASE} ---"
-              $CLI --log-level=info releases new "${RELEASE}" || echo "[WARN] Release create returned non-zero (continuing)..."
+              $CLI --log-level=info releases new "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Release create returned non-zero (continuing)..."
 
               echo "--- 3. Uploading Client Static Source Maps (~/_next/static) ---"
               $CLI --log-level=info releases files "${RELEASE}" upload-sourcemaps .next/static \
                 --url-prefix "~/_next/static" \
+                --org "${SENTRY_ORG}" \
+                --project "${SENTRY_PROJECT}" \
                 --validate || echo "[WARN] Static source maps upload failed (continuing)..."
 
               echo "--- 4. Uploading Server Source Maps (~/_next/server) ---"
               $CLI --log-level=info releases files "${RELEASE}" upload-sourcemaps .next/server \
                 --url-prefix "~/_next/server" \
+                --org "${SENTRY_ORG}" \
+                --project "${SENTRY_PROJECT}" \
                 --validate || echo "[WARN] Server source maps upload failed (continuing)..."
 
               echo "--- 5. Injecting & Uploading Debug IDs ---"
               $CLI sourcemaps inject .next || true
-              $CLI --log-level=info sourcemaps upload .next --release "${RELEASE}" || true
+              $CLI --log-level=info sourcemaps upload .next/static --release "${RELEASE}" --url-prefix "~/_next/static" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
+              $CLI --log-level=info sourcemaps upload .next/server --release "${RELEASE}" --url-prefix "~/_next/server" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
 
               echo "--- 6. Finalizing GlitchTip Release ---"
-              $CLI --log-level=info releases finalize "${RELEASE}" || echo "[WARN] Finalize returned non-zero (continuing)..."
+              $CLI --log-level=info releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Finalize returned non-zero (continuing)..."
 
               echo "--- 7. Verifying Uploaded Artifacts in GlitchTip ---"
-              $CLI releases files "${RELEASE}" list || echo "[WARN] Could not list release files"
+              $CLI releases files "${RELEASE}" list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Could not list release files"
               echo "=========================================================="
             '
           docker rmi frontend-builder || true
