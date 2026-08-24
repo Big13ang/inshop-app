@@ -3,10 +3,10 @@ import * as z from "zod";
 
 export const env = createEnv({
     server: {
-        E2E_MOCK: z.string().min(1),
-        GLITCHTIP_DSN: z.string().min(1),
-        SENTRY_RELEASE: z.string().min(1),
-        SENTRY_ENVIRONMENT: z.string().min(1),
+        E2E_MOCK: z.string().default("false"),
+        GLITCHTIP_DSN: z.string().default("https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5"),
+        SENTRY_RELEASE: z.string().default("production"),
+        SENTRY_ENVIRONMENT: z.string().default("production"),
     },
     client: {
         NEXT_PUBLIC_API_URL: z.url(),
