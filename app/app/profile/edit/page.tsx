@@ -4,7 +4,7 @@ import EditProfileClientWrapper from '@/features/profile/edit/EditProfileClientW
 import { ProfileEditSkeleton } from '@/features/profile/components/ProfileSkeleton';
 
 export const metadata: Metadata = {
-  title: 'ویرایش پروفایل | اینشاپ',
+  title: 'ویرایش پروفایل',
 };
 
 export default function EditProfilePage() {

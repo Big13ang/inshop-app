@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "inShop | ورود به اینشاپ",
+    title: "ورود به حساب کاربری",
 };
 
 export default function AuthLayout({

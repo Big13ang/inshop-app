@@ -9,27 +9,26 @@ export interface ConstructMetadataParams {
   noIndex?: boolean;
 }
 
-const DEFAULT_TITLE = 'این‌شاپ';
-const DEFAULT_DESCRIPTION = 'مشاهده جزییات محصول و کسب‌وکار در این‌شاپ';
+const DEFAULT_TITLE = 'اینشاپ | انتخابهای باکیفیت برای خرید آنلاین';
+const SITE_NAME = 'اینشاپ';
+const DEFAULT_DESCRIPTION =
+  'اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.';
 
 /**
- * Formats page title for SEO & Social metadata, always appending "| این‌شاپ".
+ * Formats page title for SEO & Social metadata, always appending "| اینشاپ".
  * Examples:
- * - formatTitle('قهوه اسپرسو', 'فروشگاه راین') => 'قهوه اسپرسو - فروشگاه راین | این‌شاپ'
- * - formatTitle('قهوه اسپرسو')                 => 'قهوه اسپرسو | این‌شاپ'
- * - formatTitle(undefined, 'فروشگاه راین')   => 'فروشگاه راین | این‌شاپ'
- * - formatTitle()                              => 'این‌شاپ'
+ * - formatTitle('قهوه اسپرسو', 'فروشگاه راین') => 'قهوه اسپرسو - فروشگاه راین | اینشاپ'
+ * - formatTitle('قهوه اسپرسو')                 => 'قهوه اسپرسو | اینشاپ'
+ * - formatTitle(undefined, 'فروشگاه راین')   => 'فروشگاه راین | اینشاپ'
+ * - formatTitle()                              => 'اینشاپ | انتخابهای باکیفیت برای خرید آنلاین'
  */
 const formatTitle = (title?: string, shopName?: string | null) => {
   const heading = [title, shopName].filter(Boolean).join(' - ');
-  return heading ? `${heading} | ${DEFAULT_TITLE}` : DEFAULT_TITLE;
+  return heading ? `${heading} | ${SITE_NAME}` : DEFAULT_TITLE;
 };
 
 /**
- * Formats page description for SEO & Social metadata, ensuring "در این‌شاپ" is at the end.
- * Examples:
- * - formatDescription('دانه‌های تازه برشته شده', 'فروشگاه راین') => 'دانه‌های تازه برشته شده - فروشگاه راین در این‌شاپ'
- * - formatDescription('دانه‌های تازه برشته شده')                   => 'دانه‌های تازه برشته شده - این‌شاپ'
+ * Formats page description for SEO & Social metadata.
  */
 const formatDescription = (desc?: string, shopName?: string | null) => {
   const trimmed = desc?.trim();

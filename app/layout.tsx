@@ -17,7 +17,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "inShop | اینشاپ ",
+  title: {
+    default: "اینشاپ | انتخابهای باکیفیت برای خرید آنلاین",
+    template: "%s | اینشاپ",
+  },
+  description:
+    "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
+  applicationName: "اینشاپ",
   // enamad validation
   other: {
     enamad: "26426690",
@@ -30,12 +36,31 @@ export const metadata: Metadata = {
     shortcut: "/favicon/favicon.ico",
     apple: "/favicon/apple-touch-icon.png",
   },
-  manifest: "/favicon/site.webmanifest",
   appleWebApp: {
-    title: "inShop",
+    title: "اینشاپ",
     capable: true,
     statusBarStyle: "default",
-  }
+  },
+  openGraph: {
+    title: {
+      default: "اینشاپ | انتخابهای باکیفیت برای خرید آنلاین",
+      template: "%s | اینشاپ",
+    },
+    description:
+      "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
+    siteName: "اینشاپ",
+    locale: "fa_IR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: {
+      default: "اینشاپ | انتخابهای باکیفیت برای خرید آنلاین",
+      template: "%s | اینشاپ",
+    },
+    description:
+      "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
+  },
 };
 
 async function ProvidersWithProfile({ children }: { children: React.ReactNode }) {

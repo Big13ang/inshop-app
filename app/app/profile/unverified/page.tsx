@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import UnverifiedSellerView from '@/features/profile/unverified/UnverifiedSellerView';
 
 export const metadata: Metadata = {
-  title: 'فروشنده تأیید نشده | اینشاپ',
+  title: 'فروشنده تأیید نشده',
 };
 
 export default function UnverifiedProfilePage() {

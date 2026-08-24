@@ -4,7 +4,7 @@ import OwnProfileView from '@/features/profile/overview/OwnProfileView';
 import { ProfileOverviewSkeleton } from '@/features/profile/components/ProfileSkeleton';
 
 export const metadata: Metadata = {
-  title: 'پروفایل فروشگاه | اینشاپ',
+  title: 'پروفایل فروشگاه',
 };
 
 export default function ProfilePage() {
