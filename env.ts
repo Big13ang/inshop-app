@@ -15,6 +15,8 @@ export const env = createEnv({
         NEXT_PUBLIC_GLITCHTIP_DSN: z.string().min(1),
         NEXT_PUBLIC_SENTRY_RELEASE: z.string().min(1),
         NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().min(1),
+        NEXT_PUBLIC_GA_ID: z.string().min(1),
+        NEXT_PUBLIC_GTM_ID: z.string().min(1),
     },
     experimental__runtimeEnv: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
@@ -23,5 +25,7 @@ export const env = createEnv({
         NEXT_PUBLIC_GLITCHTIP_DSN: process.env.NEXT_PUBLIC_GLITCHTIP_DSN,
         NEXT_PUBLIC_SENTRY_RELEASE: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
         NEXT_PUBLIC_SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
+        NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
+        NEXT_PUBLIC_GTM_ID: process.env.NEXT_PUBLIC_GTM_ID,
     },
 });

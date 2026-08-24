@@ -5,6 +5,7 @@ import Providers from "./providers";
 import { getServerProfile } from "@/features/profile/services/profileServerService";
 import { Suspense } from "react";
 import IosViewportFixer from "@/components/utils/IosViewportFixer";
+import Analytics from "@/components/utils/Analytics";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -70,6 +71,7 @@ export default function RootLayout({
         </div>
         <Toaster position="top-center" dir="rtl" />
         <IosViewportFixer />
+        <Analytics />
       </body>
     </html>
   );
