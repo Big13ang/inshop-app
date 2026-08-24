@@ -24,9 +24,10 @@ export const metadata: Metadata = {
   description:
     "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
   applicationName: "اینشاپ",
-  // enamad validation
+  // enamad validation & Bing Webmaster verification
   other: {
     enamad: "26426690",
+    "msvalidate.01": "8DA225BAF9A330B1B976E247038E6C9E",
   },
   icons: {
     icon: [
@@ -83,6 +84,8 @@ export default function RootLayout({
       <head>
         {/* enamad validation */}
         <meta name="enamad" content="26426690" />
+        {/* Bing Webmaster verification */}
+        <meta name="msvalidate.01" content="8DA225BAF9A330B1B976E247038E6C9E" />
       </head>
       <body className="flex flex-col overflow-hidden w-full max-w-full md:items-center bg-background">
         <div className="safe-area h-full w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden">
