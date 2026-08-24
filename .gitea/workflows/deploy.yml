@@ -73,15 +73,17 @@ jobs:
           } >> .npmrc.ci
           echo "Configured npm auth for $npm_host."
 
-      - name: Configure Shecan Anti-Sanction DNS
+      - name: Configure Shecan Anti-Sanction DNS & Static Host Mappings
         run: |
           echo "=========================================================="
-          echo "Configuring Shecan Anti-Sanction DNS..."
+          echo "Configuring Shecan Anti-Sanction DNS & Host Mappings..."
           echo "=========================================================="
           if command -v sudo >/dev/null 2>&1; then
             printf "nameserver 178.22.122.100\nnameserver 185.51.200.2\nnameserver 8.8.8.8\n" | sudo tee /etc/resolv.conf >/dev/null || true
+            printf "\n185.143.234.238 errors.inshop.social\n185.143.234.238 registry.inshop.social\n" | sudo tee -a /etc/hosts >/dev/null || true
           elif [ -w /etc/resolv.conf ]; then
             printf "nameserver 178.22.122.100\nnameserver 185.51.200.2\nnameserver 8.8.8.8\n" > /etc/resolv.conf || true
+            printf "\n185.143.234.238 errors.inshop.social\n185.143.234.238 registry.inshop.social\n" >> /etc/hosts || true
           fi
           cat /etc/resolv.conf || true
           echo "=========================================================="
@@ -156,9 +158,16 @@ jobs:
           echo "=========================================================="
           echo "Uploading source maps to GlitchTip..."
           echo "=========================================================="
+          GLITCHTIP_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}"
+          GLITCHTIP_HOST="$(node -e "try { console.log(new URL(process.argv[1]).hostname) } catch { console.log('errors.inshop.social') }" "$GLITCHTIP_URL")"
+
           docker run --rm \
             --network host \
-            -e SENTRY_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
+            --add-host "${GLITCHTIP_HOST}:185.143.234.238" \
+            --add-host "${GLITCHTIP_HOST}:185.143.233.238" \
+            --add-host "errors.inshop.social:185.143.234.238" \
+            --add-host "errors.inshop.social:185.143.233.238" \
+            -e SENTRY_URL="${GLITCHTIP_URL}" \
             -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN || secrets.SENTRY_AUTH_TOKEN }}" \
             -e SENTRY_ORG="${{ vars.GLITCHTIP_ORG || 'inshop' }}" \
             -e SENTRY_PROJECT="${{ vars.GLITCHTIP_PROJECT || 'inshop-app' }}" \
@@ -177,22 +186,33 @@ jobs:
               echo "SERVER_MAPS_CNT: $(find .next/server -name "*.map" 2>/dev/null | wc -l)"
               echo "========================"
 
-              echo "--- 1. Uploading Static Source Maps (~/_next/static) ---"
+              echo "--- 1. Injecting Debug IDs ---"
+              $CLI sourcemaps inject .next || true
+
+              echo "--- 2. Uploading Static Source Maps (~/_next/static) ---"
               $CLI releases files "${RELEASE}" upload-sourcemaps .next/static \
+                --url-prefix "~/_next/static" \
+                --org "${SENTRY_ORG}" \
+                --project "${SENTRY_PROJECT}" || $CLI sourcemaps upload .next/static \
+                --release "${RELEASE}" \
                 --url-prefix "~/_next/static" \
                 --org "${SENTRY_ORG}" \
                 --project "${SENTRY_PROJECT}"
 
-              echo "--- 2. Uploading Server Source Maps (~/_next/server) ---"
+              echo "--- 3. Uploading Server Source Maps (~/_next/server) ---"
               $CLI releases files "${RELEASE}" upload-sourcemaps .next/server \
+                --url-prefix "~/_next/server" \
+                --org "${SENTRY_ORG}" \
+                --project "${SENTRY_PROJECT}" || $CLI sourcemaps upload .next/server \
+                --release "${RELEASE}" \
                 --url-prefix "~/_next/server" \
                 --org "${SENTRY_ORG}" \
                 --project "${SENTRY_PROJECT}"
 
-              echo "--- 3. Finalizing Release ---"
+              echo "--- 4. Finalizing Release ---"
               $CLI releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
 
-              echo "--- 4. Listing Uploaded Release Files in GlitchTip ---"
+              echo "--- 5. Listing Uploaded Release Files in GlitchTip ---"
               $CLI releases files "${RELEASE}" list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
               echo "=========================================================="
             '
