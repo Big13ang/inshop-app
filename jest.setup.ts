@@ -4,6 +4,8 @@ process.env.NEXT_PUBLIC_DEBUG_AUTH = process.env.NEXT_PUBLIC_DEBUG_AUTH || 'fals
 process.env.NEXT_PUBLIC_GLITCHTIP_DSN = process.env.NEXT_PUBLIC_GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5';
 process.env.NEXT_PUBLIC_SENTRY_RELEASE = process.env.NEXT_PUBLIC_SENTRY_RELEASE || 'test-release';
 process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'test';
+process.env.NEXT_PUBLIC_GA_ID = process.env.NEXT_PUBLIC_GA_ID || '';
+process.env.NEXT_PUBLIC_GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || '';
 process.env.GLITCHTIP_DSN = process.env.GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5';
 process.env.SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'test-release';
 process.env.SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'test';
@@ -43,6 +45,8 @@ jest.mock('@/env', () => ({
     NEXT_PUBLIC_GLITCHTIP_DSN: 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5',
     NEXT_PUBLIC_SENTRY_RELEASE: 'test-release',
     NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'test',
+    NEXT_PUBLIC_GA_ID: '',
+    NEXT_PUBLIC_GTM_ID: '',
     GLITCHTIP_DSN: 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5',
     SENTRY_RELEASE: 'test-release',
     SENTRY_ENVIRONMENT: 'test',

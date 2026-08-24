@@ -120,6 +120,8 @@ jobs:
             --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
             --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
             --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            --build-arg NEXT_PUBLIC_GA_ID="${{ vars.NEXT_PUBLIC_GA_ID || '' }}" \
+            --build-arg NEXT_PUBLIC_GTM_ID="${{ vars.NEXT_PUBLIC_GTM_ID || '' }}" \
             --build-arg GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
             --build-arg SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
             --build-arg SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
@@ -135,6 +137,8 @@ jobs:
             --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
             --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
             --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            --build-arg NEXT_PUBLIC_GA_ID="${{ vars.NEXT_PUBLIC_GA_ID || '' }}" \
+            --build-arg NEXT_PUBLIC_GTM_ID="${{ vars.NEXT_PUBLIC_GTM_ID || '' }}" \
             --build-arg GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
             --build-arg SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
             --build-arg SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
