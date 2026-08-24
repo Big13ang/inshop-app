@@ -1,5 +1,13 @@
 process.env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 process.env.NEXT_PUBLIC_CDN_URL = process.env.NEXT_PUBLIC_CDN_URL || 'http://localhost:9000/inshop-uploads';
+process.env.NEXT_PUBLIC_DEBUG_AUTH = process.env.NEXT_PUBLIC_DEBUG_AUTH || 'false';
+process.env.NEXT_PUBLIC_GLITCHTIP_DSN = process.env.NEXT_PUBLIC_GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5';
+process.env.NEXT_PUBLIC_SENTRY_RELEASE = process.env.NEXT_PUBLIC_SENTRY_RELEASE || 'test-release';
+process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || 'test';
+process.env.GLITCHTIP_DSN = process.env.GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5';
+process.env.SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'test-release';
+process.env.SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'test';
+process.env.E2E_MOCK = process.env.E2E_MOCK || 'false';
 
 import '@testing-library/jest-dom';
 import mockReact from 'react';
@@ -31,6 +39,14 @@ jest.mock('@/env', () => ({
   env: {
     NEXT_PUBLIC_API_URL: 'http://localhost:3000',
     NEXT_PUBLIC_CDN_URL: 'http://localhost:9000/inshop-uploads',
+    NEXT_PUBLIC_DEBUG_AUTH: 'false',
+    NEXT_PUBLIC_GLITCHTIP_DSN: 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5',
+    NEXT_PUBLIC_SENTRY_RELEASE: 'test-release',
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'test',
+    GLITCHTIP_DSN: 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5',
+    SENTRY_RELEASE: 'test-release',
+    SENTRY_ENVIRONMENT: 'test',
+    E2E_MOCK: 'false',
   },
 }));
 

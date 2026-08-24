@@ -114,10 +114,14 @@ jobs:
             --secret id=npmrc,src=.npmrc.ci \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
-            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
+            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH || 'false' }}" \
             --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            --build-arg GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
             --build-arg SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
             --build-arg SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            --build-arg E2E_MOCK="false" \
             -t frontend-builder .
 
           echo "Building hardened production image (stripping all .map files for security)..."
@@ -125,10 +129,14 @@ jobs:
             --secret id=npmrc,src=.npmrc.ci \
             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL }}" \
-            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH }}" \
+            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH || 'false' }}" \
             --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            --build-arg GLITCHTIP_DSN="${{ steps.env_info.outputs.glitchtip_dsn }}" \
             --build-arg SENTRY_RELEASE="${{ steps.env_info.outputs.release_name }}" \
             --build-arg SENTRY_ENVIRONMENT="${{ steps.env_info.outputs.env_name }}" \
+            --build-arg E2E_MOCK="false" \
             -t "${IMAGE}:${{ steps.env_info.outputs.image_tag }}" .
           echo "Docker image build completed."
 
@@ -148,21 +156,9 @@ jobs:
           echo "=========================================================="
           echo "Uploading source maps to GlitchTip..."
           echo "=========================================================="
-          CLI_PATH="$PWD/bin/glitchtip-cli"
-          if [ ! -f "$CLI_PATH" ]; then
-            mkdir -p "$HOME/.local/bin"
-            curl -fsSL -A "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0" \
-              "https://gitlab.com/glitchtip/glitchtip-cli/-/jobs/artifacts/v1.0.0/raw/artifacts/glitchtip-cli-linux-x86_64?job=build-linux-x86_64" \
-              -o "$HOME/.local/bin/glitchtip-cli" && chmod +x "$HOME/.local/bin/glitchtip-cli" || true
-            CLI_PATH="$(command -v glitchtip-cli || echo "$HOME/.local/bin/glitchtip-cli")"
-          fi
-          chmod +x "${CLI_PATH}" 2>/dev/null || true
-          echo "GlitchTip CLI located at: ${CLI_PATH}"
-
           docker run --rm \
             --dns 178.22.122.100 \
             --dns 185.51.200.2 \
-            -v "${CLI_PATH}:/usr/local/bin/glitchtip-cli:ro" \
             -e SENTRY_URL="${{ vars.GLITCHTIP_URL || 'https://errors.inshop.social' }}" \
             -e SENTRY_AUTH_TOKEN="${{ secrets.GLITCHTIP_AUTH_TOKEN || secrets.SENTRY_AUTH_TOKEN }}" \
             -e SENTRY_ORG="${{ vars.GLITCHTIP_ORG || 'inshop' }}" \
@@ -171,72 +167,34 @@ jobs:
             sh -c '
               set -uo pipefail
               RELEASE="${{ steps.env_info.outputs.release_name }}"
+              CLI="./node_modules/.bin/sentry-cli"
 
-              echo "=== GLITCHTIP DIAGNOSTIC CONFIG ==="
+              echo "=== GLITCHTIP CONFIG ==="
               echo "SENTRY_URL:      ${SENTRY_URL}"
               echo "SENTRY_ORG:      ${SENTRY_ORG}"
               echo "SENTRY_PROJECT:  ${SENTRY_PROJECT}"
               echo "RELEASE:         ${RELEASE}"
-              echo "AUTH_TOKEN_LEN:  ${#SENTRY_AUTH_TOKEN}"
               echo "STATIC_MAPS_CNT: $(find .next/static -name "*.map" 2>/dev/null | wc -l)"
               echo "SERVER_MAPS_CNT: $(find .next/server -name "*.map" 2>/dev/null | wc -l)"
-              echo "==================================="
+              echo "========================"
 
-              echo "--- 1. Testing Organization & Projects API ---"
-              curl -s -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" "${SENTRY_URL}/api/0/organizations/${SENTRY_ORG}/projects/" || echo "Could not query projects"
-              echo ""
-
-              if command -v glitchtip-cli >/dev/null 2>&1 && glitchtip-cli --version >/dev/null 2>&1; then
-                echo "Using GlitchTip CLI: $(glitchtip-cli --version)"
-
-                echo "--- 2. Testing GlitchTip Connection ---"
-                glitchtip-cli info || echo "[WARN] glitchtip-cli info returned non-zero (continuing)..."
-
-                echo "--- 3. Creating Release: ${RELEASE} ---"
-                glitchtip-cli releases new "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Release create returned non-zero (continuing)..."
-
-                echo "--- 4. Injecting Debug IDs into .next ---"
-                glitchtip-cli sourcemaps inject .next
-
-                echo "--- 5. Uploading Client Static Source Maps (~/_next/static) ---"
-                glitchtip-cli sourcemaps upload .next/static \
-                  --release "${RELEASE}" \
-                  --url-prefix "~/_next/static" \
-                  --org "${SENTRY_ORG}" \
-                  --project "${SENTRY_PROJECT}" \
-                  --validate || echo "[WARN] Client sourcemap upload returned non-zero (continuing)..."
-
-                echo "--- 6. Uploading Server Source Maps (~/_next/server) ---"
-                glitchtip-cli sourcemaps upload .next/server \
-                  --release "${RELEASE}" \
-                  --url-prefix "~/_next/server" \
-                  --org "${SENTRY_ORG}" \
-                  --project "${SENTRY_PROJECT}" \
-                  --validate || echo "[WARN] Server sourcemap upload returned non-zero (continuing)..."
-
-                echo "--- 7. Finalizing Release in GlitchTip ---"
-                glitchtip-cli releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Finalize returned non-zero (continuing)..."
-              fi
-
-              echo "--- 8. Uploading Direct Release Files for GlitchTip UI ---"
-              CLI="./node_modules/.bin/sentry-cli"
+              echo "--- 1. Uploading Static Source Maps (~/_next/static) ---"
               $CLI releases files "${RELEASE}" upload-sourcemaps .next/static \
                 --url-prefix "~/_next/static" \
                 --org "${SENTRY_ORG}" \
-                --project "${SENTRY_PROJECT}" || echo "[WARN] Release files static upload returned non-zero (continuing)..."
+                --project "${SENTRY_PROJECT}"
 
+              echo "--- 2. Uploading Server Source Maps (~/_next/server) ---"
               $CLI releases files "${RELEASE}" upload-sourcemaps .next/server \
                 --url-prefix "~/_next/server" \
                 --org "${SENTRY_ORG}" \
-                --project "${SENTRY_PROJECT}" || echo "[WARN] Release files server upload returned non-zero (continuing)..."
+                --project "${SENTRY_PROJECT}"
 
+              echo "--- 3. Finalizing Release ---"
               $CLI releases finalize "${RELEASE}" --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
 
-              echo "--- 9. Listing Uploaded Release Files in GlitchTip ---"
-              $CLI releases files "${RELEASE}" list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || echo "[WARN] Could not list release files"
-
-              echo "--- 10. Verifying Release Status ---"
-              $CLI releases list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
+              echo "--- 4. Listing Uploaded Release Files in GlitchTip ---"
+              $CLI releases files "${RELEASE}" list --org "${SENTRY_ORG}" --project "${SENTRY_PROJECT}" || true
               echo "=========================================================="
             '
           docker rmi frontend-builder || true

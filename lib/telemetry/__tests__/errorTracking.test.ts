@@ -17,6 +17,8 @@ const mockScope = {
 };
 
 jest.mock("@sentry/nextjs", () => ({
+  init: jest.fn(),
+  getClient: jest.fn(),
   captureException: jest.fn(() => "mock-event-id-exception"),
   captureMessage: jest.fn(() => "mock-event-id-message"),
   setUser: jest.fn(),

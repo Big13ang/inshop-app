@@ -16,6 +16,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "diff:generate": "node .agents/skills/detail-recap/scripts/detail-recap.js",
+    "upload-sourcemaps": "./scripts/upload-sourcemaps.sh",
     "prepare": "lefthook install"
   },
   "dependencies": {

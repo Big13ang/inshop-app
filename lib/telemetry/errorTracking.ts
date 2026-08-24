@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import "@/sentry.client.config";
 import { type Result } from "@/lib/utils/result";
 import { normalizeError } from "./normalizer";
 import { ErrorTrackingUser, TelemetryContext } from "./types";

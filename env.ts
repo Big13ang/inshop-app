@@ -3,21 +3,25 @@ import * as z from "zod";
 
 export const env = createEnv({
     server: {
-        // DATABASE_URL: z.url(),
-        // OPEN_AI_API_KEY: z.string().min(1),
-        E2E_MOCK: z.string().optional(),
-        GLITCHTIP_DSN: z.string().optional(),
+        E2E_MOCK: z.string().min(1),
+        GLITCHTIP_DSN: z.string().min(1),
+        SENTRY_RELEASE: z.string().min(1),
+        SENTRY_ENVIRONMENT: z.string().min(1),
     },
     client: {
         NEXT_PUBLIC_API_URL: z.url(),
         NEXT_PUBLIC_CDN_URL: z.url(),
-        NEXT_PUBLIC_DEBUG_AUTH: z.enum(['true', 'false']).optional(),
-        NEXT_PUBLIC_GLITCHTIP_DSN: z.string().optional(),
+        NEXT_PUBLIC_DEBUG_AUTH: z.enum(['true', 'false']),
+        NEXT_PUBLIC_GLITCHTIP_DSN: z.string().min(1),
+        NEXT_PUBLIC_SENTRY_RELEASE: z.string().min(1),
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().min(1),
     },
     experimental__runtimeEnv: {
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
         NEXT_PUBLIC_CDN_URL: process.env.NEXT_PUBLIC_CDN_URL,
         NEXT_PUBLIC_DEBUG_AUTH: process.env.NEXT_PUBLIC_DEBUG_AUTH,
         NEXT_PUBLIC_GLITCHTIP_DSN: process.env.NEXT_PUBLIC_GLITCHTIP_DSN,
+        NEXT_PUBLIC_SENTRY_RELEASE: process.env.NEXT_PUBLIC_SENTRY_RELEASE,
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
     },
 });
