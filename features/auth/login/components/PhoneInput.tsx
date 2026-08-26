@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import ErrorMessage from './ErrorMessage';
 import { useFormContext, useFormState } from 'react-hook-form';
 
-interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     name?: string;
     label?: string;
     error?: string;
