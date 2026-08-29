@@ -10,6 +10,7 @@
   },
   "mutate": [
     "features/auth/login/components/PhoneInput.tsx",
+    "features/auth/login/components/SubmitButton.tsx",
     "features/auth/password/components/PasswordInput.tsx"
   ]
 }
