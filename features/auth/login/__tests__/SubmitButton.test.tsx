@@ -1,7 +1,5 @@
-// @ts-nocheck
 import React from 'react';
-import userEvent from '@testing-library/user-event';
-import { render } from '@testing-library/react';
+import { render, userEvent, expect } from '@/lib/test-utils';
 import SubmitButton, { SubmitButtonProps } from '../components/SubmitButton';
 
 const initButton = (props: Partial<SubmitButtonProps> = {}, children: React.ReactNode = 'ادامه') => {

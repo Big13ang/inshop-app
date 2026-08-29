@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { AUTH_FORMS, AuthForm } from "../../constant";
-import userEvent from "@testing-library/user-event";
-import { render } from "@testing-library/react";
+import { render, userEvent, expect } from "@/lib/test-utils";
 import PasswordInput from "../components/PasswordInput";
 
 interface FormWrapperProps {

@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import PhoneInput, { PhoneInputProps } from "../components/PhoneInput";
-import userEvent from '@testing-library/user-event';
-import { render } from '@testing-library/react';
+import { render, userEvent, expect } from '@/lib/test-utils';
 
 const INPUT_PLACEHOLDER = "09035703067";
 const PHONE_NUMBER_ERROR_MESSAGE = "شماره تماس باید 11 رقم باشد.";
