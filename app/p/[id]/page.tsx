@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const image = coverMedia ? getMediaUrl(coverMedia) : null;
 
   return constructMetadata({
-    title: undefined,
+    title: post.product?.name || undefined,
     description: post.description,
     image,
     shopName,
