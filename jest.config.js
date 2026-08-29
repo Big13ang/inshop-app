@@ -3,6 +3,7 @@ const config = {
   // jest-fixed-jsdom properly exposes Node's native fetch globals (Request, Response, etc.)
   // that MSW v2 interceptors need at module load time.
   testEnvironment: 'jest-fixed-jsdom',
+  setupFiles: ['<rootDir>/jest.polyfills.js'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     // Force MSW to resolve to its precompiled CJS builds (avoids ESM/TS source)

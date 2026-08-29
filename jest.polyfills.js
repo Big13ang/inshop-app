@@ -6,6 +6,14 @@
  * jsdom's test environment doesn't expose these — so we copy them from globalThis.
  */
 
+// Configure React 19 act environment globally before any React imports
+global.IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+if (typeof window !== 'undefined') {
+  window.IS_REACT_ACT_ENVIRONMENT = true;
+}
+var IS_REACT_ACT_ENVIRONMENT = true;
+
 import { TextDecoder, TextEncoder } from 'util';
 import { ReadableStream } from 'stream/web';
 
@@ -20,4 +28,5 @@ Object.assign(global, {
   Response: globalThis.Response,
   Headers: globalThis.Headers,
   FormData: globalThis.FormData,
+  IS_REACT_ACT_ENVIRONMENT: true,
 });

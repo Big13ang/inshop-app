@@ -11,6 +11,16 @@ process.env.SENTRY_RELEASE = process.env.SENTRY_RELEASE || 'test-release';
 process.env.SENTRY_ENVIRONMENT = process.env.SENTRY_ENVIRONMENT || 'test';
 process.env.E2E_MOCK = process.env.E2E_MOCK || 'false';
 
+// Configure React 19 act environment across all global scopes
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).IS_REACT_ACT_ENVIRONMENT = true;
+if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).IS_REACT_ACT_ENVIRONMENT = true;
+}
+
 import '@testing-library/jest-dom';
 import mockReact from 'react';
 import { server } from './mocks/server';
