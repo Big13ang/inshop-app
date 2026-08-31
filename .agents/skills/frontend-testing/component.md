@@ -190,7 +190,14 @@ type User = ReturnType<typeof userEvent.setup>;
 
 // ─── Tier 1: Domain Locators (SRP: Querying DOM Elements) ───────────────────
 export const authLocators = {
-  phoneInput: () => screen.getByRole('textbox'),
+  phoneInput: (name: RegExp | string = new RegExp(LOGIN_TEXTS.label, 'i')) => {
+    const regex = typeof name === 'string' ? new RegExp(name, 'i') : name;
+    return screen.getByRole('textbox', { name: regex });
+  },
+  phoneInputByPlaceholder: (placeholder: RegExp | string = new RegExp(LOGIN_TEXTS.placeholder, 'i')) => {
+    const regex = typeof placeholder === 'string' ? new RegExp(placeholder, 'i') : placeholder;
+    return screen.getByPlaceholderText(regex);
+  },
   phoneLabel: () => screen.getByLabelText(LOGIN_TEXTS.label),
   alert: () => screen.getByRole('alert'),
   queryAlert: () => screen.queryByRole('alert'),
@@ -228,11 +235,6 @@ export function createLoginDriver(options: LoginDriverOptions = {}) {
     user,
     onSubmit,
     ...actions,
-
-    // Header queries
-    heading: () => screen.getByRole('heading', { name: LOGIN_TEXTS.title }),
-    subtitle: () => screen.getByText(LOGIN_TEXTS.subtitle),
-    terms: () => screen.getByText(LOGIN_TEXTS.terms),
 
     // Element queries delegated directly to authLocators
     phoneLabel: authLocators.phoneLabel,
@@ -279,47 +281,26 @@ import { TEXTS } from '../constants';
 import { VALID_PHONES, INVALID_PHONES } from './fixtures/phones';
 import { createLoginDriver } from '@/features/auth/testing/authDrivers';
 
-// ─── Initial render ───────────────────────────────────────────────────────────
-describe('Login Component - Initial Rendering', () => {
-  it('renders page header title and subtitle', () => {
-    const page = createLoginDriver();
-
-    expect(page.heading()).toBeInTheDocument();
-    expect(page.subtitle()).toBeInTheDocument();
-  });
-
-  it('renders phone input associated with its label and correct attributes', () => {
+// ─── Initial State ────────────────────────────────────────────────────────────
+describe('Login Component - Initial State', () => {
+  it('renders phone input with associated label and disabled submit button', () => {
     const page = createLoginDriver();
 
     expect(page.phoneLabel()).toBeInTheDocument();
-    expect(page.phoneInput()).toHaveAttribute('type', 'tel');
-    expect(page.phoneInput()).toHaveAttribute('placeholder', TEXTS.placeholder);
     expect(page.phoneInput()).toHaveAttribute('aria-invalid', 'false');
-  });
-
-  it('renders submit button as disabled on initial load', () => {
-    const page = createLoginDriver();
-
-    expect(page.submitButton()).toBeInTheDocument();
     expect(page.submitButton()).toBeDisabled();
   });
 
-  it('renders terms and conditions notice', () => {
-    const page = createLoginDriver();
-
-    expect(page.terms()).toBeInTheDocument();
-  });
-
-  it('shows no validation error on fresh load', () => {
+  it('does not display validation error before user interaction', () => {
     const page = createLoginDriver();
 
     expect(page.queryAlert()).not.toBeInTheDocument();
   });
 });
 
-// ─── Validation feedback ──────────────────────────────────────────────────────
-describe('Login Component - Input Validation', () => {
-  it('shows error message and sets aria-invalid when invalid phone is entered', async () => {
+// ─── Validation & Error Recovery ──────────────────────────────────────────────
+describe('Login Component - Validation & Error Recovery', () => {
+  it('shows error feedback and sets aria-invalid when invalid phone is entered', async () => {
     const page = createLoginDriver();
 
     await page.fillPhone(INVALID_PHONES.tooShort);
@@ -331,7 +312,7 @@ describe('Login Component - Input Validation', () => {
     });
   });
 
-  it('clears error message and resets aria-invalid when corrected to valid phone', async () => {
+  it('clears error feedback and resets aria-invalid when user corrects to a valid phone', async () => {
     const page = createLoginDriver();
 
     await page.fillPhone(INVALID_PHONES.tooShort);
@@ -345,42 +326,11 @@ describe('Login Component - Input Validation', () => {
       expect(page.phoneInput()).toHaveAttribute('aria-invalid', 'false');
     });
   });
-
-  it('displays error for non-numeric phone input', async () => {
-    const page = createLoginDriver();
-
-    await page.fillPhone(INVALID_PHONES.letters);
-
-    await waitFor(() => {
-      expect(page.alert()).toBeInTheDocument();
-      expect(page.alert()).toHaveTextContent(TEXTS.errorInvalidPhone);
-    });
-  });
 });
 
-// ─── Submit button state ──────────────────────────────────────────────────────
+// ─── Submit Button State ──────────────────────────────────────────────────────
 describe('Login Component - Submit Button State', () => {
-  it('enables submit button when valid phone is entered', async () => {
-    const page = createLoginDriver();
-
-    await page.fillPhone(VALID_PHONES.standard);
-
-    await waitFor(() => {
-      expect(page.submitButton()).not.toBeDisabled();
-    });
-  });
-
-  it('keeps submit button disabled when phone is invalid', async () => {
-    const page = createLoginDriver();
-
-    await page.fillPhone(INVALID_PHONES.nineDigits);
-
-    await waitFor(() => {
-      expect(page.submitButton()).toBeDisabled();
-    });
-  });
-
-  it('disables submit button again if valid phone is cleared', async () => {
+  it('enables submit button on valid phone and re-disables when cleared', async () => {
     const page = createLoginDriver();
 
     await page.fillPhone(VALID_PHONES.standard);
@@ -391,9 +341,9 @@ describe('Login Component - Submit Button State', () => {
   });
 });
 
-// ─── Form submission ──────────────────────────────────────────────────────────
-describe('Login Component - Form Submission Flow', () => {
-  it('calls onSubmit with valid phone when submit button is clicked', async () => {
+// ─── Submission Flow ──────────────────────────────────────────────────────────
+describe('Login Component - Submission Flow', () => {
+  it('calls onSubmit with valid phone number on button click', async () => {
     const page = createLoginDriver();
 
     await page.fillAndSubmit(VALID_PHONES.standard);
@@ -404,7 +354,7 @@ describe('Login Component - Form Submission Flow', () => {
     });
   });
 
-  it('submits form when Enter key is pressed in phone input with valid data', async () => {
+  it('submits the form when Enter key is pressed in phone input with valid data', async () => {
     const page = createLoginDriver();
 
     await page.fillPhone(VALID_PHONES.standard);
@@ -416,15 +366,6 @@ describe('Login Component - Form Submission Flow', () => {
       expect(page.onSubmit).toHaveBeenCalledTimes(1);
       expect(page.onSubmit).toHaveBeenCalledWith({ phone: VALID_PHONES.standard });
     });
-  });
-
-  it('does not submit when phone is invalid', async () => {
-    const page = createLoginDriver();
-
-    await page.fillPhone(INVALID_PHONES.tooShort);
-    await page.clickSubmit();
-
-    expect(page.onSubmit).not.toHaveBeenCalled();
   });
 
   it('displays loading state and disables submit button during async submission', async () => {
@@ -443,6 +384,7 @@ describe('Login Component - Form Submission Flow', () => {
 
     await page.clickSubmit();
 
+    // In-flight state: button shows loading text & is disabled
     await waitFor(() => {
       expect(page.querySubmittingButton()).toBeInTheDocument();
       expect(page.querySubmittingButton()).toBeDisabled();
@@ -451,6 +393,7 @@ describe('Login Component - Form Submission Flow', () => {
 
     resolveSubmit();
 
+    // Completion state: normal button restored
     await waitFor(() => {
       expect(page.querySubmitButton()).toBeInTheDocument();
       expect(page.querySubmittingButton()).not.toBeInTheDocument();
