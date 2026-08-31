@@ -7,7 +7,14 @@ type User = ReturnType<typeof userEvent.setup>;
 // ─── 1. Auth Locators ────────────────────────────────────────────────────────
 
 export const authLocators = {
-  phoneInput: () => screen.getByRole('textbox'),
+  phoneInput: (name: RegExp | string = new RegExp(LOGIN_TEXTS.label, 'i')) => {
+    const regex = typeof name === 'string' ? new RegExp(name, 'i') : name;
+    return screen.getByRole('textbox', { name: regex });
+  },
+  phoneInputByPlaceholder: (placeholder: RegExp | string = new RegExp(LOGIN_TEXTS.placeholder, 'i')) => {
+    const regex = typeof placeholder === 'string' ? new RegExp(placeholder, 'i') : placeholder;
+    return screen.getByPlaceholderText(regex);
+  },
   phoneLabel: () => screen.getByLabelText(LOGIN_TEXTS.label),
   alert: () => screen.getByRole('alert'),
   queryAlert: () => screen.queryByRole('alert'),
@@ -48,14 +55,10 @@ export function createLoginDriver(options: LoginDriverOptions = {}) {
     onSubmit,
     ...actions,
 
-    // Header & Info
-    heading: () => screen.getByRole('heading', { name: LOGIN_TEXTS.title }),
-    subtitle: () => screen.getByText(LOGIN_TEXTS.subtitle),
-    terms: () => screen.getByText(LOGIN_TEXTS.terms),
-
     // Element queries
     phoneLabel: authLocators.phoneLabel,
-    phoneInput: authLocators.phoneInput,
+    phoneInput: () => authLocators.phoneInput(),
+    phoneInputByPlaceholder: () => authLocators.phoneInputByPlaceholder(),
     alert: authLocators.alert,
     queryAlert: authLocators.queryAlert,
     submitButton: () => authLocators.submitButton(LOGIN_TEXTS.submit),
