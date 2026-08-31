@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { RotateCcw, Home } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { HomeIcon } from "@/components/icons/HomeIcon";
 import { Button } from "@/components/ui/button";
 import { captureError } from "@/lib/telemetry/errorTracking";
 
@@ -89,7 +90,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
                 onClick={handleGoHome}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-700 hover:text-black transition-colors py-2 cursor-pointer underline underline-offset-4"
               >
-                <Home className="size-3.5" strokeWidth={2} />
+                <HomeIcon className="size-3.5" />
                 <span>صفحه اصلی</span>
               </button>
             </div>

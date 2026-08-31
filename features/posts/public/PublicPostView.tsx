@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Home } from 'lucide-react';
+import { HomeIcon } from '@/components/icons/HomeIcon';
 import Header from '@/components/layout/Header';
 import MainFooter from '@/components/layout/MainFooter';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
                 size="xl"
                 className="w-full flex items-center justify-center gap-2"
               >
-                <Home className="size-4" strokeWidth={2} />
+                <HomeIcon className="size-4" />
                 صفحه اصلی
               </Button>
             </Link>

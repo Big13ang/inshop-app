@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Store } from 'lucide-react';
+import { Store } from 'lucide-react';
+import { HomeIcon } from '@/components/icons/HomeIcon';
 import { Button } from '@/components/ui/button';
 import { text } from '../constants';
 
@@ -45,7 +46,7 @@ export default function UnverifiedSellerView() {
               size="xl"
               className="w-full flex items-center justify-center gap-2 font-bold"
             >
-              <Home className="size-4" strokeWidth={2} />
+              <HomeIcon className="size-4" />
               <span>{text.unverified.homeAction}</span>
             </Button>
           </Link>

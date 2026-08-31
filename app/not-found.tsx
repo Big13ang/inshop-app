@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
+import { HomeIcon } from '@/components/icons/HomeIcon';
 import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
@@ -58,7 +59,7 @@ export default function NotFound() {
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-700 hover:text-black transition-colors py-2 cursor-pointer underline underline-offset-4"
         >
-          <Home className="size-3.5" strokeWidth={2} />
+          <HomeIcon className="size-3.5" />
           <span>صفحه اصلی</span>
         </Link>
       </div>

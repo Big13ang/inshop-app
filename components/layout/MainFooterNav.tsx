@@ -3,10 +3,13 @@
 
 import { useTransition, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, PlusSquare, Send, Home } from 'lucide-react';
+import { User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/features/profile/context/UserContext';
 import { cn, getMediaUrl } from '@/lib/utils';
+import { HomeIcon } from '@/components/icons/HomeIcon';
+import { AddIcon } from '@/components/icons/AddIcon';
+import { ChatIcon } from '@/components/icons/ChatIcon';
 import Footer, { type FooterTabConfig } from './Footer';
 import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet';
 
@@ -88,19 +91,20 @@ export default function MainFooterNav() {
             customRender: (isActive: boolean) => (
                 <span className={cn(
                     "relative inline-flex items-center justify-center size-8 !overflow-visible",
-                    "after:content-['بزودی'] after:absolute after:-top-2 after:-right-3",
+                    "after:content-['بزودی'] after:absolute after:-top-2 after:-left-3",
                     "after:rounded-full after:bg-primary after:px-1.5 after:py-0.5",
                     "after:text-[9px] after:font-bold after:text-on-primary",
                     "after:leading-none after:whitespace-nowrap after:pointer-events-none after:z-50"
                 )}>
-                    <Send
+                    <ChatIcon
                         data-testid="tab-icon"
+                        width={32}
+                        height={32}
                         className={cn(
-                            'size-8 -scale-x-100',
+                            'size-8',
                             isActive ? 'text-primary' : 'text-secondary',
                         )}
-                        strokeWidth={isActive ? 2.5 : 2}
-                        fill={isActive ? 'currentColor' : 'none'}
+                        filled={isActive}
                         aria-hidden="true"
                     />
                 </span>
@@ -108,15 +112,42 @@ export default function MainFooterNav() {
         },
         {
             id: ROUTES.newPost,
-            icon: PlusSquare,
             label: 'پست جدید',
             onPress: navigate,
+            customRender: (isActive: boolean) => (
+                <span className="flex flex-col items-center">
+                    <AddIcon
+                        data-testid="tab-icon"
+                        width={32}
+                        height={32}
+                        className={cn(
+                            'size-8',
+                            isActive ? 'text-primary' : 'text-secondary',
+                        )}
+                        aria-hidden="true"
+                    />
+                </span>
+            ),
         },
         {
             id: ROUTES.home,
-            icon: Home,
             label: 'خانه',
             onPress: navigate,
+            customRender: (isActive: boolean) => (
+                <span className="flex flex-col items-center">
+                    <HomeIcon
+                        data-testid="tab-icon"
+                        width={32}
+                        height={32}
+                        className={cn(
+                            'size-8',
+                            isActive ? 'text-primary' : 'text-secondary',
+                        )}
+                        filled={isActive}
+                        aria-hidden="true"
+                    />
+                </span>
+            ),
         },
     ];
 
