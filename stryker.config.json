@@ -4,13 +4,24 @@
   "jest": {
     "configFile": "jest.config.js"
   },
-  "reporters": ["progress", "clear-text"],
+  "reporters": ["html", "clear-text", "progress"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
   "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": ".stryker-tmp/incremental.json",
   "mutate": [
     "features/**/*.{ts,tsx}",
     "!features/**/__tests__/**",
+    "!features/**/testing/**",
+    "!features/**/fixtures/**",
+    "!features/**/types.ts",
     "!features/**/*.d.ts"
   ],
+  "mutator": {
+    "excludedMutations": ["StringLiteral"]
+  },
   "inPlace": true,
   "concurrency": 2,
   "timeoutMS": 15000
