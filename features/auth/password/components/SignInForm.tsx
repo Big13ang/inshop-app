@@ -18,7 +18,11 @@ import {
   useResetPasswordPhoneNumberMutation,
 } from '@/features/auth/hooks/useAuthMutations';
 
-export default function SignInForm() {
+export interface SignInFormProps {
+  defaultValues?: Partial<SignInFormData>;
+}
+
+export default function SignInForm({ defaultValues }: SignInFormProps = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -39,6 +43,7 @@ export default function SignInForm() {
       password: '',
       otp: '',
       authForm: AUTH_FORMS.SIGN_IN,
+      ...defaultValues,
     },
     resolver: zodResolver(dynamicAuthValidationSchema),
   });
