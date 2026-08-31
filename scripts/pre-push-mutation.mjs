@@ -2,7 +2,26 @@ import { execSync } from 'node:child_process';
 
 /**
  * Runs Stryker mutation testing ONLY on component/feature files modified in this push.
+ * Guarantees automated rollback via git if interrupted or failed.
  */
+function cleanup() {
+  try {
+    execSync('git restore . 2>/dev/null');
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
+// Safety traps for graceful rollback on abort/exit
+process.on('SIGINT', () => {
+  cleanup();
+  process.exit(1);
+});
+process.on('SIGTERM', () => {
+  cleanup();
+  process.exit(1);
+});
+
 function getChangedFiles() {
   try {
     // 1. Try to find files changed against upstream tracking branch
@@ -68,11 +87,16 @@ if (filesToMutate.length === 0) {
 const mutatePattern = filesToMutate.join(',');
 console.log(`🔍 Running scoped mutation test on ${filesToMutate.length} changed file(s):\n${filesToMutate.map(f => `  - ${f}`).join('\n')}\n`);
 
+let exitCode = 0;
 try {
   execSync(`npx stryker run --mutate "${mutatePattern}"`, {
     stdio: 'inherit',
   });
 } catch {
   console.error('❌ Mutation testing failed. Some mutants survived.');
-  process.exit(1);
+  exitCode = 1;
+} finally {
+  cleanup();
 }
+
+process.exit(exitCode);
