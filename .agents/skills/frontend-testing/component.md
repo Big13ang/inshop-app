@@ -164,22 +164,95 @@ Branding, copy, and layout belong in E2E / visual tests, not component tests.
 
 ---
 
-## The `setup()` Pattern — Fresh World Per Test
+## The 3-Tier Functional Driver Pattern (SOLID & Reusable)
 
 **Never render in `beforeAll` or share a `user` instance.**
-Every test gets its own render.
+Every test uses a fresh driver factory that encapsulates DOM queries and user actions without classes or OOP boilerplate.
+
+```
+┌────────────────────────────────────────────────────────┐
+│  Tier 1: Domain Locators (authLocators)                │  DOM queries only
+├────────────────────────────────────────────────────────┤
+│  Tier 2: Domain Actions (createAuthActions)            │  User interactions
+├────────────────────────────────────────────────────────┤
+│  Tier 3: Flow Driver (createLoginDriver)               │  Mounts & composes
+└────────────────────────────────────────────────────────┘
+```
+
+### Shared Driver Definition (`features/auth/testing/authDrivers.tsx`)
 
 ```typescript
-// features/auth/login/__tests__/Login.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import Login from '../Login';
+import { render, screen, userEvent } from '@/lib/test-utils';
+import Login, { LoginProps } from '@/features/auth/login/Login';
+import { TEXTS as LOGIN_TEXTS } from '@/features/auth/login/constants';
 
-const setup = () => {
-  const user = userEvent.setup();
-  render(<Login />);
-  return { user };
+type User = ReturnType<typeof userEvent.setup>;
+
+// ─── Tier 1: Domain Locators (SRP: Querying DOM Elements) ───────────────────
+export const authLocators = {
+  phoneInput: () => screen.getByRole('textbox'),
+  phoneLabel: () => screen.getByLabelText(LOGIN_TEXTS.label),
+  alert: () => screen.getByRole('alert'),
+  queryAlert: () => screen.queryByRole('alert'),
+  submitButton: (name: RegExp | string = new RegExp(LOGIN_TEXTS.submit, 'i')) => {
+    const regex = typeof name === 'string' ? new RegExp(name, 'i') : name;
+    return screen.getByRole('button', { name: regex });
+  },
+  querySubmitButton: (name: RegExp | string = new RegExp(LOGIN_TEXTS.submit, 'i')) => {
+    const regex = typeof name === 'string' ? new RegExp(name, 'i') : name;
+    return screen.queryByRole('button', { name: regex });
+  },
 };
+
+// ─── Tier 2: Domain Actions (SRP: User Interactions) ────────────────────────
+export const createAuthActions = (user: User) => ({
+  fillPhone: (phone: string) => user.type(authLocators.phoneInput(), phone),
+  clearPhone: () => user.clear(authLocators.phoneInput()),
+  submitPhone: () => user.type(authLocators.phoneInput(), '{Enter}'),
+  clickSubmit: (name?: RegExp | string) => user.click(authLocators.submitButton(name)),
+});
+
+// ─── Tier 3: Feature Driver (SRP: Mounts & Composes for Login) ──────────────
+export interface LoginDriverOptions {
+  onSubmit?: LoginProps['onSubmit'];
+}
+
+export function createLoginDriver(options: LoginDriverOptions = {}) {
+  const onSubmit = options.onSubmit ?? jest.fn();
+  const user = userEvent.setup();
+  const actions = createAuthActions(user);
+
+  render(<Login onSubmit={onSubmit} />);
+
+  return {
+    user,
+    onSubmit,
+    ...actions,
+
+    // Header queries
+    heading: () => screen.getByRole('heading', { name: LOGIN_TEXTS.title }),
+    subtitle: () => screen.getByText(LOGIN_TEXTS.subtitle),
+    terms: () => screen.getByText(LOGIN_TEXTS.terms),
+
+    // Element queries delegated directly to authLocators
+    phoneLabel: authLocators.phoneLabel,
+    phoneInput: authLocators.phoneInput,
+    alert: authLocators.alert,
+    queryAlert: authLocators.queryAlert,
+
+    // Button queries
+    submitButton: () => authLocators.submitButton(LOGIN_TEXTS.submit),
+    submittingButton: () => authLocators.submitButton(LOGIN_TEXTS.isSubmitting),
+    querySubmitButton: () => authLocators.querySubmitButton(LOGIN_TEXTS.submit),
+    querySubmittingButton: () => authLocators.querySubmitButton(LOGIN_TEXTS.isSubmitting),
+
+    // Composite flow action
+    fillAndSubmit: async (phone: string) => {
+      await actions.fillPhone(phone);
+      await actions.clickSubmit(LOGIN_TEXTS.submit);
+    },
+  };
+}
 ```
 
 ---
@@ -196,163 +269,194 @@ const setup = () => {
 
 **Never use**: `querySelector`, class selectors, XPath.
 
-```typescript
-// ✅ Role-first queries
-screen.getByRole('textbox')                           // <input>
-screen.getByRole('button', { name: /دریافت کد/ })    // text-matched button
-screen.getByRole('heading', { name: /ورود/ })
-screen.getByRole('img', { name: /لوگو/ })
-
-// ✅ Label — also validates htmlFor/id pairing
-screen.getByLabelText('شماره موبایل')
-
-// ❌ Never
-document.querySelector('.submit-btn')
-screen.getByTestId('phone-input')  // only if nothing else works
-```
-
 ---
 
-## Complete Form Component Test
+## Complete Form Component Test (`features/auth/login/__tests__/Login.test.tsx`)
 
 ```typescript
-// features/auth/login/__tests__/Login.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import Login from '../Login';
+import { waitFor, expect } from '@/lib/test-utils';
+import { TEXTS } from '../constants';
 import { VALID_PHONES, INVALID_PHONES } from './fixtures/phones';
-
-const setup = () => {
-  const user = userEvent.setup();
-  render(<Login />);
-  return {
-    user,
-    phoneInput: () => screen.getByRole('textbox'),
-    submitBtn:  () => screen.getByRole('button', { name: /دریافت کد تایید/ }),
-    errorMsg:   () => screen.queryByRole('alert'),
-  };
-};
+import { createLoginDriver } from '@/features/auth/testing/authDrivers';
 
 // ─── Initial render ───────────────────────────────────────────────────────────
-describe('Login — initial render', () => {
-  it('renders phone input', () => {
-    setup();
-    expect(screen.getByRole('textbox')).toBeInTheDocument();
+describe('Login Component - Initial Rendering', () => {
+  it('renders page header title and subtitle', () => {
+    const page = createLoginDriver();
+
+    expect(page.heading()).toBeInTheDocument();
+    expect(page.subtitle()).toBeInTheDocument();
   });
 
-  it('renders submit button as disabled', () => {
-    const { submitBtn } = setup();
-    expect(submitBtn()).toBeDisabled();
+  it('renders phone input associated with its label and correct attributes', () => {
+    const page = createLoginDriver();
+
+    expect(page.phoneLabel()).toBeInTheDocument();
+    expect(page.phoneInput()).toHaveAttribute('type', 'tel');
+    expect(page.phoneInput()).toHaveAttribute('placeholder', TEXTS.placeholder);
+    expect(page.phoneInput()).toHaveAttribute('aria-invalid', 'false');
   });
 
-  it('associates label with phone input', () => {
-    setup();
-    expect(screen.getByLabelText('شماره موبایل')).toBeInTheDocument();
+  it('renders submit button as disabled on initial load', () => {
+    const page = createLoginDriver();
+
+    expect(page.submitButton()).toBeInTheDocument();
+    expect(page.submitButton()).toBeDisabled();
   });
 
-  it('phone input has type="tel"', () => {
-    const { phoneInput } = setup();
-    expect(phoneInput()).toHaveAttribute('type', 'tel');
+  it('renders terms and conditions notice', () => {
+    const page = createLoginDriver();
+
+    expect(page.terms()).toBeInTheDocument();
   });
 
-  it('shows no error on fresh load', () => {
-    const { errorMsg } = setup();
-    expect(errorMsg()).not.toBeInTheDocument();
+  it('shows no validation error on fresh load', () => {
+    const page = createLoginDriver();
+
+    expect(page.queryAlert()).not.toBeInTheDocument();
   });
 });
 
 // ─── Validation feedback ──────────────────────────────────────────────────────
-describe('Login — validation feedback', () => {
-  it('shows error text when an invalid phone is entered', async () => {
-    const { user, phoneInput } = setup();
-    await user.type(phoneInput(), INVALID_PHONES.tooShort);
+describe('Login Component - Input Validation', () => {
+  it('shows error message and sets aria-invalid when invalid phone is entered', async () => {
+    const page = createLoginDriver();
+
+    await page.fillPhone(INVALID_PHONES.tooShort);
+
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(page.alert()).toBeInTheDocument();
+      expect(page.alert()).toHaveTextContent(TEXTS.errorInvalidPhone);
+      expect(page.phoneInput()).toHaveAttribute('aria-invalid', 'true');
     });
   });
 
-  it('sets aria-invalid="true" on invalid input', async () => {
-    const { user, phoneInput } = setup();
-    await user.type(phoneInput(), INVALID_PHONES.tooShort);
+  it('clears error message and resets aria-invalid when corrected to valid phone', async () => {
+    const page = createLoginDriver();
+
+    await page.fillPhone(INVALID_PHONES.tooShort);
+    await waitFor(() => expect(page.queryAlert()).toBeInTheDocument());
+
+    await page.clearPhone();
+    await page.fillPhone(VALID_PHONES.standard);
+
     await waitFor(() => {
-      expect(phoneInput()).toHaveAttribute('aria-invalid', 'true');
+      expect(page.queryAlert()).not.toBeInTheDocument();
+      expect(page.phoneInput()).toHaveAttribute('aria-invalid', 'false');
     });
   });
 
-  it('clears error when user corrects to a valid phone', async () => {
-    const { user, phoneInput } = setup();
-    await user.type(phoneInput(), INVALID_PHONES.tooShort);
-    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+  it('displays error for non-numeric phone input', async () => {
+    const page = createLoginDriver();
 
-    await user.clear(phoneInput());
-    await user.type(phoneInput(), VALID_PHONES.standard);
-    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
-  });
+    await page.fillPhone(INVALID_PHONES.letters);
 
-  it('error message contains Persian text', async () => {
-    const { user, phoneInput } = setup();
-    await user.type(phoneInput(), INVALID_PHONES.tooShort);
     await waitFor(() => {
-      const msg = screen.getByRole('alert').textContent ?? '';
-      expect(/[؀-ۿ]/.test(msg)).toBe(true);
+      expect(page.alert()).toBeInTheDocument();
+      expect(page.alert()).toHaveTextContent(TEXTS.errorInvalidPhone);
     });
   });
 });
 
 // ─── Submit button state ──────────────────────────────────────────────────────
-describe('Login — submit button', () => {
-  it('enables when a valid phone is entered', async () => {
-    const { user, phoneInput, submitBtn } = setup();
-    await user.type(phoneInput(), VALID_PHONES.standard);
-    await waitFor(() => expect(submitBtn()).not.toBeDisabled());
+describe('Login Component - Submit Button State', () => {
+  it('enables submit button when valid phone is entered', async () => {
+    const page = createLoginDriver();
+
+    await page.fillPhone(VALID_PHONES.standard);
+
+    await waitFor(() => {
+      expect(page.submitButton()).not.toBeDisabled();
+    });
   });
 
-  it('stays disabled when phone is invalid', async () => {
-    const { user, phoneInput, submitBtn } = setup();
-    await user.type(phoneInput(), INVALID_PHONES.tooShort);
-    await waitFor(() => expect(submitBtn()).toBeDisabled());
+  it('keeps submit button disabled when phone is invalid', async () => {
+    const page = createLoginDriver();
+
+    await page.fillPhone(INVALID_PHONES.nineDigits);
+
+    await waitFor(() => {
+      expect(page.submitButton()).toBeDisabled();
+    });
+  });
+
+  it('disables submit button again if valid phone is cleared', async () => {
+    const page = createLoginDriver();
+
+    await page.fillPhone(VALID_PHONES.standard);
+    await waitFor(() => expect(page.submitButton()).not.toBeDisabled());
+
+    await page.clearPhone();
+    await waitFor(() => expect(page.submitButton()).toBeDisabled());
   });
 });
 
 // ─── Form submission ──────────────────────────────────────────────────────────
-describe('Login — form submission', () => {
-  it('calls onSubmit with the phone number when form is submitted', async () => {
-    const onSubmit = jest.fn();
-    const user = userEvent.setup();
-    render(<Login onSubmit={onSubmit} />);
+describe('Login Component - Form Submission Flow', () => {
+  it('calls onSubmit with valid phone when submit button is clicked', async () => {
+    const page = createLoginDriver();
 
-    await user.type(screen.getByRole('textbox'), VALID_PHONES.standard);
-    await user.click(screen.getByRole('button', { name: /دریافت کد تایید/ }));
+    await page.fillAndSubmit(VALID_PHONES.standard);
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith({ phone: VALID_PHONES.standard });
+      expect(page.onSubmit).toHaveBeenCalledTimes(1);
+      expect(page.onSubmit).toHaveBeenCalledWith({ phone: VALID_PHONES.standard });
+    });
+  });
+
+  it('submits form when Enter key is pressed in phone input with valid data', async () => {
+    const page = createLoginDriver();
+
+    await page.fillPhone(VALID_PHONES.standard);
+    await waitFor(() => expect(page.submitButton()).not.toBeDisabled());
+
+    await page.submitPhone();
+
+    await waitFor(() => {
+      expect(page.onSubmit).toHaveBeenCalledTimes(1);
+      expect(page.onSubmit).toHaveBeenCalledWith({ phone: VALID_PHONES.standard });
     });
   });
 
   it('does not submit when phone is invalid', async () => {
-    const onSubmit = jest.fn();
-    const user = userEvent.setup();
-    render(<Login onSubmit={onSubmit} />);
+    const page = createLoginDriver();
 
-    await user.type(screen.getByRole('textbox'), INVALID_PHONES.tooShort);
-    // Button is disabled — click does nothing
-    await user.click(screen.getByRole('button', { name: /دریافت کد تایید/ }));
-    expect(onSubmit).not.toHaveBeenCalled();
+    await page.fillPhone(INVALID_PHONES.tooShort);
+    await page.clickSubmit();
+
+    expect(page.onSubmit).not.toHaveBeenCalled();
   });
 
-  it('shows loading state while submission is in progress', async () => {
-    // MSW handler for this is configured to delay — see msw.md
-    const user = userEvent.setup();
-    render(<Login />);
+  it('displays loading state and disables submit button during async submission', async () => {
+    let resolveSubmit!: () => void;
+    const asyncSubmit = jest.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSubmit = resolve;
+        })
+    );
 
-    await user.type(screen.getByRole('textbox'), VALID_PHONES.standard);
-    await user.click(screen.getByRole('button', { name: /دریافت کد تایید/ }));
+    const page = createLoginDriver({ onSubmit: asyncSubmit });
 
-    // Button text changes during loading
-    expect(screen.getByRole('button', { name: /در حال ارسال/ })).toBeInTheDocument();
+    await page.fillPhone(VALID_PHONES.standard);
+    await waitFor(() => expect(page.submitButton()).not.toBeDisabled());
+
+    await page.clickSubmit();
+
+    await waitFor(() => {
+      expect(page.querySubmittingButton()).toBeInTheDocument();
+      expect(page.querySubmittingButton()).toBeDisabled();
+      expect(page.querySubmitButton()).not.toBeInTheDocument();
+    });
+
+    resolveSubmit();
+
+    await waitFor(() => {
+      expect(page.querySubmitButton()).toBeInTheDocument();
+      expect(page.querySubmittingButton()).not.toBeInTheDocument();
+    });
   });
 });
-```
 
 ---
 
