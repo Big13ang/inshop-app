@@ -88,7 +88,7 @@ Rules:
 This project uses **Lefthook** to run local-only linting and testing checks before every git push. This ensures code quality before pushing changes to the repository server.
 
 ### Available Hooks
-- **Pre-Push**: Runs `npm run lint`, `npm run test`, scoped mutation tests (`node scripts/pre-push-mutation.mjs`), and `npm run build` automatically.
+- **Pre-Push**: Runs `npm run lint`, `npm run test`, and `npm run build` automatically.
 
 ### Installation & Usage
 Git hooks are automatically configured on `npm install` (via the `prepare` script). To manually install/sync hooks:
