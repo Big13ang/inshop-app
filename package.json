@@ -57,6 +57,8 @@
     "@babel/preset-typescript": "^7.29.7",
     "@playwright/mcp": "^0.0.76",
     "@playwright/test": "^1.60.0",
+    "@stryker-mutator/core": "^10.0.0",
+    "@stryker-mutator/jest-runner": "^10.0.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.9.1",
