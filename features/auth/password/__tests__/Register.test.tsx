@@ -63,7 +63,6 @@ describe('Register (SignUpFinalize) Component - Form Submission Flow', () => {
 
   it('calls verifyPhoneNumber API with correct payload when valid 4-digit OTP and password are provided', async () => {
     const verifySpy = jest.spyOn(authService, 'verifyPhoneNumber').mockResolvedValue({
-      status: true,
       token: 'test-token',
     });
     const page = createSignUpFinalizeDriver({ phoneNumber: '09171234567' });
