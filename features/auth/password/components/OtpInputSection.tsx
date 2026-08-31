@@ -8,7 +8,7 @@ import PhoneNumberBadge from './PhoneNumberBadge';
 import { AUTH_FORMS, AuthForm, PREVIOUS_STEP_MAP } from '../../constant';
 
 interface OtpInputSectionProps {
-  onResend?: () => void | Promise<void | boolean> | boolean;
+  onResend?: () => void;
   phoneNumber?: string;
 }
 
@@ -79,7 +79,7 @@ export default function OtpInputSection({ onResend, phoneNumber: propPhone }: Ot
       {errorMessage && <ErrorMessage message={errorMessage} />}
 
       <div className="flex items-center justify-between w-full text-xs mt-0.5">
-        <OtpTimer onResend={onResend} resetOtp={handleResetOtp} initialTime={120} className="mt-0" />
+        <OtpTimer onResend={onResend ?? (() => {})} resetOtp={handleResetOtp} initialTime={120} className="mt-0" />
 
         {showEditPhoneButton && (
           <button

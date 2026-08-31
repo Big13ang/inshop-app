@@ -7,7 +7,7 @@ import { useCountdown } from '../hooks/useCountdown';
 import { cn } from '@/lib/utils';
 
 interface OtpTimerProps {
-  onResend?: () => void | Promise<void | boolean> | boolean;
+  onResend: () => void;
   resetOtp: () => void;
   initialTime?: number;
   className?: string;
@@ -24,11 +24,8 @@ export default function OtpTimer({ onResend, resetOtp, initialTime = 120, classN
     return `${m}:${s}`;
   };
 
-  const handleResend = async () => {
-    if (onResend) {
-      const result = await onResend();
-      if (result === false) return;
-    }
+  const handleResend = () => {
+    onResend();
     resetOtp();
     reset();
   };

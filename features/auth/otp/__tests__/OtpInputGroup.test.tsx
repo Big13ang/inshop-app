@@ -49,7 +49,6 @@ describe('OtpInputGroup - Rendering & Attributes', () => {
     const { inputs } = setup();
 
     expect(inputs).toHaveLength(OTP_LENGTH);
-    expect(inputs).toHaveLength(4);
 
     inputs.forEach((input, index) => {
       expect(input).toBeInTheDocument();
