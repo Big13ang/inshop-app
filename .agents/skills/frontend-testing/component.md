@@ -149,13 +149,64 @@ Keep render smoke tests to the minimum needed to confirm the form is usable —
 input present, button present and disabled, no error on load.
 Branding, copy, and layout belong in E2E / visual tests, not component tests.
 
+### The "Tautological / Fake Assertion" anti-pattern (Zero-Trust Tests)
+
+A test that asserts on static state that was already true before the action occurred provides zero confidence.
+
+```typescript
+// ❌ ZERO TRUST — button was ALREADY in the document before submit!
+it('submits registration when valid OTP and password are provided', async () => {
+  const page = createSignUpFinalizeDriver();
+  await page.fillAndSubmit('1234', VALID_PASSWORDS.standard);
+
+  await waitFor(() => {
+    expect(page.submitButton()).toBeInTheDocument(); // ❌ Fails to verify submission occurred!
+  });
+});
+
+// ✅ HIGH TRUST — assert on the state CHANGE or resulting action
+it('calls submit handler with valid payload on submission', async () => {
+  const onSubmit = jest.fn();
+  const page = createSignUpFinalizeDriver({ onSubmit });
+
+  await page.fillAndSubmit('1234', VALID_PASSWORDS.standard);
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({ otp: '1234', password: VALID_PASSWORDS.standard });
+  });
+});
+```
+
+### The "Schema Permutations in Component Tests" anti-pattern
+
+Testing 10 different regex variations (missing digits, missing letters, too short, too long, special characters) inside full DOM renders violates the Testing Pyramid.
+
+- **Unit layer (`*Schema.test.ts`)**: Tests 100% of regex and length boundary permutations with `it.each` in <5ms.
+- **Component layer (`*Form.test.tsx`)**: Only tests **2 UI behaviors**:
+  1. *Negative path*: Entering invalid input shows the error alert.
+  2. *Recovery path*: Correcting to valid input clears the error alert.
+
+### The "Child Component Re-Testing" anti-pattern
+
+Do not re-test child component mechanics (e.g. password visibility eye-icon toggling, input HTML attributes) inside every parent container test.
+- [`PasswordInput.test.tsx`](features/auth/password/__tests__/PasswordInput.test.tsx) tests the show/hide toggle once in isolation.
+- Parent container tests (`Register.test.tsx`, `ResetPassword.test.tsx`) focus strictly on flow integration, validation feedback, and form submission contracts.
+
+### The Inversion Test Rule (Mutation Verification)
+
+Before committing any new test, **invert the assertion** (e.g., change `toBeDisabled()` to `not.toBeDisabled()`, or `expect(fn).toHaveBeenCalled()` to `not.toHaveBeenCalled()`).
+- If the test does NOT fail immediately, the test is tautological and must be rewritten.
+
 ### Decision rule
 
 | What you're asserting | Type | Keep? |
 |---|---|---|
-| User can submit and sees the next screen | Behaviour | ✅ Yes |
-| Error message appears when phone is invalid | Behaviour | ✅ Yes |
+| User can submit and sees the next screen / callback payload | Behaviour | ✅ Yes |
+| Error message appears on invalid entry & clears on correction | Behaviour | ✅ Yes |
 | Button is disabled until input is valid | Behaviour | ✅ Yes |
+| Element was already in document before action (`toBeInTheDocument`) | Fake / Tautology | ❌ Fix to assert on state change |
+| 10 different regex variations in JSDOM | Pyramid violation | ❌ Move to `*Schema.test.ts` |
+| Password eye icon toggle in every parent form | Child duplication | ❌ Test in child component test only |
 | `console.log` was called with the data | Implementation | ❌ Delete |
 | Internal function / service was called | Implementation | ❌ Delete |
 | `type="submit"` attribute is present | Implementation | ❌ Delete |
