@@ -10,7 +10,7 @@
     "lint": "NODE_OPTIONS=\"-r ./scripts/eslint-ts6-preload.js\" eslint",
     "test": "jest",
     "test:unit": "jest",
-    "test:mutation": "MUTATION_TEST=true jest",
+    "test:mutation": "stryker run",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",

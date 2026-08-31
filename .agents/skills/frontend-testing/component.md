@@ -192,10 +192,14 @@ Do not re-test child component mechanics (e.g. password visibility eye-icon togg
 - [`PasswordInput.test.tsx`](features/auth/password/__tests__/PasswordInput.test.tsx) tests the show/hide toggle once in isolation.
 - Parent container tests (`Register.test.tsx`, `ResetPassword.test.tsx`) focus strictly on flow integration, validation feedback, and form submission contracts.
 
-### The Inversion Test Rule (Mutation Verification)
+### The Inversion Test Rule & Scoped Mutation Testing
 
-Before committing any new test, **invert the assertion** (e.g., change `toBeDisabled()` to `not.toBeDisabled()`, or `expect(fn).toHaveBeenCalled()` to `not.toHaveBeenCalled()`).
-- If the test does NOT fail immediately, the test is tautological and must be rewritten.
+1. **Assertion Inversion (Manual)**: Before committing any new test, **invert the assertion** (e.g., change `toBeDisabled()` to `not.toBeDisabled()`, or `expect(fn).toHaveBeenCalled()` to `not.toHaveBeenCalled()`). If the test does not fail immediately, the test is tautological and must be rewritten.
+2. **Automated Scoped Mutation Testing (Stryker)**: To test the resilience of your component tests against source code mutations without running across the entire repository:
+   ```bash
+   rtk npm run test:mutation -- --mutate "features/auth/login/Login.tsx"
+   ```
+   This generates mutants **strictly** for that component, runs its test suite, and reports the mutation score.
 
 ### Decision rule
 
