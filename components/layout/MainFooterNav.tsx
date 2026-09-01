@@ -40,7 +40,7 @@ export default function MainFooterNav() {
     const handleCloseConfirmLogoutModal = () => setIsConfirmLogoutOpen(false);
 
     function handleMessageClick() {
-        toast.info('بخش پیام‌ها به‌زودی اضافه خواهد شد');
+        toast.info('چت درون برنامه به‌زودی اضافه خواهد شد');
     }
 
     const tabs: FooterTabConfig[] = [
@@ -85,7 +85,7 @@ export default function MainFooterNav() {
         },
         {
             id: 'messages',
-            label: 'پیام‌ها - بزودی',
+            label: 'چت درون برنامه - بزودی',
             isActionButton: true,
             onPress: handleMessageClick,
             customRender: (isActive: boolean) => (
