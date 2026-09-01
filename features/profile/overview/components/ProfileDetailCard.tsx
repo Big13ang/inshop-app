@@ -136,7 +136,7 @@ export default function ProfileDetailCard({
         <span className="font-bold text-sm text-primary mb-1 block">
           {sellerName}
         </span>
-        <p className="text-[13px] text-secondary leading-6 text-justify">
+        <p className="text-[13px] text-secondary leading-6">
           {caption}
         </p>
       </div>

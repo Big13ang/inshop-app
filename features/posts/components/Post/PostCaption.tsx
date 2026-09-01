@@ -20,7 +20,7 @@ export function PostCaption() {
   return (
     <div className="text-[13px] leading-6 text-foreground">
       <p
-        className="overflow-hidden text-justify transition-[max-height,opacity] duration-normal ease-out-smooth"
+        className="overflow-hidden transition-[max-height,opacity] duration-normal ease-out-smooth"
         style={{ maxHeight: isExpanded ? '80rem' : '4.5rem' }}
       >
         {visibleDescription}

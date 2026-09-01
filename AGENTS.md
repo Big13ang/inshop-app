@@ -69,6 +69,7 @@ Rules:
 - **No Response Transformation**: Do not transform backend API response field names or status values to custom frontend structures. Keep backend field names (e.g., `description`, `createdAt`, `rejectReason`) and status values (e.g., `'PENDING_REVIEW'`, `'REJECTED'`) as-is in frontend query structures and models. Only use lightweight rendering utilities (e.g., `getMediaUrl`) to convert backend URLs/data at render time.
 - **No Re-Exports / Re-Export Proxies**: Never create re-export proxy files or alias files (e.g. `export { getMediaUrl } from '@/lib/utils'`). Always import utilities, services, components, and types directly from their original defining module path.
 - **Clean Architecture**: Use the `Result` pattern (`Result.ok`, `Result.err`) anywhere you can for cleaner, exception-free code.
+- **No Text Justify**: Never use text justification (`text-justify` or `text-align: justify`) anywhere in the product unless explicitly requested by the user.
 - **No Verified Badge**: Never use `<VerifiedBadge />` (or verified badge icon) unless explicitly requested by the user.
 - **Use Custom UI Components**: Always prioritize using custom UI components defined in the project over raw HTML elements or external components.
   - **Buttons**: Use `<Button>` from `@/components/ui/button` instead of native `<button>`.

@@ -85,7 +85,7 @@ export default function ProfileBioSection({
 
       {/* Shop Bio */}
       <div className="mt-3 text-right" dir="rtl">
-        <p className="text-[13px] text-secondary leading-6 text-justify whitespace-pre-wrap">
+        <p className="text-[13px] text-secondary leading-6 whitespace-pre-wrap">
           {sellerProfile?.bio}
         </p>
       </div>

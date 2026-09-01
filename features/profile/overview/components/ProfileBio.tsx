@@ -13,7 +13,7 @@ export function ProfileBio({ bio }: ProfileBioProps) {
     <div className="mt-3 text-right" dir="rtl">
       <p
         className={cn(
-          'text-justify text-[13px] leading-6 whitespace-pre-wrap',
+          'text-[13px] leading-6 whitespace-pre-wrap',
           hasBio ? 'text-secondary' : 'text-secondary/60',
         )}
       >
