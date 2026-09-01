@@ -95,17 +95,14 @@ export default function SelectedMediaSlider({
   return (
     <div
       style={{ contentVisibility: 'auto' } as React.CSSProperties}
-      className={cn(
-        sliderContainerVariants({ state: isCompact ? 'compact' : 'default' }),
-        !isCompact && 'max-h-[50vh]'
-      )}
+      className={sliderContainerVariants({ state: isCompact ? 'compact' : 'default' })}
     >
       <div className="w-full relative overflow-hidden bg-zinc-950">
         <PostSlider
           items={mediaList}
           activeSlide={safeActiveIndex}
           onSlideChange={handleActiveChange}
-          objectFit="contain"
+          objectFit="cover"
         />
 
         <div className="absolute top-4 right-4 bg-zinc-950/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-bold text-white flex items-center gap-1.5 border border-white/10 z-[25]">
