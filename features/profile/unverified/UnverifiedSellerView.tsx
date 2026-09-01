@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Store } from 'lucide-react';
 import { HomeIcon } from '@/components/icons/HomeIcon';
 import { Button } from '@/components/ui/button';
+import AppLogo from '@/components/ui/AppLogo';
 import { text } from '../constants';
 
 export default function UnverifiedSellerView() {
@@ -15,9 +16,7 @@ export default function UnverifiedSellerView() {
       {/* Central Content Container */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-sm w-full mx-auto gap-6">
         <div className="flex flex-col items-center gap-4">
-          <span className="font-logo font-extrabold text-5xl text-primary select-none">
-            inShop
-          </span>
+          <AppLogo />
 
           <div className="flex items-center justify-center size-20 rounded-3xl bg-surface-l1 text-primary border border-primary/10 shadow-sm">
             <Store className="size-9" strokeWidth={1.75} />

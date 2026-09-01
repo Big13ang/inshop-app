@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { RotateCcw } from "lucide-react";
 import { HomeIcon } from "@/components/icons/HomeIcon";
 import { Button } from "@/components/ui/button";
+import AppLogo from "@/components/ui/AppLogo";
 import { captureError } from "@/lib/telemetry/errorTracking";
 
 interface GlobalErrorProps {
@@ -46,12 +47,10 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto gap-6">
               <div className="flex flex-col items-center gap-4">
                 {/* Brand Logo in the foreground center */}
-                <span className="font-logo font-extrabold text-5xl text-black select-none">
-                  inShop
-                </span>
+                <AppLogo />
 
                 {/* Main 500 error text with tight tracking */}
-                <h1 className="text-8xl font-black font-logo tracking-tighter text-black select-none leading-none">
+                <h1 className="text-8xl font-black font-sans tracking-tighter text-black select-none leading-none">
                   500
                 </h1>
 
