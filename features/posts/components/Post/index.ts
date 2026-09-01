@@ -9,7 +9,7 @@ import { PostMedia } from './PostMedia';
 import { PostActions } from './PostActions';
 import { PostStatusBadge } from './PostStatusBadge';
 import { PostBody } from './PostBody';
-import { PostCaption } from './PostCaption';
+import { PostDescription } from './PostDescription';
 import { PostVerifiedBadge } from './PostVerifiedBadge';
 
 export const Post = {
@@ -27,10 +27,10 @@ export const Post = {
   Actions: PostActions,
   StatusBadge: PostStatusBadge,
   Body: PostBody,
-  Caption: PostCaption,
+  Description: PostDescription,
   VerifiedBadge: PostVerifiedBadge,
 };
 
-export { PostActions };
+export { PostActions, PostDescription };
 export { usePostContext } from './PostContext';
 export type { BasePostData } from './types';

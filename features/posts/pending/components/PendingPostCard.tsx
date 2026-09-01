@@ -91,7 +91,7 @@ export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardPro
           <Link href={profileHref}>
             <Post.AuthorName className="mb-1 inline-block cursor-pointer hover:underline" />
           </Link>
-          <Post.Caption />
+          <Post.Description />
         </Post.Body>
       </Post.Root>
     </Post.Provider>
