@@ -45,6 +45,7 @@ export default function PostSlider({
     initial: initialSlide,
     mode: 'snap',
     rubberband: true,
+    drag: true,
     defaultAnimation: {
       duration: 350,
       easing: DEFAULT_EASING,

@@ -4,12 +4,10 @@ import SellerPanelBanner from "./SellerPanelBanner";
 
 export const SelectMediaPhaseView = () => {
     return (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto pb-20 hide-scrollbar">
             <SellerPanelBanner />
             <SelectedMediaSlider aspectClassName="aspect-square" />
-            <div className="flex-1 min-h-0 overflow-y-auto pb-20">
-                <SelectedGallery />
-            </div>
+            <SelectedGallery />
         </div>
     );
 };
