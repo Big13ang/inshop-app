@@ -38,6 +38,7 @@ export function PublicPostMenuDrawer({ post, onDeleted }: PublicPostMenuDrawerPr
   }
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const owner = post.owner || post.shop;
 
   return (
     <>
@@ -47,14 +48,14 @@ export function PublicPostMenuDrawer({ post, onDeleted }: PublicPostMenuDrawerPr
         <PostMenu.CopyLinkItem url={shareUrl} onCopy={actions.closeMenu} />
 
         <PostMenu.ShareItem
-          title={post.shop.shopName}
+          title={owner?.shopName || ''}
           text={post.description}
           onShare={actions.closeMenu}
         />
 
         <PostMenu.DeleteItem
           postId={post.id}
-          authorUsername={post.shop.username}
+          authorUsername={owner?.username || ''}
           label="حذف پست"
           hint="حذف کامل این پست"
           onClick={handleOpenConfirm}
@@ -70,5 +71,3 @@ export function PublicPostMenuDrawer({ post, onDeleted }: PublicPostMenuDrawerPr
     </>
   );
 }
-
-export default PublicPostMenuDrawer;

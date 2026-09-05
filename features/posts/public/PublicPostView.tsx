@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Post } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
 import { usePublicPostById, type PublicPost } from '@/features/posts/services/publicPostService';
-import PublicPostMenuDrawer from './components/PublicPostMenuDrawer';
+import { PublicPostMenuDrawer } from './components/PublicPostMenuDrawer';
 
 interface Props {
   postId: string;
@@ -100,15 +100,25 @@ export default function PublicPostView({ postId, initialPost }: Props) {
     );
   }
 
-  const shopHref = post.shop.username ? `/@${post.shop.username}` : '#';
+  const owner = post.owner || post.shop;
+  const username = owner?.username || '';
+  const shopHref = username ? `/@${username}` : '#';
 
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
-    media: post.media,
+    media: (post.media || []).map((m) => ({
+      id: m.id,
+      url: m.url || '',
+      storageKey: m.storageKey || '',
+      thumbnailStorageKey: m.thumbnailStorageKey || '',
+      thumbnailUrl: m.thumbnailUrl || '',
+      mimeType: m.mimeType,
+      altText: m.altText,
+    })),
     createdAt: post.publishedAt,
-    sellerName: post.shop.shopName,
-    sellerAvatar: post.shop.profilePhotoUrl || '',
+    sellerName: owner?.shopName || '',
+    sellerAvatar: owner?.profilePhotoUrl || '',
     isVerified: false,
   };
 

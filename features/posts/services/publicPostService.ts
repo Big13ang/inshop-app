@@ -1,12 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { http, Result, type ApiResponse } from '@/lib/utils';
 
-export interface PublicPostProduct {
-  name: string | null;
-  imageUrl: string | null;
-  link: string | null;
-}
-
 export interface PublicPostShop {
   shopName: string;
   username: string;
@@ -38,8 +32,8 @@ export interface PublicPost {
   id: string;
   description: string;
   publishedAt: string;
-  product: PublicPostProduct;
-  shop: PublicPostShop;
+  owner?: PublicPostShop;
+  shop?: PublicPostShop;
   media: PublicPostMedia[];
 }
 

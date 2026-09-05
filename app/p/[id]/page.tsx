@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { isClientNavigation } from '@/lib/utils/serverNavigation';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
 import PublicPostView from '@/features/posts/public/PublicPostView';
 import { getMediaUrl } from '@/lib/utils/media';
@@ -20,7 +21,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     });
   }
 
-  const rawShopName = post.shop?.shopName || undefined;
+  const owner = post.owner || post.shop;
+  const rawShopName = owner?.shopName || undefined;
   const shopName = rawShopName
     ? rawShopName.startsWith('فروشگاه')
       ? rawShopName
@@ -30,7 +32,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const image = coverMedia ? getMediaUrl(coverMedia) : null;
 
   return constructMetadata({
-    title: post.product?.name || undefined,
     description: post.description,
     image,
     shopName,
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicPostPage({ params }: PageProps) {
   const { id } = await params;
-  const post = await fetchPublicPostServer(id);
+  const post = (await isClientNavigation()) ? null : await fetchPublicPostServer(id);
 
   return <PublicPostView postId={id} initialPost={post} />;
 }
