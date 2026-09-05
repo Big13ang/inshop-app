@@ -161,13 +161,15 @@ export const handlers = [
               postId: id,
               status: 'ready',
               storageKey: mid,
+              thumbnailStorageKey: `${mid}.thumbnail.jpg`,
               originalFileName: `${mid}.jpg`,
               mimeType: 'image/jpeg',
               sizeBytes: 1000,
               order: idx,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              url: `http://localhost:3000/uploads/${mid}`
+              url: `http://localhost:3000/uploads/${mid}`,
+              thumbnailUrl: `http://localhost:3000/uploads/${mid}.thumbnail.jpg`
             }))
           : [],
         createdAt: new Date().toISOString(),
@@ -197,13 +199,15 @@ export const handlers = [
               postId: id,
               status: 'ready',
               storageKey: mid,
+              thumbnailStorageKey: `${mid}.thumbnail.jpg`,
               originalFileName: `${mid}.jpg`,
               mimeType: 'image/jpeg',
               sizeBytes: 1000,
               order: idx,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              url: `/api/uploads/${mid}`
+              url: `/api/uploads/${mid}`,
+              thumbnailUrl: `/api/uploads/${mid}.thumbnail.jpg`
             }))
           : [],
         createdAt: new Date().toISOString(),
@@ -235,13 +239,15 @@ export const handlers = [
               postId: id,
               status: 'ready',
               storageKey: `legacy-${idx}`,
+              thumbnailStorageKey: `legacy-${idx}.thumbnail.jpg`,
               originalFileName: `legacy-${idx}.jpg`,
               mimeType: 'image/jpeg',
               sizeBytes: 1000,
               order: idx,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              url
+              url,
+              thumbnailUrl: url
             }))
           : [],
         createdAt: new Date().toISOString(),

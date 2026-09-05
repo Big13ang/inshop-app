@@ -18,11 +18,20 @@ export interface PublicPostShop {
 
 export interface PublicPostMedia {
   id: string;
+  uploadSessionId: string;
+  sellerId: string;
+  postId: string;
+  status: string;
+  storageKey: string;
+  thumbnailStorageKey: string;
   mimeType: string;
   sizeBytes: number;
   order: number;
-  url: string;
   altText: string | null;
+  createdAt: string;
+  updatedAt: string;
+  url: string;
+  thumbnailUrl: string;
 }
 
 export interface PublicPost {

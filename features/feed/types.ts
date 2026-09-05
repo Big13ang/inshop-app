@@ -1,6 +1,8 @@
 export interface FeedMediaItem {
   url: string;
   type: 'image' | 'video';
+  thumbnailUrl: string;
+  thumbnailStorageKey: string;
 }
 
 export interface FeedPost {

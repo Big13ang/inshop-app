@@ -16,13 +16,15 @@ export function createPendingPostsFixture(): SellerPost[] {
           postId: 'pending-1',
           status: 'ready',
           storageKey: 'photo-p1.jpg',
+          thumbnailStorageKey: 'photo-p1.thumbnail.jpg',
           originalFileName: 'photo-p1.jpg',
           mimeType: 'image/jpeg',
           sizeBytes: 1000,
           order: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          url: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0'
+          url: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0'
         }
       ],
       createdAt: new Date(Date.now() - 5 * 60_000).toISOString(),
@@ -44,13 +46,15 @@ export function createPendingPostsFixture(): SellerPost[] {
           postId: 'rejected-1',
           status: 'ready',
           storageKey: 'photo-r1.jpg',
+          thumbnailStorageKey: 'photo-r1.thumbnail.jpg',
           originalFileName: 'photo-r1.jpg',
           mimeType: 'image/jpeg',
           sizeBytes: 1000,
           order: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908'
+          url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908'
         }
       ],
       createdAt: new Date(Date.now() - 60 * 60_000).toISOString(),
@@ -72,13 +76,15 @@ export function createPendingPostsFixture(): SellerPost[] {
           postId: 'rejected-2',
           status: 'ready',
           storageKey: 'photo-r2.jpg',
+          thumbnailStorageKey: 'photo-r2.thumbnail.jpg',
           originalFileName: 'photo-r2.jpg',
           mimeType: 'image/jpeg',
           sizeBytes: 1000,
           order: 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f'
+          url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f'
         }
       ],
       createdAt: new Date(Date.now() - 120 * 60_000).toISOString(),

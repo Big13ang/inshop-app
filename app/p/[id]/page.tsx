@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
 import PublicPostView from '@/features/posts/public/PublicPostView';
-import { getMediaUrl } from '@/lib/utils';
+import { getMediaUrl } from '@/lib/utils/media';
 import { constructMetadata } from '@/lib/utils/metadata';
 
 interface PageProps {

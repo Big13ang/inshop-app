@@ -161,7 +161,8 @@ In Tailwind: `duration-[var(--duration-normal)]` or use the token directly in cu
 | `--animate-slide-up`  | `animate-slide-up` | 220ms    | Content entering from below              |
 | `--animate-pop-in`    | `animate-pop-in`   | 280ms    | Confirmation icons, success states       |
 | `--animate-shimmer`   | `animate-shimmer`  | 1.6s     | Skeleton loaders                         |
-| `--animate-heart-pop` | `animate-heart-pop`| 1s       | Like / reaction animations               |
+| `--animate-heart-pop`   | `animate-heart-pop`   | 1s       | Like / reaction animations               |
+| `--animate-image-reveal`| `animate-image-reveal`| 650ms    | High-res progressive image reveal        |
 
 ---
 

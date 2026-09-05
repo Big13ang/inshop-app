@@ -1,6 +1,11 @@
 export interface PostMediaItem {
-  url?: string | null;
-  storageKey?: string | null;
+  id: string;
+  url: string;
+  storageKey: string;
+  thumbnailStorageKey: string;
+  thumbnailUrl: string;
+  mimeType?: string;
+  altText?: string | null;
 }
 
 export interface BasePostData {

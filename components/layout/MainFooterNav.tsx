@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/features/profile/context/UserContext';
-import { cn, getMediaUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/lib/utils/media';
 import { HomeIcon } from '@/components/icons/HomeIcon';
 import { AddIcon } from '@/components/icons/AddIcon';
 import { ChatIcon } from '@/components/icons/ChatIcon';
@@ -28,7 +29,7 @@ export default function MainFooterNav() {
     const [isConfirmLogoutOpen, setIsConfirmLogoutOpen] = useState(false);
 
     const rawPhoto = meData?.sellerProfile?.profilePhotoUrl;
-    const profilePhotoUrl = rawPhoto ? getMediaUrl({ url: rawPhoto }) : '';
+    const profilePhotoUrl = rawPhoto ? getMediaUrl(rawPhoto) : '';
 
     function navigate(href: string) {
         if (pathname === href) return;

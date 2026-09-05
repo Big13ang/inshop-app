@@ -2,14 +2,14 @@
 import Link from 'next/link';
 import type { SellerPost } from '@/features/posts/services/postsQueryService';
 import type { BackendFeedPost } from '@/features/feed/services/feedService';
-import { getMediaUrl } from '@/lib/utils';
+import { getThumbnailUrl } from '@/lib/utils/media';
 
 interface Props {
   post: SellerPost | BackendFeedPost;
   onClick?: (id: string) => void;
 }
 
-export default function ProfileGridItem({ post, onClick }: Props) {
+export function ProfileGridItem({ post, onClick }: Props) {
   const images = getImages(post);
   const image = images[0];
 
@@ -48,7 +48,7 @@ export default function ProfileGridItem({ post, onClick }: Props) {
 function getImages(post: SellerPost | BackendFeedPost) {
   return (
     post.media
-      ?.map((media) => getMediaUrl(media))
+      ?.map((media) => getThumbnailUrl(media))
       .filter(Boolean) ?? []
   );
 }

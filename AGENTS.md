@@ -66,7 +66,7 @@ Rules:
 - **No Try/Catch — Mandatory Result Pattern**: You MUST NOT use standard `try/catch` blocks anywhere in client-side code, services, or utils. Always use the `Result` pattern (`Result.try`, `Result.ok`, `Result.err`, `Result.unwrap`) for clean, exception-free error handling.
 - **Mandatory HTTP Client Usage**: All client-side network requests anywhere in the app MUST use `http` (for general API requests) or `authHttp` (for authentication requests) from `@/lib/utils`. Direct `fetch` API calls or unapproved third-party callers are strictly forbidden.
 - **Extract Functions**: Avoid defining inline functions that span more than one line (e.g., multiline callback handlers or event listeners). Always extract them into named helper functions/handlers within the component or module to improve readability and testability.
-- **No Re-Exports & No Alias Exports**: You are NEVER allowed to re-export things or create alias exports (e.g. `export const PostCaption = PostDescription;`, `export { getMediaUrl } from '@/lib/utils'`, or proxy files). Always define and import utilities, services, components, and types directly under their single canonical name from their original defining module path.
+- **No Re-Exports & No Alias Exports**: You are NEVER allowed to re-export things or create alias exports (e.g. `export const slideMedia = slideImage;`, `export const PostCaption = PostDescription;`, `export { getMediaUrl } from '@/lib/utils'`, or proxy files). Always define and import utilities, services, components, and types directly under their single canonical name from their original defining module path. See below for detailed rules and examples.
 - **No Export Default (Except Next.js Route Files)**: You are NEVER allowed to use `export default` anywhere in the project unless it is a Next.js route file that strictly requires it by convention (`page.tsx`, `layout.tsx`, `not-found.tsx`, `loading.tsx`, `template.tsx`, `error.tsx`). All other components, utilities, hooks, and services MUST use named exports (`export function ...`, `export const ...`).
 - **Clean Architecture**: Use the `Result` pattern (`Result.ok`, `Result.err`) anywhere you can for cleaner, exception-free code.
 - **No Text Justify**: Never use text justification (`text-justify` or `text-align: justify`) anywhere in the product unless explicitly requested by the user.
@@ -149,3 +149,55 @@ export function PostMenuDrawer({ post }: Props) {
   return <Menu.Root isOpen={state.isMenuOpen} onClose={actions.closeMenu}>...</Menu.Root>;
 }
 ```
+
+---
+
+## No Alias Exports & Colocate Definitions Where Used
+
+- **Strictly No Alias Exports**: You are NEVER allowed to create alias exports to preserve old names, maintain backward compatibility, or bridge renames (e.g. `export const slideMedia = slideImage;`, `export const PostCaption = PostDescription;`). If an identifier is renamed, refactored, or replaced, update all callsites directly and delete the old name entirely. Never keep compatibility shims or alias variables around.
+- **Define & Export Things Where They Are Actually Used**: Never dump component-specific styles, CVA variants, sub-components, or private helper functions into shared `utils.ts` files or external files when they are only consumed in one component. Define and keep them directly inside the file where they are used. If an item is only used in a single file, keep it local (unexported) to that file. Only export from shared modules what is genuinely shared across multiple consumers.
+
+### ❌ Bad Example (Alias export & dumping local styles into utils)
+```tsx
+// ❌ BAD: Dumping SlideItem-specific CVA styles into shared utils.ts
+// components/ui/PostSlider/utils.ts
+export const slideSkeleton = cva(...);
+export const slideThumbnail = cva(...);
+export const slideImage = cva(...);
+
+// ❌ BAD: Alias export created to avoid breaking old name
+export const slideMedia = slideImage;
+
+// components/ui/PostSlider/SlideItem.tsx
+// Importing single-use styles from utils across files
+import { slideSkeleton, slideThumbnail, slideImage } from './utils';
+```
+
+### ✅ Good Example (Colocated where used & no alias exports)
+```tsx
+// ✅ GOOD: Only truly shared slider utilities live in utils.ts
+// components/ui/PostSlider/utils.ts
+export const slideContainer = cva(...);
+export const calculatePostMediaAspectRatio = (...);
+
+// ✅ GOOD: Component-specific styles are defined locally right where they are used
+// components/ui/PostSlider/SlideItem.tsx
+import { cva } from 'class-variance-authority';
+import { slideContainer } from './utils';
+
+// Local to SlideItem, not exported, no alias exports
+const slideSkeleton = cva(...);
+const slideThumbnail = cva(...);
+const slideImage = cva(...);
+
+export function SlideItem({ item, idx, objectFit }: SlideItemProps) {
+  return (
+    <div className={slideContainer({ objectFit })}>
+      <div className={slideSkeleton({ objectFit, dimmed: hasThumbnail })} />
+      <img className={slideThumbnail({ objectFit, loaded: isLoaded })} />
+      <img className={slideImage({ objectFit, loaded: isLoaded })} />
+    </div>
+  );
+}
+```
+

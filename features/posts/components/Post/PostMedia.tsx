@@ -1,6 +1,6 @@
 import PostSlider from '@/components/ui/PostSlider';
 import { usePostContext } from './PostContext';
-import { getMediaUrl } from '@/lib/utils';
+import { getMediaUrl, getThumbnailUrl } from '@/lib/utils/media';
 
 interface PostMediaProps {
   children?: React.ReactNode;
@@ -10,6 +10,7 @@ export function PostMedia({ children }: PostMediaProps) {
   const { state } = usePostContext();
   const items = state.post.media?.map(item => ({
     url: getMediaUrl(item),
+    thumbnailUrl: getThumbnailUrl(item),
     alt: state.post.description || undefined,
   })) ?? [];
 

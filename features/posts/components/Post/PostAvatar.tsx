@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { usePostContext } from './PostContext';
 import { Store } from 'lucide-react';
-import { getMediaUrl } from '@/lib/utils';
+import { getMediaUrl } from '@/lib/utils/media';
 
 export function PostAvatar({ fallbackAlt = 'فروشنده' }: { fallbackAlt?: string }) {
   const { state } = usePostContext();

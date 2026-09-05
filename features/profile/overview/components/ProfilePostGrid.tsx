@@ -2,7 +2,7 @@
 
 import { ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getMediaUrl } from '@/lib/utils';
+import { getThumbnailUrl } from '@/lib/utils/media';
 import type { SellerPost } from '@/features/posts/services/postsQueryService';
 import { text } from '../../constants';
 
@@ -30,7 +30,7 @@ function ProfileGridCell({ post }: ProfileGridCellProps) {
         // CDN-hosted post media, dimensions unknown at render time.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={getMediaUrl(cover)}
+          src={getThumbnailUrl(cover)}
           alt={captionLabel}
           loading="lazy"
           decoding="async"

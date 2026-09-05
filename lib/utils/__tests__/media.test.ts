@@ -1,4 +1,5 @@
-import { getMediaUrl, getMediaKind } from '../media';
+import { env } from '@/env';
+import { getMediaUrl, getMediaKind, getThumbnailUrl } from '../media';
 
 describe('getMediaKind', () => {
   it('returns video for video mime types', () => {
@@ -14,14 +15,14 @@ describe('getMediaKind', () => {
 });
 
 describe('getMediaUrl', () => {
-  const originalCdnUrl = process.env.NEXT_PUBLIC_CDN_URL;
+  const originalCdnUrl = env.NEXT_PUBLIC_CDN_URL;
 
   beforeEach(() => {
-    process.env.NEXT_PUBLIC_CDN_URL = 'http://localhost:9000/inshop-uploads';
+    (env as { NEXT_PUBLIC_CDN_URL: string }).NEXT_PUBLIC_CDN_URL = 'http://localhost:9000/inshop-uploads';
   });
 
   afterAll(() => {
-    process.env.NEXT_PUBLIC_CDN_URL = originalCdnUrl;
+    (env as { NEXT_PUBLIC_CDN_URL: string }).NEXT_PUBLIC_CDN_URL = originalCdnUrl;
   });
 
   it('returns empty string for null, undefined, or empty string', () => {
@@ -41,14 +42,92 @@ describe('getMediaUrl', () => {
   });
 
   it('resolves objects with url, storageKey, or id', () => {
-    expect(getMediaUrl({ url: 'https://example.com/item.jpg' })).toBe('https://example.com/item.jpg');
-    expect(getMediaUrl({ url: 'posts/cover.png' })).toBe('http://localhost:9000/inshop-uploads/posts/cover.png');
-    expect(getMediaUrl({ storageKey: 'posts/storage.png' })).toBe('http://localhost:9000/inshop-uploads/posts/storage.png');
-    expect(getMediaUrl({ id: 'posts/id.png' })).toBe('http://localhost:9000/inshop-uploads/posts/id.png');
+    expect(
+      getMediaUrl({
+        id: 'posts/id.png',
+        url: 'https://example.com/item.jpg',
+        storageKey: 'posts/storage.png',
+        thumbnailStorageKey: 'posts/thumb.png',
+      })
+    ).toBe('https://example.com/item.jpg');
+
+    expect(
+      getMediaUrl({
+        id: 'posts/id.png',
+        url: 'posts/cover.png',
+        storageKey: 'posts/storage.png',
+        thumbnailStorageKey: 'posts/thumb.png',
+      })
+    ).toBe('http://localhost:9000/inshop-uploads/posts/cover.png');
   });
 
   it('returns clean key if NEXT_PUBLIC_CDN_URL is empty', () => {
-    process.env.NEXT_PUBLIC_CDN_URL = '';
+    (env as { NEXT_PUBLIC_CDN_URL: string }).NEXT_PUBLIC_CDN_URL = '';
     expect(getMediaUrl('avatars/user.jpg')).toBe('avatars/user.jpg');
   });
 });
+
+describe('getThumbnailUrl', () => {
+  const originalCdnUrl = env.NEXT_PUBLIC_CDN_URL;
+
+  beforeEach(() => {
+    (env as { NEXT_PUBLIC_CDN_URL: string }).NEXT_PUBLIC_CDN_URL = 'http://localhost:9000/inshop-uploads';
+  });
+
+  afterAll(() => {
+    (env as { NEXT_PUBLIC_CDN_URL: string }).NEXT_PUBLIC_CDN_URL = originalCdnUrl;
+  });
+
+  it('returns empty string for null, undefined, or empty string', () => {
+    expect(getThumbnailUrl(null)).toBe('');
+    expect(getThumbnailUrl(undefined)).toBe('');
+    expect(getThumbnailUrl('')).toBe('');
+  });
+
+  it('prioritizes thumbnailStorageKey with CDN URL formatting', () => {
+    expect(
+      getThumbnailUrl({
+        id: 'm1',
+        storageKey: 'uploads/seller/full.webp',
+        thumbnailStorageKey: 'uploads/seller/thumb.webp',
+        url: 'http://localhost:9000/inshop-uploads/uploads/seller/full.webp',
+      })
+    ).toBe('http://localhost:9000/inshop-uploads/uploads/seller/thumb.webp');
+  });
+
+  it('returns absolute URL directly if thumbnailStorageKey starts with http:// or https://', () => {
+    expect(
+      getThumbnailUrl({
+        id: 'm1',
+        storageKey: 'uploads/seller/full.webp',
+        thumbnailStorageKey: 'https://cdn.example.com/thumb.webp',
+        url: 'https://cdn.example.com/full.webp',
+      })
+    ).toBe('https://cdn.example.com/thumb.webp');
+  });
+
+  it('falls back to thumbnailUrl if thumbnailStorageKey is missing', () => {
+    expect(
+      getThumbnailUrl({
+        id: 'm1',
+        storageKey: 'uploads/seller/full.webp',
+        thumbnailUrl: 'uploads/seller/thumb-fallback.webp',
+        url: 'http://localhost:9000/inshop-uploads/uploads/seller/full.webp',
+      })
+    ).toBe('http://localhost:9000/inshop-uploads/uploads/seller/thumb-fallback.webp');
+  });
+
+  it('falls back to getMediaUrl when thumbnail fields are missing', () => {
+    expect(
+      getThumbnailUrl({
+        id: 'm1',
+        storageKey: 'uploads/seller/full.webp',
+      })
+    ).toBe('http://localhost:9000/inshop-uploads/uploads/seller/full.webp');
+  });
+
+  it('handles string input directly', () => {
+    expect(getThumbnailUrl('uploads/thumb.webp')).toBe('http://localhost:9000/inshop-uploads/uploads/thumb.webp');
+  });
+});
+

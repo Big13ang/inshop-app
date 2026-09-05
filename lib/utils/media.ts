@@ -3,10 +3,28 @@ import { env } from '@/env';
 export type MediaKind = 'image' | 'video';
 
 export type MediaInput =
-  | { id?: string | null; url?: string | null; storageKey?: string | null }
+  | {
+      id?: string | null;
+      url?: string | null;
+      storageKey?: string | null;
+      thumbnailStorageKey?: string | null;
+      thumbnailUrl?: string | null;
+    }
   | string
   | null
   | undefined;
+
+/**
+ * Formats a storage key or URL into a fully-qualified CDN URL.
+ */
+function formatKey(key: string): string {
+  if (key.startsWith('http://') || key.startsWith('https://')) {
+    return key;
+  }
+  const baseUrl = (env.NEXT_PUBLIC_CDN_URL || '').replace(/\/+$/, '');
+  const cleanKey = key.replace(/^\/+/, '');
+  return baseUrl ? `${baseUrl}/${cleanKey}` : cleanKey;
+}
 
 /**
  * Determines whether a file (or MIME string) represents an image or video.
@@ -29,18 +47,6 @@ export function getMediaKind(fileOrMime: File | string): MediaKind {
 export function getMediaUrl(media?: MediaInput): string {
   if (!media) return '';
 
-  const formatKey = (key: string): string => {
-    if (key.startsWith('http://') || key.startsWith('https://')) {
-      return key;
-    }
-    const rawBaseUrl = process.env.NEXT_PUBLIC_CDN_URL !== undefined
-      ? process.env.NEXT_PUBLIC_CDN_URL
-      : env.NEXT_PUBLIC_CDN_URL;
-    const baseUrl = (rawBaseUrl || '').replace(/\/+$/, '');
-    const cleanKey = key.replace(/^\/+/, '');
-    return baseUrl ? `${baseUrl}/${cleanKey}` : cleanKey;
-  };
-
   if (typeof media === 'string') {
     return formatKey(media);
   }
@@ -58,5 +64,28 @@ export function getMediaUrl(media?: MediaInput): string {
   }
 
   return '';
+}
+
+/**
+ * Resolves a media item's thumbnail to a full URL.
+ * - Prioritizes thumbnailStorageKey formatted with CDN URL.
+ * - Falls back to getMediaUrl (storageKey, url, id) if thumbnailStorageKey is absent.
+ */
+export function getThumbnailUrl(media?: MediaInput): string {
+  if (!media) return '';
+
+  if (typeof media === 'string') {
+    return formatKey(media);
+  }
+
+  if (media.thumbnailStorageKey) {
+    return formatKey(media.thumbnailStorageKey);
+  }
+
+  if (media.thumbnailUrl) {
+    return formatKey(media.thumbnailUrl);
+  }
+
+  return getMediaUrl(media);
 }
 

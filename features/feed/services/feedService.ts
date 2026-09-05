@@ -14,6 +14,7 @@ export interface FeedPostMedia {
   postId: string;
   status: string;
   storageKey: string;
+  thumbnailStorageKey: string;
   originalFileName: string;
   mimeType: string;
   sizeBytes: number;
@@ -21,7 +22,8 @@ export interface FeedPostMedia {
   altText: string | null;
   createdAt: string;
   updatedAt: string;
-  url: string | null;
+  url: string;
+  thumbnailUrl: string;
 }
 
 export interface BackendFeedPost {

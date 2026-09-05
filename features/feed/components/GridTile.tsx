@@ -1,6 +1,6 @@
 'use client';
 
-import ProfileGridItem from '@/features/profile/overview/components/ProfileGridItem';
+import { ProfileGridItem } from '@/features/profile/overview/components/ProfileGridItem';
 import type { BackendFeedPost } from '../services/feedService';
 
 interface GridTileProps {

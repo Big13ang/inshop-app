@@ -3,7 +3,7 @@
 import { useInView } from 'react-intersection-observer';
 import { postsQueryService } from '@/features/posts/services/postsQueryService';
 import { ProfileEmptyState } from './ProfileGridEmptyState';
-import ProfileGridItem from './ProfileGridItem';
+import { ProfileGridItem } from './ProfileGridItem';
 
 interface ProfileGridFeedProps {
   username?: string;

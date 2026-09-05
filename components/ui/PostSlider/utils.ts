@@ -18,22 +18,6 @@ export const slideContainer = cva(
   }
 );
 
-export const slideMedia = cva(
-  'w-full h-full select-none',
-  {
-    variants: {
-      objectFit: {
-        contain: 'object-contain',
-        cover: 'object-cover',
-      },
-      loaded: {
-        true: '',
-        false: '',
-      },
-    },
-  }
-);
-
 export const bulletDot = cva(
   'w-1.5 h-1.5 rounded-full transition-all duration-200 pointer-events-auto cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.35)]',
   {

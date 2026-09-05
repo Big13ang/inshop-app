@@ -1,5 +1,6 @@
 export interface PostSliderItem {
   url: string;
+  thumbnailUrl?: string;
   alt?: string;
 }
 

@@ -24,13 +24,16 @@ export interface BackendMedia {
   postId: string;
   status: string;
   storageKey: string;
+  thumbnailStorageKey: string;
   originalFileName: string;
   mimeType: string;
   sizeBytes: number;
   order: number;
+  altText?: string | null;
   createdAt: string;
   updatedAt: string;
-  url: string | null;
+  url: string;
+  thumbnailUrl: string;
 }
 
 export const POST_STATUS = {
