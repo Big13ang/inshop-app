@@ -1,4 +1,4 @@
-import Feed from '@/features/feed/components/Feed';
+import { Feed } from '@/features/feed/components/Feed';
 import MainFooter from '@/components/layout/MainFooter';
 
 export default function Home() {

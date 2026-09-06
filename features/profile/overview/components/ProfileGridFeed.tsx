@@ -7,12 +7,10 @@ import { ProfileGridItem } from './ProfileGridItem';
 
 interface ProfileGridFeedProps {
   username?: string;
-  onPostClick?: (id: string) => void;
 }
 
 export default function ProfileGridFeed({
   username,
-  onPostClick,
 }: ProfileGridFeedProps) {
   const {
     data: infiniteData,
@@ -47,7 +45,6 @@ export default function ProfileGridFeed({
           <ProfileGridItem
             key={post.id}
             post={post}
-            onClick={onPostClick}
           />
         ))}
       </div>
