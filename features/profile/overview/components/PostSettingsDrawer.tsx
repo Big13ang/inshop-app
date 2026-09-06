@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Menu } from '@/components/ui/Menu';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 import { canShare, shareContent } from '@/lib/utils/shareContent';
+import { cn } from '@/lib/utils';
 import DeletePostConfirmationBottomSheet from '@/features/posts/components/DeletePostConfirmationBottomSheet';
 
 export interface DrawerPostItem {
@@ -116,7 +117,7 @@ export default function PostSettingsDrawer({
         />
 
         <Menu.Item
-          icon={<Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />}
+          icon={<Bookmark className={cn('w-4 h-4', isBookmarked && 'fill-current')} />}
           label={isBookmarked ? 'حذف از نشان‌شده‌ها' : 'افزودن به نشان‌شده‌ها'}
           onClick={handleBookmarkClick}
         />

@@ -2,14 +2,13 @@
 
 import { ProfileGridItem } from '@/features/profile/overview/components/ProfileGridItem';
 import type { BackendFeedPost } from '../services/feedService';
+import type { PostResponseDto } from '@/features/search/types';
 
 interface GridTileProps {
-  post: BackendFeedPost;
-  onClick?: (id: string) => void;
+  post: BackendFeedPost | PostResponseDto;
 }
 
-export function GridTile({ post, onClick }: GridTileProps) {
-  return <ProfileGridItem post={post} onClick={onClick} />;
+export function GridTile({ post }: GridTileProps) {
+  return <ProfileGridItem post={post} />;
 }
 
-export default GridTile;
