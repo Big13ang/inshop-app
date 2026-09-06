@@ -1,0 +1,21 @@
+language js
+
+jsx_attribute(name = "className", value = $val) where {
+  $val <: not or {
+    contains `cn($_)`,
+    contains `clsx($_)`,
+    contains `cva($_)`,
+    contains `$fn($_)` where {
+      $fn <: r".*[vV]ariants"
+    }
+  },
+  $val <: or {
+    contains `$cond ? $then : $else`,
+    contains `$a && $b`
+  },
+  register_diagnostic(
+    span = $val,
+    message = "Do not use template literals or inline conditionals in className. Use cn(...) instead.",
+    severity = "error"
+  )
+}
