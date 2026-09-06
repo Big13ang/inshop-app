@@ -7,7 +7,7 @@ export function getBaseUrl(overrideUrl?: string): string {
 }
 
 export function setLanguageHeader({ request }: { request?: Request }): void {
-  if (request && request.headers && typeof request.headers.set === 'function') {
+  if (request?.headers && typeof request.headers.set === 'function') {
     if (!request.headers.has('Accept-Language')) {
       request.headers.set('Accept-Language', 'fa');
     }
@@ -121,7 +121,7 @@ export async function handleJsonResponse<T>(responsePromise: Promise<Response>):
     return undefined as unknown as T;
   }
   const text = await response.text();
-  if (!text || !text.trim()) {
+  if (!text?.trim()) {
     return undefined as unknown as T;
   }
   return JSON.parse(text) as T;

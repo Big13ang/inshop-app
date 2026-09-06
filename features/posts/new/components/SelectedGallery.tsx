@@ -5,6 +5,7 @@ import { useMediaStore } from '../services/mediaStore';
 import { reorderItems } from '../utils/reorderItems';
 import GalleryCell from './GalleryCell';
 import { MAX_IMAGES } from '../constants';
+import { cn } from '@/lib/utils';
 
 function getSelectionIndex(order: number | null): number {
   const UNSELECTED_INDEX = -1;
@@ -46,7 +47,7 @@ export default function SelectedGallery() {
     <div className="flex-1 flex flex-col select-none mt-6" id="selected-gallery-container">
       <div className="px-4 mb-3 flex justify-between items-center">
         <span className="text-[10px] font-medium text-zinc-400">آپلود شده را لمس کنید تا انتخاب شود</span>
-        <span className={`text-[10px] font-medium ${isAtLimit ? 'text-red-500' : 'text-zinc-500'}`}>
+        <span className={cn('text-[10px] font-medium', isAtLimit ? 'text-red-500' : 'text-zinc-500')}>
           {mediaList.length}/{MAX_IMAGES} تصویر
         </span>
       </div>
