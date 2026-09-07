@@ -49,9 +49,6 @@ export function InShopSearchResult({
   const isCustomData = Boolean(profiles || posts);
 
   if (!hasResults) {
-    if (!cleanQuery) {
-      return null;
-    }
     if (cleanQuery.length < 3) {
       return <SearchHint />;
     }

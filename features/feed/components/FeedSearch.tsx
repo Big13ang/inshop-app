@@ -17,7 +17,7 @@ export function FeedSearch({ children }: FeedSearchProps) {
   const debouncedQuery = useDebounce(searchQuery, 350);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value.trim());
+    setSearchQuery(e.target.value);
   };
 
   const handleClearSearch = () => {
