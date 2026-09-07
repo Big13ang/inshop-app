@@ -44,6 +44,13 @@ function UserInitializer({ children, initialUser }: UserProviderProps) {
     hasSellerProfile: currentUser?.sellerProfile != null,
   });
 
+  if (isRetryableError) {
+    console.warn('[UserContext] Active retryable error on /me. Preserving session state or awaiting retry.', {
+      currentUser: currentUser?.id,
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+
   const handleRefetch = () => {
     refetch();
   };

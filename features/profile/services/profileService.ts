@@ -106,8 +106,21 @@ export function isUnauthorizedError(error: unknown): boolean {
 }
 
 export function shouldRetryProfileQuery(failureCount: number, error: unknown): boolean {
-  if (isUnauthorizedError(error)) return false;
-  return failureCount < 3;
+  if (isUnauthorizedError(error)) {
+    console.info("[Auth] Not retrying /me query because error is 401 Unauthorized.");
+    return false;
+  }
+  const shouldRetry = failureCount < 3;
+  if (shouldRetry) {
+    const delay = getProfileRetryDelay(failureCount);
+    console.warn(
+      `[Auth] Retrying /me query (attempt ${failureCount + 1}/3) in ${delay}ms... Reason:`,
+      error instanceof Error ? error.message : error
+    );
+  } else {
+    console.error("[Auth] /me query exceeded max retries (3/3), giving up.", error);
+  }
+  return shouldRetry;
 }
 
 export function getProfileRetryDelay(attemptIndex: number): number {
@@ -125,15 +138,15 @@ export async function fetchMe(): Promise<UserProfile | null> {
     });
 
     if (isUnauthorized) {
+      console.info("[Auth] /me returned 401 Unauthorized - user session is unauthenticated.");
       return null;
     }
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('[auth] /me request failed on client:', result.error);
-    }
+    console.error("[Auth] /me request failed with retryable server/network error:", result.error);
     throw result.error instanceof Error ? result.error : new Error(String(result.error));
   }
 
+  console.log(`[Auth] /me query verified user session: ${result.value.data?.email || result.value.data?.id}`);
   return result.value.data;
 }
 

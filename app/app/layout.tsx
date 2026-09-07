@@ -17,6 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // Only redirect to login if verification has completed, the user is definitely
     // unauthenticated (401 / null user), and NOT in a transient retryable error state (5xx / network).
     if (!isVerifying && !isLoggedIn && !isRetryableError) {
+      console.info('[AppLayout] User unauthenticated (401), redirecting to login:', pathname);
       router.replace(getLoginUrlWithCallback(pathname));
     }
   }, [isLoggedIn, isVerifying, isRetryableError, pathname, router]);
@@ -24,6 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // If a server or network error occurred during initial verification and there is no cached session,
   // show a retry screen instead of redirecting to login.
   if (isRetryableError && !isLoggedIn) {
+    console.warn('[AppLayout] Rendering retry screen due to retryable server/network error on /me');
     return (
       <main className="flex flex-col items-center justify-center min-h-screen px-6 py-12 select-none bg-background text-foreground text-center">
         <div className="flex flex-col items-center max-w-sm mx-auto gap-5">
