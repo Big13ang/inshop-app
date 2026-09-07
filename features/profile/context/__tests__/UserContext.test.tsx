@@ -4,25 +4,46 @@ import { UserProvider, useUser } from '../UserContext';
 import type { UserProfile } from '../../services/profileService';
 
 let mockMe: UserProfile | null = null;
+let mockError: Error | null = null;
+let mockDataUpdatedAt = 1;
 
 jest.mock('../../services/profileService', () => ({
+  isUnauthorizedError: (error: unknown) => {
+    if (!error || typeof error !== 'object') return false;
+    return (error as { response?: { status?: number } })?.response?.status === 401;
+  },
   profileService: {
-    useSuspenseMe: () => ({ data: mockMe, error: null }),
+    useMe: () => ({
+      data: mockMe,
+      error: mockError,
+      dataUpdatedAt: mockDataUpdatedAt,
+      refetch: jest.fn(),
+    }),
+    useSuspenseMe: () => ({
+      data: mockMe,
+      error: mockError,
+      dataUpdatedAt: mockDataUpdatedAt,
+      refetch: jest.fn(),
+    }),
   },
 }));
 
 function TestConsumer() {
-  const { user, isLoggedIn } = useUser();
+  const { user, isLoggedIn, isRetryableError, isVerifying } = useUser();
   return (
     <div>
       <span data-testid="is-logged-in">{isLoggedIn ? 'yes' : 'no'}</span>
       <span data-testid="username">{user?.sellerProfile?.username || 'none'}</span>
+      <span data-testid="is-retryable">{isRetryableError ? 'yes' : 'no'}</span>
+      <span data-testid="is-verifying">{isVerifying ? 'yes' : 'no'}</span>
     </div>
   );
 }
 
 describe('UserContext', () => {
   beforeEach(() => {
+    mockError = null;
+    mockDataUpdatedAt = 1;
     mockMe = {
       id: 'u-1',
       name: 'Test User',
@@ -80,5 +101,47 @@ describe('UserContext', () => {
     );
 
     expect(screen.getByTestId('is-logged-in')).toHaveTextContent('no');
+  });
+
+  it('preserves cached user and isLoggedIn=true when transient 5xx/network error occurs', () => {
+    mockError = Object.assign(new Error('502 Bad Gateway'), { response: { status: 502 } });
+
+    render(
+      <UserProvider initialUser={mockMe}>
+        <TestConsumer />
+      </UserProvider>
+    );
+
+    expect(screen.getByTestId('is-logged-in')).toHaveTextContent('yes');
+    expect(screen.getByTestId('username')).toHaveTextContent('test_shop');
+    expect(screen.getByTestId('is-retryable')).toHaveTextContent('yes');
+  });
+
+  it('flags isRetryableError=true when 500/network error occurs on cold start without user', () => {
+    mockMe = null;
+    mockError = Object.assign(new Error('Network Error'), { response: { status: 500 } });
+
+    render(
+      <UserProvider>
+        <TestConsumer />
+      </UserProvider>
+    );
+
+    expect(screen.getByTestId('is-logged-in')).toHaveTextContent('no');
+    expect(screen.getByTestId('is-retryable')).toHaveTextContent('yes');
+  });
+
+  it('does not flag isRetryableError when error is genuine 401', () => {
+    mockMe = null;
+    mockError = Object.assign(new Error('Unauthorized'), { response: { status: 401 } });
+
+    render(
+      <UserProvider>
+        <TestConsumer />
+      </UserProvider>
+    );
+
+    expect(screen.getByTestId('is-logged-in')).toHaveTextContent('no');
+    expect(screen.getByTestId('is-retryable')).toHaveTextContent('no');
   });
 });

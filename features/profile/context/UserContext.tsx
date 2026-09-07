@@ -1,14 +1,16 @@
 'use client';
 
 import { createContext, use, ReactNode, Suspense } from 'react';
-import { profileService, UserMe } from '../services/profileService';
+import { isUnauthorizedError, profileService, UserMe } from '../services/profileService';
 import { debugAuth } from '@/lib/utils/authDebug';
 
-interface UserContextType {
+export interface UserContextType {
   user: UserMe | null;
   error: Error | null;
   isLoggedIn: boolean;
   isVerifying: boolean;
+  isRetryableError: boolean;
+  refetch: () => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -19,34 +21,40 @@ interface UserProviderProps {
 }
 
 function UserInitializer({ children, initialUser }: UserProviderProps) {
-  const { data: user, error, dataUpdatedAt } = profileService.useSuspenseMe(
+  const {
+    data: user,
+    error,
+    dataUpdatedAt,
+    refetch,
+  } = profileService.useMe(
     initialUser !== undefined
       ? { initialData: initialUser, initialDataUpdatedAt: 0 }
       : undefined
   );
 
-  const currentUser = user ?? null;
+  const currentUser = user ?? (error ? (initialUser ?? null) : null);
   const isLoggedIn = currentUser != null;
-  // With initialData seeded from SSR, this first render's isLoggedIn reflects
-  // the server's cookie check, not the browser's. initialDataUpdatedAt: 0
-  // marks that seed as unverified; dataUpdatedAt only becomes non-zero once
-  // a real client-side /me request has completed. We derive isVerifying from
-  // this instead of isFetching, since isFetching depends on react-query's
-  // internal effect having run, which can fire after a consuming component's
-  // own effect (e.g. a redirect-on-logged-out check) on the same mount.
-  const isVerifying = dataUpdatedAt === 0;
+  const isRetryableError = Boolean(error && !isUnauthorizedError(error));
+  const isVerifying = !error && dataUpdatedAt === 0;
 
   debugAuth('user-context', 'state', {
     isLoggedIn,
     isVerifying,
+    isRetryableError,
     hasSellerProfile: currentUser?.sellerProfile != null,
   });
+
+  const handleRefetch = () => {
+    refetch();
+  };
 
   const contextValue: UserContextType = {
     user: currentUser,
     error: (error as Error) || null,
     isLoggedIn,
     isVerifying,
+    isRetryableError,
+    refetch: handleRefetch,
   };
 
   return (

@@ -94,24 +94,44 @@ export async function checkUsernameAvailability(username: string): Promise<Check
   return res.data;
 }
 
-async function fetchMe(): Promise<UserProfile | null> {
+export function isUnauthorizedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const errObj = error as {
+    response?: { status?: number };
+    status?: number;
+    statusCode?: number;
+  };
+  const status = errObj.response?.status ?? errObj.status ?? errObj.statusCode;
+  return status === 401;
+}
+
+export function shouldRetryProfileQuery(failureCount: number, error: unknown): boolean {
+  if (isUnauthorizedError(error)) return false;
+  return failureCount < 3;
+}
+
+export function getProfileRetryDelay(attemptIndex: number): number {
+  return Math.min(1000 * 2 ** attemptIndex, 10000);
+}
+
+export async function fetchMe(): Promise<UserProfile | null> {
   const result = await Result.try(authHttp.get<ApiResponse<UserProfile>>('/me'));
 
   if (!result.ok) {
-    const isUnauthorized =
-      result.error &&
-      typeof result.error === 'object' &&
-      'response' in result.error &&
-      (result.error as { response?: { status?: number } }).response?.status === 401;
+    const isUnauthorized = isUnauthorizedError(result.error);
 
     debugAuth('profile', isUnauthorized ? 'clientFetchMe:unauthenticated' : 'clientFetchMe:error', {
       errorMessage: result.error instanceof Error ? result.error.message : String(result.error),
     });
 
-    if (!isUnauthorized) {
+    if (isUnauthorized) {
+      return null;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
       console.error('[auth] /me request failed on client:', result.error);
     }
-    return null;
+    throw result.error instanceof Error ? result.error : new Error(String(result.error));
   }
 
   return result.value.data;
@@ -123,7 +143,8 @@ export const profileService = {
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
       staleTime: 0,
-      retry: false,
+      retry: shouldRetryProfileQuery,
+      retryDelay: getProfileRetryDelay,
       ...options,
     });
   },
@@ -133,7 +154,8 @@ export const profileService = {
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
       staleTime: 0,
-      retry: false,
+      retry: shouldRetryProfileQuery,
+      retryDelay: getProfileRetryDelay,
       ...options,
     });
   },
