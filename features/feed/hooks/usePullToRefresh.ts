@@ -5,7 +5,7 @@ import { useDrag, type FullGestureState } from '@use-gesture/react';
 import { Result } from '@/lib/utils';
 
 export interface UsePullToRefreshProps {
-  onRefresh: () => Promise<unknown> | void;
+  onRefresh: () => Promise<unknown> | undefined;
 }
 
 export type PullStatus = 'idle' | 'pulling' | 'refreshing';
@@ -56,7 +56,7 @@ export function pullReducer(state: PullState, action: PullAction): PullState {
 function calculateDampedDistance(diffY: number): number {
   const maxPull = 85;
   const dampFactor = 0.45;
-  return Math.min(maxPull, Math.pow(diffY * dampFactor, 0.92));
+  return Math.min(maxPull, (diffY * dampFactor) ** 0.92);
 }
 
 export function usePullToRefresh({ onRefresh }: UsePullToRefreshProps) {

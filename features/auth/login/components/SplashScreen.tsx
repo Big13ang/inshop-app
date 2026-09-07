@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 const DEFAULT_VIDEO_URL = 'https://inshop-static-asset.s3.ir-thr-at1.arvanstorage.ir/inshop-splash.mp4';
@@ -28,7 +28,7 @@ export default function SplashScreen({
     onCompleteRef.current = onComplete;
   }, [onComplete]);
 
-  const startExitTransition = () => {
+  const startExitTransition = useCallback(() => {
     if (isExitingRef.current) return;
     isExitingRef.current = true;
 
@@ -40,7 +40,7 @@ export default function SplashScreen({
         onCompleteRef.current();
       }
     }, EXIT_ANIMATION_DURATION_MS);
-  };
+  }, []);
 
   const handleVideoEnded = () => {
     startExitTransition();
@@ -73,7 +73,7 @@ export default function SplashScreen({
     return () => {
       clearTimeout(maxSafetyTimer);
     };
-  }, []);
+  }, [startExitTransition]);
 
   if (phase === 'finished') {
     return null;

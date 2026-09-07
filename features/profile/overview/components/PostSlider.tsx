@@ -6,7 +6,7 @@ import { useKeenSlider } from 'keen-slider/react';
 import 'keen-slider/keen-slider.min.css';
 import { cn } from '@/lib/utils';
 
-const DEFAULT_EASING = (t: number) => 1 - Math.pow(1 - t, 4);
+const DEFAULT_EASING = (t: number) => 1 - (1 - t) ** 4;
 const emptySubscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
@@ -137,7 +137,7 @@ export default function PostSlider({
     if (instanceRef.current) {
       instanceRef.current.update();
     }
-  }, [items.length, instanceRef]);
+  }, [instanceRef]);
 
   if (items.length === 0) return null;
 

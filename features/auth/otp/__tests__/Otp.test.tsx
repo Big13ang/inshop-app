@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, act, userEvent, expect } from '@/lib/test-utils';
 import Otp from '../Otp';
 import { TEXTS } from '../constants';

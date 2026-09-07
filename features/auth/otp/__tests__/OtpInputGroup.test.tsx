@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, userEvent, expect } from '@/lib/test-utils';
 import OtpInputGroup from '../components/OtpInputGroup';
 import { useOtp } from '../hooks/useOtp';

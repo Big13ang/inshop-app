@@ -62,7 +62,7 @@ function buildStore(
       const { mediaList } = _get();
       const item = mediaList.find((it) => it.id === id);
 
-      if (item && item.previewUrl) {
+      if (item?.previewUrl) {
         URL.revokeObjectURL(item.previewUrl);
       }
 
@@ -76,9 +76,11 @@ function buildStore(
       const { mediaList } = _get();
       _set(DEFAULT_VALUES);
 
-      mediaList.forEach(
-        (item) => item.previewUrl && URL.revokeObjectURL(item.previewUrl)
-      );
+      mediaList.forEach((item) => {
+        if (item.previewUrl) {
+          URL.revokeObjectURL(item.previewUrl);
+        }
+      });
     }
   };
 }

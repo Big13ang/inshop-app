@@ -13,7 +13,7 @@ export const dynamicAuthValidationSchema = z.object({
   ) {
     const passResult = passwordSchema.safeParse(data.password);
     if (!passResult.success) {
-      passResult.error.issues.forEach((issue) => ctx.addIssue({ ...issue, path: ['password'] }));
+      passResult.error.issues.forEach((issue) => { ctx.addIssue({ ...issue, path: ['password'] }); });
     }
     if (!data.otp || data.otp.length < 4) {
       ctx.addIssue({

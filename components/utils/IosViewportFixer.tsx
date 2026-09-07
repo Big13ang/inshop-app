@@ -32,7 +32,7 @@ const SCROLL_INTO_VIEW_DELAY_MS = 250;
 
 function isTextEntry(el: EventTarget | null): el is HTMLElement {
   const node = el as HTMLElement | null;
-  if (!node || !node.tagName) return false;
+  if (!node?.tagName) return false;
   return (
     node.tagName === 'INPUT' ||
     node.tagName === 'TEXTAREA' ||

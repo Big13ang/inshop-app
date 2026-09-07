@@ -2,7 +2,7 @@ import { cva } from 'class-variance-authority';
 
 export const emptySubscribe = () => () => { };
 export const EMPTY_ARRAY: string[] = [];
-export const DEFAULT_EASING = (t: number) => 1 - Math.pow(1 - t, 4);
+export const DEFAULT_EASING = (t: number) => 1 - (1 - t) ** 4;
 export const CONTAINER_CLASSES =
   'relative w-full h-full group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 dark:focus-visible:ring-zinc-50 overflow-hidden';
 

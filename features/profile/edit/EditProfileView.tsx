@@ -22,7 +22,7 @@ const FORM_ID = 'edit-profile-form';
 
 
 const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
-  if (!user || !user.sellerProfile) {
+  if (!user?.sellerProfile) {
     return {
       address: "",
       addressShow: false,
