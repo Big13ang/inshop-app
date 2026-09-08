@@ -1,4 +1,5 @@
 import { env } from '@/env';
+import { getBaseUrl } from '@/lib/utils/httpConfig';
 
 export interface UploadParams {
   id: string;

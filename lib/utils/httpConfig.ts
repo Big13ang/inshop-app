@@ -2,8 +2,32 @@ import type { BeforeErrorState, Options } from 'ky';
 import { Result } from './result';
 
 export function getBaseUrl(overrideUrl?: string): string {
-  const url = overrideUrl || process.env.NEXT_PUBLIC_API_URL;
-  return url ? url.replace(/\/$/, '') : '';
+  if (overrideUrl) {
+    return overrideUrl.replace(/\/$/, '');
+  }
+
+  // 1. Node.js environment variable check (SSR / Node.js runtime)
+  const appEnv = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
+  if (appEnv === 'dev' || appEnv === 'development') {
+    return (process.env.DEV_API_URL || process.env.NEXT_PUBLIC_DEV_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.dev.inshop.social').replace(/\/$/, '');
+  }
+  if (appEnv === 'prod' || appEnv === 'production') {
+    return (process.env.PROD_API_URL || process.env.NEXT_PUBLIC_PROD_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.inshop.social').replace(/\/$/, '');
+  }
+
+  // 2. Client-side browser hostname detection
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'dev.inshop.social' || host.startsWith('dev.')) {
+      return 'https://api.dev.inshop.social';
+    }
+    if (host === 'inshop.social' || host.endsWith('inshop.social')) {
+      return 'https://api.inshop.social';
+    }
+  }
+
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  return url ? url.replace(/\/$/, '') : 'https://api.inshop.social';
 }
 
 export function setLanguageHeader({ request }: { request?: Request }): void {
