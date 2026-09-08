@@ -97,14 +97,54 @@ jobs:
       - name: Log in to the internal registry
         run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
 
+      - name: Fetch centralized environment config
+        run: |
+          set -euo pipefail
+          TARGET_ENV="${{ steps.target.outputs.is_dev == 'true' && 'development' || 'production' }}"
+          echo "Fetching centralized environment for: ${TARGET_ENV}..."
+          mkdir -p .infra-env
+          if git clone --depth 1 https://meri:InShopAdminMeri2026%21@git.inshop.social/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null || \
+             git clone --depth 1 https://git.inshop.social/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null; then
+            if [ -f ".infra-env/environments/${TARGET_ENV}/frontend.env" ]; then
+              cp ".infra-env/environments/${TARGET_ENV}/frontend.env" ./active-frontend.env
+              echo "Successfully loaded centralized environments/${TARGET_ENV}/frontend.env"
+            fi
+          fi
+          test -f ./active-frontend.env || touch ./active-frontend.env
+
       - name: Build Next.js image
         run: |
+          set -euo pipefail
+          BUILD_ARGS=()
+          if [ -s "./active-frontend.env" ]; then
+            echo "Building with centralized environment arguments:"
+            while IFS= read -r line || [ -n "$line" ]; do
+              line="$(echo "${line}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+              [[ -z "${line}" || "${line}" =~ ^# ]] && continue
+              if [[ "${line}" =~ = ]]; then
+                k="${line%%=*}"
+                v="${line#*=}"
+                v="${v%\"}"
+                v="${v#\"}"
+                v="${v%\'}"
+                v="${v#\'}"
+                BUILD_ARGS+=(--build-arg "${k}=${v}")
+                echo "  -> ${k}=${v}"
+              fi
+            done < "./active-frontend.env"
+          else
+            echo "Falling back to default repository build arguments..."
+            BUILD_ARGS+=(
+              --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL || (steps.target.outputs.is_dev == 'true' && 'https://api.dev.inshop.social' || 'https://api.inshop.social') }}"
+              --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL || 'https://storage.inshop.social' }}"
+              --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH || 'false' }}"
+              --build-arg E2E_MOCK="false"
+            )
+          fi
+
           docker build \
             --secret id=npmrc,src=.npmrc.ci \
-            --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL || 'https://api.inshop.social' }}" \
-            --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL || 'https://storage.inshop.social' }}" \
-            --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH || 'false' }}" \
-            --build-arg E2E_MOCK="false" \
+            "${BUILD_ARGS[@]}" \
             -t "${IMAGE}:${{ steps.target.outputs.image_tag }}" \
             -t "${IMAGE}:${{ steps.target.outputs.is_dev == 'true' && 'dev-latest' || 'prod-latest' }}" .
 
@@ -123,27 +163,31 @@ jobs:
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
-  # 2. Deploy to Dev (dev_application_frontend)
+  # 2. Deploy to Dev (dev_application_dev_frontend)
   # ---------------------------------------------------------------------------
   deploy-dev:
     needs: build-dev
     if: needs.build-dev.outputs.is_dev == 'true'
     runs-on: swarm-deploy
     env:
-      SERVICE: "dev_application_frontend"
+      SERVICE: "dev_application_dev_frontend"
     steps:
       - name: Log in to registry
         run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
 
-      - name: Deploy to DEV Environment (dev_application_frontend)
+      - name: Deploy to DEV Environment (dev_application_dev_frontend)
         run: |
           set -euo pipefail
           DIGEST="${{ needs.build-dev.outputs.digest }}"
 
-          if ! docker service inspect "${SERVICE}" >/dev/null 2>&1; then
-            echo "::error::Service '${SERVICE}' does not exist in Docker Swarm."
-            echo "Run 'make deploy-dev-app' on the swarm manager first."
-            exit 1
+          TARGET_SVC="${SERVICE}"
+          if ! docker service inspect "${TARGET_SVC}" >/dev/null 2>&1; then
+            if docker service inspect "dev_application_frontend" >/dev/null 2>&1; then
+              TARGET_SVC="dev_application_frontend"
+            else
+              echo "::error::Service '${TARGET_SVC}' does not exist in Docker Swarm."
+              exit 1
+            fi
           fi
 
           echo "Updating Docker Swarm service: ${SERVICE} -> ${DIGEST}"
