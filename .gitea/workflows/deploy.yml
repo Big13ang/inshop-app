@@ -103,7 +103,8 @@ jobs:
           TARGET_ENV="${{ steps.target.outputs.is_dev == 'true' && 'dev' || 'prod' }}"
           echo "Fetching centralized environment for: ${TARGET_ENV}..."
           mkdir -p .infra-env
-          if git clone --depth 1 https://meri:InShopAdminMeri2026%21@git.inshop.social/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null || \
+          if git clone --depth 1 http://meri:InShopAdminMeri2026%21@gitea:3000/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null || \
+             git clone --depth 1 https://meri:InShopAdminMeri2026%21@git.inshop.social/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null || \
              git clone --depth 1 https://git.inshop.social/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null; then
             if [ -f ".infra-env/environments/${TARGET_ENV}/frontend.env" ]; then
               cp ".infra-env/environments/${TARGET_ENV}/frontend.env" ./active-frontend.env
@@ -144,6 +145,9 @@ jobs:
               --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL || (steps.target.outputs.is_dev == 'true' && 'https://api.dev.inshop.social' || 'https://api.inshop.social') }}"
               --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL || 'https://storage.inshop.social' }}"
               --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH || 'false' }}"
+              --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ vars.NEXT_PUBLIC_GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5' }}"
+              --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${{ steps.target.outputs.image_tag }}"
+              --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="${{ steps.target.outputs.is_dev == 'true' && 'development' || 'production' }}"
               --build-arg E2E_MOCK="false"
             )
           fi
