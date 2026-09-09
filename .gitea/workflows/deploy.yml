@@ -100,7 +100,7 @@ jobs:
       - name: Fetch centralized environment config
         run: |
           set -euo pipefail
-          TARGET_ENV="${{ steps.target.outputs.is_dev == 'true' && 'development' || 'production' }}"
+          TARGET_ENV="${{ steps.target.outputs.is_dev == 'true' && 'dev' || 'prod' }}"
           echo "Fetching centralized environment for: ${TARGET_ENV}..."
           mkdir -p .infra-env
           if git clone --depth 1 https://meri:InShopAdminMeri2026%21@git.inshop.social/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null || \
@@ -108,6 +108,12 @@ jobs:
             if [ -f ".infra-env/environments/${TARGET_ENV}/frontend.env" ]; then
               cp ".infra-env/environments/${TARGET_ENV}/frontend.env" ./active-frontend.env
               echo "Successfully loaded centralized environments/${TARGET_ENV}/frontend.env"
+            elif [ "${TARGET_ENV}" = "dev" ] && [ -f ".infra-env/environments/development/frontend.env" ]; then
+              cp ".infra-env/environments/development/frontend.env" ./active-frontend.env
+              echo "Successfully loaded centralized environments/development/frontend.env"
+            elif [ "${TARGET_ENV}" = "prod" ] && [ -f ".infra-env/environments/production/frontend.env" ]; then
+              cp ".infra-env/environments/production/frontend.env" ./active-frontend.env
+              echo "Successfully loaded centralized environments/production/frontend.env"
             fi
           fi
           test -f ./active-frontend.env || touch ./active-frontend.env

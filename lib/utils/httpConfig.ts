@@ -6,7 +6,36 @@ export function getBaseUrl(overrideUrl?: string): string {
     return overrideUrl.replace(/\/$/, '');
   }
 
-  // 1. Node.js environment variable check (SSR / Node.js runtime)
+  // 1. Client-side browser hostname detection (Highest priority in browser)
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+
+    // Any development domain or subdomain
+    if (
+      host === 'dev.inshop.social' ||
+      host.startsWith('dev.') ||
+      host.includes('dev-') ||
+      host.includes('.dev.')
+    ) {
+      return 'https://api.dev.inshop.social';
+    }
+
+    // Localhost development
+    if (host === 'localhost' || host === '127.0.0.1') {
+      const devUrl =
+        process.env.NEXT_PUBLIC_DEV_API_URL ||
+        process.env.NEXT_PUBLIC_API_URL ||
+        'http://localhost:8000';
+      return devUrl.replace(/\/$/, '');
+    }
+
+    // Production domain (strictly inshop.social or www.inshop.social)
+    if (host === 'inshop.social' || host === 'www.inshop.social') {
+      return (process.env.NEXT_PUBLIC_PROD_API_URL || 'https://api.inshop.social').replace(/\/$/, '');
+    }
+  }
+
+  // 2. Node.js environment variable check (SSR / Node.js runtime)
   const appEnv = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
   if (appEnv === 'dev' || appEnv === 'development') {
     return (process.env.DEV_API_URL || process.env.NEXT_PUBLIC_DEV_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.dev.inshop.social').replace(/\/$/, '');
@@ -15,19 +44,14 @@ export function getBaseUrl(overrideUrl?: string): string {
     return (process.env.PROD_API_URL || process.env.NEXT_PUBLIC_PROD_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.inshop.social').replace(/\/$/, '');
   }
 
-  // 2. Client-side browser hostname detection
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'dev.inshop.social' || host.startsWith('dev.')) {
-      return 'https://api.dev.inshop.social';
-    }
-    if (host === 'inshop.social' || host.endsWith('inshop.social')) {
-      return 'https://api.inshop.social';
-    }
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (url) {
+    return url.replace(/\/$/, '');
   }
 
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  return url ? url.replace(/\/$/, '') : 'https://api.inshop.social';
+  return process.env.NODE_ENV === 'development'
+    ? 'https://api.dev.inshop.social'
+    : 'https://api.inshop.social';
 }
 
 export function setLanguageHeader({ request }: { request?: Request }): void {
