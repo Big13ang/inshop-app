@@ -3,18 +3,24 @@
 #
 # Workflows supported:
 # 1. Push to develop/dev:
-#    - Builds image tagged with dev-<sha> and dev-latest.
-#    - Deploys automatically to DEV environment: dev_application_frontend
-#      (dev.inshop.social).
+#    - Builds image tagged with dev-<sha> and dev-latest with BuildKit caching.
+#    - Loads centralized environments/dev/frontend.env (api.dev.inshop.social).
+#    - Deploys automatically to DEV environment: dev_application_frontend /
+#      dev_application_dev_frontend (dev.inshop.social).
 #
-# 2. Release Tag (v*) or Gitea Release:
-#    - Zero-rebuild Docker image promotion:
-#      Pulls the tested dev image, re-tags it to the release tag and prod-latest,
-#      pushes to registry, and deploys the exact immutable digest to production:
-#      application_frontend (inshop.social).
+# 2. Release Tag (*) or Gitea Release:
+#    - Rebuilds project with production environment (api.inshop.social).
+#    - Uses BuildKit layer caching (cache-from prod-latest and dev-latest)
+#      and BuildKit inline cache for fast rebuilds.
+#    - Tags with <tag>, prod-<sha>, and prod-latest.
+#    - Deploys automatically to PROD environment: application_frontend (inshop.social).
 #
-# 3. workflow_dispatch:
-#    - Manual deployment to dev or one-click promotion to prod.
+# 3. Push to master/main:
+#    - Builds production image tagged with prod-<sha> and prod-latest.
+#    - Deploys automatically to PROD environment: application_frontend (inshop.social).
+#
+# 4. workflow_dispatch:
+#    - Manual deployment to dev or prod with optional custom tag and environment choice.
 # =============================================================================
 name: frontend-ci-cd
 
@@ -26,24 +32,22 @@ on:
       - develop
       - dev
     tags:
-      - 'v*'
-      - 'release-*'
+      - '*'
   release:
     types: [published, created]
   workflow_dispatch:
     inputs:
-      promote_to_prod:
-        description: 'Promote tested dev image to production (re-tag without rebuild)'
-        type: boolean
-        default: false
-      source_tag:
-        description: 'Source dev tag to promote (e.g. dev-latest or dev-<sha>)'
-        type: string
-        default: 'dev-latest'
+      target_env:
+        description: 'Target environment to build and deploy'
+        type: choice
+        options:
+          - production
+          - dev
+        default: 'production'
       release_tag:
-        description: 'Production release tag (e.g. v1.0.0 or prod-latest)'
+        description: 'Optional custom image tag (e.g. v1.0.0 or leave empty)'
         type: string
-        default: 'prod-latest'
+        default: ''
 
 env:
   IMAGE: "${{ vars.REGISTRY_HOST }}/inshop/frontend"
@@ -51,27 +55,70 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # 1. Build Dev Image & Push to Registry
+  # 1. Build Image & Push to Registry (Cached with BuildKit)
   # ---------------------------------------------------------------------------
-  build-dev:
-    if: (!startsWith(github.ref, 'refs/tags/')) && github.event_name != 'release' && (github.event_name != 'workflow_dispatch' || inputs.promote_to_prod != true)
+  build-image:
     runs-on: docker
     outputs:
       digest: "${{ steps.push.outputs.digest }}"
       is_dev: "${{ steps.target.outputs.is_dev }}"
+      primary_tag: "${{ steps.target.outputs.primary_tag }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Determine Target Branch
+      - name: Determine Target Environment & Tags
         id: target
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/develop" ] || [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+          set -euo pipefail
+
+          # 1. Release tag push or release event -> Production build
+          if [[ "${GITHUB_REF}" == refs/tags/* ]] || [ "${GITHUB_EVENT_NAME}" = "release" ]; then
+            REF_TAG="${GITHUB_REF_NAME:-}"
+            if [ -z "${REF_TAG}" ]; then
+              REF_TAG="${GITHUB_REF#refs/tags/}"
+            fi
+            echo "is_dev=false" >> "$GITHUB_OUTPUT"
+            echo "target_env=prod" >> "$GITHUB_OUTPUT"
+            echo "primary_tag=${REF_TAG}" >> "$GITHUB_OUTPUT"
+            echo "extra_tags=prod-latest prod-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "Target: PRODUCTION (Release Tag: ${REF_TAG})"
+
+          # 2. Develop / Dev branch push -> Dev build
+          elif [ "${GITHUB_REF}" = "refs/heads/develop" ] || [ "${GITHUB_REF}" = "refs/heads/dev" ]; then
             echo "is_dev=true" >> "$GITHUB_OUTPUT"
-            echo "image_tag=dev-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "target_env=dev" >> "$GITHUB_OUTPUT"
+            echo "primary_tag=dev-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "extra_tags=dev-latest" >> "$GITHUB_OUTPUT"
+            echo "Target: DEVELOPMENT (Branch: ${GITHUB_REF})"
+
+          # 3. Manual workflow_dispatch
+          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TARGET_CHOICE="${{ inputs.target_env || 'production' }}"
+            CUSTOM_TAG="${{ inputs.release_tag || '' }}"
+            if [ "${TARGET_CHOICE}" = "dev" ]; then
+              TAG="${CUSTOM_TAG:-dev-${GITHUB_SHA}}"
+              echo "is_dev=true" >> "$GITHUB_OUTPUT"
+              echo "target_env=dev" >> "$GITHUB_OUTPUT"
+              echo "primary_tag=${TAG}" >> "$GITHUB_OUTPUT"
+              echo "extra_tags=dev-latest" >> "$GITHUB_OUTPUT"
+              echo "Target: DEVELOPMENT (Manual dispatch, tag: ${TAG})"
+            else
+              TAG="${CUSTOM_TAG:-prod-${GITHUB_SHA}}"
+              echo "is_dev=false" >> "$GITHUB_OUTPUT"
+              echo "target_env=prod" >> "$GITHUB_OUTPUT"
+              echo "primary_tag=${TAG}" >> "$GITHUB_OUTPUT"
+              echo "extra_tags=prod-latest" >> "$GITHUB_OUTPUT"
+              echo "Target: PRODUCTION (Manual dispatch, tag: ${TAG})"
+            fi
+
+          # 4. Master / Main branch push or other branches -> Production build
           else
             echo "is_dev=false" >> "$GITHUB_OUTPUT"
-            echo "image_tag=prod-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "target_env=prod" >> "$GITHUB_OUTPUT"
+            echo "primary_tag=prod-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+            echo "extra_tags=prod-latest" >> "$GITHUB_OUTPUT"
+            echo "Target: PRODUCTION (Branch: ${GITHUB_REF})"
           fi
 
       - name: Configure npm client for container build
@@ -97,10 +144,16 @@ jobs:
       - name: Log in to the internal registry
         run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
 
+      - name: Pull cache images (for fast layer caching)
+        run: |
+          echo "Pulling existing Docker images for BuildKit cache..."
+          docker pull "${IMAGE}:prod-latest" || true
+          docker pull "${IMAGE}:dev-latest" || true
+
       - name: Fetch centralized environment config
         run: |
           set -euo pipefail
-          TARGET_ENV="${{ steps.target.outputs.is_dev == 'true' && 'dev' || 'prod' }}"
+          TARGET_ENV="${{ steps.target.outputs.target_env }}"
           echo "Fetching centralized environment for: ${TARGET_ENV}..."
           mkdir -p .infra-env
           if git clone --depth 1 http://meri:InShopAdminMeri2026%21@gitea:3000/Mohsen/inshop-infrastructure.git .infra-env 2>/dev/null || \
@@ -119,10 +172,13 @@ jobs:
           fi
           test -f ./active-frontend.env || touch ./active-frontend.env
 
-      - name: Build Next.js image
+      - name: Build Next.js image with BuildKit cache
         run: |
           set -euo pipefail
           BUILD_ARGS=()
+          PRIMARY_TAG="${{ steps.target.outputs.primary_tag }}"
+          IS_DEV="${{ steps.target.outputs.is_dev }}"
+
           if [ -s "./active-frontend.env" ]; then
             echo "Building with centralized environment arguments:"
             while IFS= read -r line || [ -n "$line" ]; do
@@ -139,6 +195,12 @@ jobs:
                 echo "  -> ${k}=${v}"
               fi
             done < "./active-frontend.env"
+
+            # Ensure release tag is accurately recorded in Sentry for production release tags
+            if [ "${IS_DEV}" != "true" ]; then
+              BUILD_ARGS+=(--build-arg "NEXT_PUBLIC_SENTRY_RELEASE=${PRIMARY_TAG}")
+              BUILD_ARGS+=(--build-arg "SENTRY_RELEASE=${PRIMARY_TAG}")
+            fi
           else
             echo "Falling back to default repository build arguments..."
             BUILD_ARGS+=(
@@ -146,29 +208,47 @@ jobs:
               --build-arg NEXT_PUBLIC_CDN_URL="${{ vars.NEXT_PUBLIC_CDN_URL || 'https://storage.inshop.social' }}"
               --build-arg NEXT_PUBLIC_DEBUG_AUTH="${{ vars.NEXT_PUBLIC_DEBUG_AUTH || 'false' }}"
               --build-arg NEXT_PUBLIC_GLITCHTIP_DSN="${{ vars.NEXT_PUBLIC_GLITCHTIP_DSN || 'https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5' }}"
-              --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${{ steps.target.outputs.image_tag }}"
+              --build-arg NEXT_PUBLIC_SENTRY_RELEASE="${PRIMARY_TAG}"
               --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT="${{ steps.target.outputs.is_dev == 'true' && 'development' || 'production' }}"
               --build-arg E2E_MOCK="false"
             )
           fi
 
+          # Enable BuildKit inline cache for downstream cache reuse
+          BUILD_ARGS+=(--build-arg BUILDKIT_INLINE_CACHE=1)
+
+          TAG_ARGS=(-t "${IMAGE}:${PRIMARY_TAG}")
+          for extra in ${{ steps.target.outputs.extra_tags }}; do
+            TAG_ARGS+=(-t "${IMAGE}:${extra}")
+          done
+
+          echo "Running docker build with caching from prod-latest and dev-latest..."
           docker build \
+            --cache-from "${IMAGE}:prod-latest" \
+            --cache-from "${IMAGE}:dev-latest" \
             --secret id=npmrc,src=.npmrc.ci \
             "${BUILD_ARGS[@]}" \
-            -t "${IMAGE}:${{ steps.target.outputs.image_tag }}" \
-            -t "${IMAGE}:${{ steps.target.outputs.is_dev == 'true' && 'dev-latest' || 'prod-latest' }}" .
+            "${TAG_ARGS[@]}" .
 
       - name: Push and capture digest
         id: push
         run: |
           set -euo pipefail
-          docker push "${IMAGE}:${{ steps.target.outputs.image_tag }}"
-          if [ "${{ steps.target.outputs.is_dev }}" = "true" ]; then
-            docker push "${IMAGE}:dev-latest"
-          else
-            docker push "${IMAGE}:prod-latest"
+          PRIMARY_TAG="${{ steps.target.outputs.primary_tag }}"
+
+          echo "Pushing primary tag: ${IMAGE}:${PRIMARY_TAG}"
+          docker push "${IMAGE}:${PRIMARY_TAG}"
+
+          for extra in ${{ steps.target.outputs.extra_tags }}; do
+            echo "Pushing extra tag: ${IMAGE}:${extra}"
+            docker push "${IMAGE}:${extra}"
+          done
+
+          digest=$(docker inspect --format='{{ index .RepoDigests 0 }}' "${IMAGE}:${PRIMARY_TAG}")
+          if ! printf '%s\n' "${digest}" | grep -Eq '^.+@sha256:[0-9a-f]{64}$'; then
+            echo "::error::Docker returned an invalid image digest: ${digest}"
+            exit 1
           fi
-          digest=$(docker inspect --format='{{ index .RepoDigests 0 }}' "${IMAGE}:${{ steps.target.outputs.image_tag }}")
           echo "Captured Repo Digest: ${digest}"
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
@@ -176,8 +256,8 @@ jobs:
   # 2. Deploy to Dev (dev_application_dev_frontend)
   # ---------------------------------------------------------------------------
   deploy-dev:
-    needs: build-dev
-    if: needs.build-dev.outputs.is_dev == 'true'
+    needs: build-image
+    if: needs.build-image.outputs.is_dev == 'true'
     runs-on: swarm-deploy
     env:
       SERVICE: "dev_application_dev_frontend"
@@ -188,7 +268,7 @@ jobs:
       - name: Deploy to DEV Environment (dev_application_dev_frontend)
         run: |
           set -euo pipefail
-          DIGEST="${{ needs.build-dev.outputs.digest }}"
+          DIGEST="${{ needs.build-image.outputs.digest }}"
 
           TARGET_SVC="${SERVICE}"
           if ! docker service inspect "${TARGET_SVC}" >/dev/null 2>&1; then
@@ -200,13 +280,13 @@ jobs:
             fi
           fi
 
-          echo "Updating Docker Swarm service: ${SERVICE} -> ${DIGEST}"
+          echo "Updating Docker Swarm service: ${TARGET_SVC} -> ${DIGEST}"
           docker service update \
             --image "${DIGEST}" \
             --update-order start-first \
             --update-failure-action rollback \
             --with-registry-auth \
-            "${SERVICE}"
+            "${TARGET_SVC}"
 
       - name: Verify service status
         run: |
@@ -217,13 +297,14 @@ jobs:
           running_count=$(docker service ps "${SERVICE}" --filter "desired-state=running" -q | wc -l | tr -d ' ')
           echo "Active running tasks: ${running_count}"
           test "${running_count}" -gt 0
+          echo "Dev frontend successfully deployed!"
 
   # ---------------------------------------------------------------------------
-  # 3. Deploy Direct Master/Main to Prod (application_frontend)
+  # 3. Deploy to Production (application_frontend)
   # ---------------------------------------------------------------------------
-  deploy-direct-prod:
-    needs: build-dev
-    if: needs.build-dev.outputs.is_dev == 'false'
+  deploy-prod:
+    needs: build-image
+    if: needs.build-image.outputs.is_dev == 'false'
     runs-on: swarm-deploy
     env:
       SERVICE: "application_frontend"
@@ -234,71 +315,7 @@ jobs:
       - name: Deploy to Production (application_frontend)
         run: |
           set -euo pipefail
-          DIGEST="${{ needs.build-dev.outputs.digest }}"
-          docker service update \
-            --image "${DIGEST}" \
-            --update-order start-first \
-            --update-failure-action rollback \
-            --with-registry-auth \
-            "${SERVICE}"
-
-  # ---------------------------------------------------------------------------
-  # 4. Zero-Rebuild Promotion to Production (Release Tag / Release / Dispatch)
-  # ---------------------------------------------------------------------------
-  promote-to-prod:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.promote_to_prod == true)
-    runs-on: swarm-deploy
-    env:
-      SERVICE: "application_frontend"
-    steps:
-      - name: Log in to registry
-        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
-
-      - name: Re-tag tested Docker image to production (NO REBUILD)
-        id: retag
-        shell: sh
-        run: |
-          set -eu
-          SOURCE_TAG="${{ inputs.source_tag || format('dev-{0}', github.sha) }}"
-          RELEASE_TAG="${{ inputs.release_tag || '' }}"
-          if [ -z "${RELEASE_TAG}" ]; then
-            if [ -n "${GITHUB_REF_NAME:-}" ]; then
-              RELEASE_TAG="${GITHUB_REF_NAME}"
-            else
-              RELEASE_TAG="prod-${GITHUB_SHA}"
-            fi
-          fi
-
-          echo "=========================================================="
-          echo "[PROMOTE] Promoting tested dev frontend image to production:"
-          echo "[PROMOTE] Source image: ${IMAGE}:${SOURCE_TAG}"
-          echo "[PROMOTE] Target release tag: ${IMAGE}:${RELEASE_TAG}"
-          echo "=========================================================="
-
-          if ! docker pull "${IMAGE}:${SOURCE_TAG}" >/dev/null 2>&1; then
-            echo "[PROMOTE] ${IMAGE}:${SOURCE_TAG} not found; falling back to ${IMAGE}:dev-latest..."
-            SOURCE_TAG="dev-latest"
-            docker pull "${IMAGE}:${SOURCE_TAG}"
-          fi
-
-          echo "[PROMOTE] Re-tagging without rebuilding..."
-          docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:${RELEASE_TAG}"
-          docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:prod-latest"
-          docker tag "${IMAGE}:${SOURCE_TAG}" "${IMAGE}:prod-${GITHUB_SHA}"
-
-          echo "[PROMOTE] Pushing new tags to registry..."
-          docker push "${IMAGE}:${RELEASE_TAG}"
-          docker push "${IMAGE}:prod-latest"
-          docker push "${IMAGE}:prod-${GITHUB_SHA}"
-
-          PROD_DIGEST=$(docker inspect --format='{{ index .RepoDigests 0 }}' "${IMAGE}:${RELEASE_TAG}")
-          echo "[PROMOTE] Verified promoted digest: ${PROD_DIGEST}"
-          echo "digest=${PROD_DIGEST}" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy exact promoted digest to Production (application_frontend)
-        run: |
-          set -euo pipefail
-          DIGEST="${{ steps.retag.outputs.digest }}"
+          DIGEST="${{ needs.build-image.outputs.digest }}"
           echo "Updating ${SERVICE} to ${DIGEST}..."
           docker service update \
             --image "${DIGEST}" \
@@ -316,4 +333,4 @@ jobs:
           running_count=$(docker service ps "${SERVICE}" --filter "desired-state=running" -q | wc -l | tr -d ' ')
           echo "Active running tasks: ${running_count}"
           test "${running_count}" -gt 0
-          echo "Production frontend successfully deployed with zero rebuild!"
+          echo "Production frontend successfully deployed with newly built production image!"
