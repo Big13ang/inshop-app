@@ -27,9 +27,21 @@ export default function GalleryCell({ id, selectionIndex, onToggle }: GalleryCel
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCellClick();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label={isSelected ? `تصویر ${selectionIndex + 1}` : 'تصویر'}
+      aria-pressed={isSelected}
       onClick={handleCellClick}
+      onKeyDown={handleKeyDown}
       data-status={item.status}
       data-selected={isSelected}
       className={cn(
