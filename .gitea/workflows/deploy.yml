@@ -191,8 +191,13 @@ jobs:
                 v="${v#\"}"
                 v="${v%\'}"
                 v="${v#\'}"
-                BUILD_ARGS+=(--build-arg "${k}=${v}")
-                echo "  -> ${k}=${v}"
+                # Always set this below from the workflow target. This prevents
+                # a stale repository variable or wrong env file from embedding
+                # the dev API URL in a production release image.
+                if [ "${k}" != "NEXT_PUBLIC_API_URL" ]; then
+                  BUILD_ARGS+=(--build-arg "${k}=${v}")
+                  echo "  -> ${k}=${v}"
+                fi
               fi
             done < "./active-frontend.env"
 
@@ -213,6 +218,14 @@ jobs:
               --build-arg E2E_MOCK="false"
             )
           fi
+
+          if [ "${IS_DEV}" = "true" ]; then
+            EXPECTED_API_URL="https://api.dev.inshop.social"
+          else
+            EXPECTED_API_URL="https://api.inshop.social"
+          fi
+          BUILD_ARGS+=(--build-arg "NEXT_PUBLIC_API_URL=${EXPECTED_API_URL}")
+          echo "  -> NEXT_PUBLIC_API_URL=${EXPECTED_API_URL}"
 
           # Enable BuildKit inline cache for downstream cache reuse
           BUILD_ARGS+=(--build-arg BUILDKIT_INLINE_CACHE=1)
