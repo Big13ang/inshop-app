@@ -1,13 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { Store } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Loader2, LogOut, Store } from 'lucide-react';
 import { HomeIcon } from '@/components/icons/HomeIcon';
 import { Button } from '@/components/ui/button';
+import { useSignOutMutation } from '@/features/auth/hooks/useAuthMutations';
 import AppLogo from '@/components/ui/AppLogo';
 import { text } from '../constants';
 
-export default function UnverifiedSellerView() {
+export function UnverifiedSellerView() {
+  const router = useRouter();
+  const signOutMutation = useSignOutMutation();
+
+  const handleLogout = () => {
+    signOutMutation.mutate(undefined, {
+      onSuccess: () => router.replace('/auth/login'),
+    });
+  };
+
   return (
     <main
       className="relative flex h-full w-full flex-1 flex-col items-center justify-center overflow-hidden bg-background px-6 py-12 text-foreground select-none"
@@ -49,6 +60,23 @@ export default function UnverifiedSellerView() {
               <span>{text.unverified.homeAction}</span>
             </Button>
           </Link>
+
+          <Button
+            id="btn-logout-unverified"
+            type="button"
+            variant="outline"
+            size="xl"
+            onClick={handleLogout}
+            disabled={signOutMutation.isPending}
+            className="mt-3 w-full flex items-center justify-center gap-2 font-bold"
+          >
+            {signOutMutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <LogOut className="size-4 rotate-180" aria-hidden="true" />
+            )}
+            <span>{text.unverified.logoutAction}</span>
+          </Button>
         </div>
       </div>
     </main>
