@@ -8,7 +8,7 @@ import type { BasePostData } from '@/features/posts/components/Post/types';
 import { useUser } from '@/features/profile/context/UserContext';
 import { text } from '../constants';
 import RejectionOverlay from './RejectionOverlay';
-import { POST_STATUS, type SellerPost } from '../../services/postsQueryService';
+import { POST_STATUS, type SellerPost } from '@/features/posts/types';
 
 interface PendingPostCardProps {
   post: SellerPost;

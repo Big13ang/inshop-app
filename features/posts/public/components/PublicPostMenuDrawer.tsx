@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PostMenu } from '@/features/posts/components/PostMenu';
 import { usePostContext } from '@/features/posts/components/Post/PostContext';
-import { postsQueryService } from '@/features/posts/services/postsQueryService';
+import { useDeletePendingPost } from '@/features/posts/services/deletePostService';
 import DeletePostConfirmationBottomSheet from '@/features/posts/components/DeletePostConfirmationBottomSheet';
 import type { PublicPost } from '@/features/posts/services/publicPostService';
 
@@ -17,7 +17,7 @@ export function PublicPostMenuDrawer({ post, onDeleted }: PublicPostMenuDrawerPr
   const router = useRouter();
   const { state, actions } = usePostContext();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const deletePost = postsQueryService.useDeletePendingPost();
+  const deletePost = useDeletePendingPost();
 
   function handleOpenConfirm() {
     actions.closeMenu();

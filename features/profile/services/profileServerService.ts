@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { http, Result, type ApiResponse } from '@/lib/utils';
 import type { UserMe } from './profileService';
-import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
+import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { debugAuth } from '@/lib/utils/authDebug';
 
 export const getPublicSellerProfile = cache(

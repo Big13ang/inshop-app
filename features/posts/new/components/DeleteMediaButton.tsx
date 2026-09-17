@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { postsQueryService } from '@/features/posts/services/postsQueryService';
+import { useDeleteUploadSessionPhoto } from '../services/submitPostService';
 import { useMediaStore } from '../services/mediaStore';
 import DeleteImageDialog from './DeleteImageDialog';
 import { useUploadSession } from '../services/uploadSession';
@@ -19,7 +19,7 @@ export default function DeleteMediaButton({ mediaId }: DeleteMediaButtonProps) {
   const {
     isPending: isDeleting,
     mutate: deletePhotoMutation,
-  } = postsQueryService.useDeleteUploadSessionPhoto();
+  } = useDeleteUploadSessionPhoto();
 
   function handleOpenDialog(e: React.MouseEvent) {
     e.stopPropagation();

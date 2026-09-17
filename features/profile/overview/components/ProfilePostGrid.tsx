@@ -3,7 +3,7 @@
 import { ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getThumbnailUrl } from '@/lib/utils/media';
-import type { SellerPost } from '@/features/posts/services/postsQueryService';
+import type { SellerPost } from '@/features/posts/types';
 import { text } from '../../constants';
 
 /** First sentence of the caption — enough to label a thumbnail without dumping the whole post. */

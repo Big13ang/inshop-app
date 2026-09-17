@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
 import PendingPostsBanner from './PendingPostsBanner';
 import { type SellerProfile, type PublicSellerProfile } from '../../services/profileService';
-import { postsQueryService } from '@/features/posts/services/postsQueryService';
+import { usePendingRejectedPosts } from '@/features/posts/pending/services/pendingPostsService';
+import { useInfinitePostsByUsername } from '@/features/posts/services/sellerPostsService';
 import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 
@@ -24,11 +25,11 @@ export default function ProfileBioSection({
 }: ProfileBioSectionProps) {
   const router = useRouter();
 
-  const { data: pendingPosts = [] } = postsQueryService.usePendingRejectedPosts({
+  const { data: pendingPosts = [] } = usePendingRejectedPosts({
     enabled: isOwner,
   });
 
-  const { data: infiniteData } = postsQueryService.useInfinitePostsByUsername(
+  const { data: infiniteData } = useInfinitePostsByUsername(
     sellerProfile?.username
   );
 

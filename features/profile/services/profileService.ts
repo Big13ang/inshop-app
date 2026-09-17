@@ -2,7 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
-import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
+import type { SellerPostsByUsernameData } from '@/features/posts/types';
 
 export interface SellerProfilePhone {
   id: string;

@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import Link from 'next/link';
-import type { SellerPost } from '@/features/posts/services/postsQueryService';
+import type { SellerPost } from '@/features/posts/types';
 import type { BackendFeedPost } from '@/features/feed/services/feedService';
 import type { PostResponseDto } from '@/features/search/types';
 import { getThumbnailUrl } from '@/lib/utils/media';
