@@ -1,4 +1,4 @@
-import type { SellerPost } from '../features/posts/services/postsQueryService';
+import type { SellerPost } from '@/features/posts/types';
 
 // Shared seed data for the dev-only /api/posts mock route and the MSW test
 // handlers, so both surfaces describe the same fixture instead of drifting.
