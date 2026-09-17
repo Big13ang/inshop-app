@@ -27,23 +27,8 @@ export const metadata: Metadata = {
     "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
   applicationName: "اینشاپ",
   robots: isDevEnvironment()
-    ? {
-        index: false,
-        follow: false,
-        nocache: true,
-        googleBot: {
-          index: false,
-          follow: false,
-          noimageindex: true,
-          "max-video-preview": -1,
-          "max-image-preview": "none",
-          "max-snippet": -1,
-        },
-      }
-    : {
-        index: true,
-        follow: true,
-      },
+    ? { index: false, follow: false }
+    : { index: true, follow: true },
   // enamad validation & Bing Webmaster verification
   other: {
     enamad: "26426690",

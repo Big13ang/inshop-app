@@ -17,24 +17,15 @@ describe('isDevEnvironment', () => {
     expect(isDevEnvironment()).toBe(true);
   });
 
-  it('returns true when NEXT_PUBLIC_APP_ENV is development', () => {
+  it('returns true when NEXT_PUBLIC_APP_ENV is dev', () => {
     delete process.env.APP_ENV;
-    process.env.NEXT_PUBLIC_APP_ENV = 'development';
+    process.env.NEXT_PUBLIC_APP_ENV = 'dev';
     expect(isDevEnvironment()).toBe(true);
   });
 
-  it('returns true when NEXT_PUBLIC_APP_URL contains dev.', () => {
-    delete process.env.APP_ENV;
-    delete process.env.NEXT_PUBLIC_APP_ENV;
-    process.env.NEXT_PUBLIC_APP_URL = 'https://dev.inshop.social';
-    expect(isDevEnvironment()).toBe(true);
-  });
-
-  it('returns false in production environment with prod URL', () => {
-    delete process.env.APP_ENV;
-    delete process.env.NEXT_PUBLIC_APP_ENV;
-    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
-    process.env.NEXT_PUBLIC_APP_URL = 'https://inshop.social';
+  it('returns false in production', () => {
+    process.env.APP_ENV = 'production';
+    process.env.NEXT_PUBLIC_APP_ENV = 'production';
     expect(isDevEnvironment()).toBe(false);
   });
 });

@@ -54,46 +54,7 @@ export const formatDescription = (desc?: string, shopName?: string | null): stri
 };
 
 export function isDevEnvironment(): boolean {
-  const appEnv = (process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV || '').toLowerCase().trim();
-  if (appEnv === 'prod' || appEnv === 'production') {
-    return false;
-  }
-  if (appEnv === 'dev' || appEnv === 'development' || appEnv === 'staging' || appEnv === 'test') {
-    return true;
-  }
-
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').toLowerCase().trim();
-  if (appUrl.startsWith('https://inshop.social') || appUrl === 'https://www.inshop.social') {
-    return false;
-  }
-  if (
-    appUrl.includes('dev.') ||
-    appUrl.includes('staging.') ||
-    appUrl.includes('localhost') ||
-    appUrl.includes('127.0.0.1')
-  ) {
-    return true;
-  }
-
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'inshop.social' || host === 'www.inshop.social') {
-      return false;
-    }
-    if (
-      host === 'dev.inshop.social' ||
-      host.startsWith('dev.') ||
-      host.includes('dev-') ||
-      host.includes('.dev.') ||
-      host.includes('staging') ||
-      host === 'localhost' ||
-      host === '127.0.0.1'
-    ) {
-      return true;
-    }
-  }
-
-  return process.env.NODE_ENV === 'development';
+  return process.env.APP_ENV === 'dev' || process.env.NEXT_PUBLIC_APP_ENV === 'dev';
 }
 
 export function constructMetadata({
@@ -125,19 +86,7 @@ export function constructMetadata({
       images: image ? [image] : [],
     },
     ...(shouldNoIndex && {
-      robots: {
-        index: false,
-        follow: false,
-        nocache: true,
-        googleBot: {
-          index: false,
-          follow: false,
-          noimageindex: true,
-          'max-video-preview': -1,
-          'max-image-preview': 'none',
-          'max-snippet': -1,
-        },
-      },
+      robots: { index: false, follow: false },
     }),
   };
 }

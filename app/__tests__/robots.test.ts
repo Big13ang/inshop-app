@@ -24,10 +24,8 @@ describe('robots', () => {
   });
 
   it('returns allowed rules and sitemap in production environment', () => {
-    delete process.env.APP_ENV;
-    delete process.env.NEXT_PUBLIC_APP_ENV;
-    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
-    process.env.NEXT_PUBLIC_APP_URL = 'https://inshop.social';
+    process.env.APP_ENV = 'production';
+    process.env.NEXT_PUBLIC_APP_ENV = 'production';
 
     const result = robots();
 
