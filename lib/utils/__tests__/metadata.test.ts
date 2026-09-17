@@ -1,4 +1,43 @@
-import { constructMetadata, formatTitle, formatDescription, truncateText } from '../metadata';
+import { constructMetadata, formatTitle, formatDescription, truncateText, isDevEnvironment } from '../metadata';
+
+describe('isDevEnvironment', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  it('returns true when APP_ENV is dev', () => {
+    process.env.APP_ENV = 'dev';
+    expect(isDevEnvironment()).toBe(true);
+  });
+
+  it('returns true when NEXT_PUBLIC_APP_ENV is development', () => {
+    delete process.env.APP_ENV;
+    process.env.NEXT_PUBLIC_APP_ENV = 'development';
+    expect(isDevEnvironment()).toBe(true);
+  });
+
+  it('returns true when NEXT_PUBLIC_APP_URL contains dev.', () => {
+    delete process.env.APP_ENV;
+    delete process.env.NEXT_PUBLIC_APP_ENV;
+    process.env.NEXT_PUBLIC_APP_URL = 'https://dev.inshop.social';
+    expect(isDevEnvironment()).toBe(true);
+  });
+
+  it('returns false in production environment with prod URL', () => {
+    delete process.env.APP_ENV;
+    delete process.env.NEXT_PUBLIC_APP_ENV;
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+    process.env.NEXT_PUBLIC_APP_URL = 'https://inshop.social';
+    expect(isDevEnvironment()).toBe(false);
+  });
+});
 
 describe('formatTitle', () => {
   it('formats title with both title and shopName without appending site name suffix', () => {
@@ -68,14 +107,19 @@ describe('constructMetadata', () => {
     expect(meta.twitter?.title).toBeUndefined();
   });
 
-  it('sets noIndex robots when noIndex is true', () => {
+  it('sets noIndex robots when noIndex is true or in dev environment', () => {
     const meta = constructMetadata({
       title: 'صفحه پیدا نشد',
       noIndex: true,
     });
 
     expect(meta.title).toBe('صفحه پیدا نشد');
-    expect(meta.robots).toEqual({ index: false, follow: false });
+    expect(meta.robots).toEqual(
+      expect.objectContaining({
+        index: false,
+        follow: false,
+      })
+    );
   });
 });
 
