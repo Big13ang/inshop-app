@@ -1,17 +1,8 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
 import { ShieldCheck, Lock, EyeOff, Database } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { text } from '../constants';
 
 export function PrivacyView() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    router.back();
-  };
-
   const sections = [
     {
       id: 'data-protection',
@@ -36,7 +27,7 @@ export function PrivacyView() {
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground select-none" dir="rtl">
       <Header.Root>
-        <Header.Back id="privacy-back-btn" onClick={handleBack} />
+        <Header.Back id="privacy-back-btn" />
         <Header.Title>{text.menu.items.privacy.title}</Header.Title>
         <Header.Right />
       </Header.Root>

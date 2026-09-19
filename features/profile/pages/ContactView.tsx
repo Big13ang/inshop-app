@@ -1,22 +1,9 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
 import { Phone, Mail, Clock, MessageSquare } from 'lucide-react';
 import Header from '@/components/layout/Header';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { text } from '../constants';
 
 export function ContactView() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    router.back();
-  };
-
-  const handleCall = () => {
-    window.location.href = 'tel:02191000000';
-  };
-
   const contactMethods = [
     {
       id: 'phone',
@@ -44,7 +31,7 @@ export function ContactView() {
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground select-none" dir="rtl">
       <Header.Root>
-        <Header.Back id="contact-back-btn" onClick={handleBack} />
+        <Header.Back id="contact-back-btn" />
         <Header.Title>{text.menu.items.contact.title}</Header.Title>
         <Header.Right />
       </Header.Root>
@@ -79,16 +66,18 @@ export function ContactView() {
             ))}
           </div>
 
-          <Button
+          <a
             id="btn-call-support"
-            variant="filled"
-            size="xl"
-            onClick={handleCall}
-            className="w-full flex items-center justify-center gap-2 font-bold"
+            href="tel:02191000000"
+            className={buttonVariants({
+              variant: 'filled',
+              size: 'xl',
+              className: 'w-full flex items-center justify-center gap-2 font-bold',
+            })}
           >
             <Phone className="size-4" />
             <span>تماس مستقیم با پشتیبانی</span>
-          </Button>
+          </a>
         </div>
       </main>
     </div>

@@ -1,18 +1,9 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
 import { Store, ShieldCheck, Heart, Sparkles } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import AppLogo from '@/components/ui/AppLogo';
 import { text } from '../constants';
 
 export function AboutView() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    router.back();
-  };
-
   const features = [
     {
       id: 'boutique-shops',
@@ -37,7 +28,7 @@ export function AboutView() {
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground select-none" dir="rtl">
       <Header.Root>
-        <Header.Back id="about-back-btn" onClick={handleBack} />
+        <Header.Back id="about-back-btn" />
         <Header.Title>{text.menu.items.about.title}</Header.Title>
         <Header.Right />
       </Header.Root>

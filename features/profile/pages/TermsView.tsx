@@ -1,17 +1,8 @@
-'use client';
-
-import { useRouter } from 'next/navigation';
 import { ScrollText, CheckCircle2, AlertCircle, Scale } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import { text } from '../constants';
 
 export function TermsView() {
-  const router = useRouter();
-
-  const handleBack = () => {
-    router.back();
-  };
-
   const rules = [
     {
       id: 'seller-commitments',
@@ -36,7 +27,7 @@ export function TermsView() {
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background text-foreground select-none" dir="rtl">
       <Header.Root>
-        <Header.Back id="terms-back-btn" onClick={handleBack} />
+        <Header.Back id="terms-back-btn" />
         <Header.Title>{text.menu.items.terms.title}</Header.Title>
         <Header.Right />
       </Header.Root>
