@@ -100,44 +100,44 @@ export function ProfileMenu({ username: _username, isOwner: _isOwner = false }: 
           <Dialog.Backdrop />
           <Dialog.Content variant="drawer" className="pb-8 pt-1 px-4 font-sans select-none">
             {/* Header with circular Close X button, centered title, and subtle bottom divider */}
-            <div className="relative mb-3.5 flex items-center justify-center border-b border-zinc-100 dark:border-zinc-800 pb-3 px-1" dir="rtl">
+            <div className="relative mb-3.5 flex items-center justify-center border-b border-container-base pb-3 px-1" dir="rtl">
               <button
                 type="button"
                 onClick={handleCloseMenu}
                 aria-label={text.menu.closeAction}
-                className="absolute left-1 size-8 rounded-full bg-[#f4f4f5] hover:bg-[#e4e4e7] dark:bg-zinc-800 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-foreground transition-colors cursor-pointer active:scale-95"
+                className="absolute left-1 size-8 rounded-full bg-surface-l1 hover:bg-container-base flex items-center justify-center text-secondary hover:text-foreground transition-colors cursor-pointer active:scale-95"
               >
                 <X className="size-4" strokeWidth={2} />
               </button>
-              <h2 className="text-base font-bold text-foreground tracking-tight">
+              <h2 className="text-sm font-bold text-foreground">
                 {text.menu.title}
               </h2>
             </div>
 
-            {/* Looped Card Items matching media_1789814415062.png */}
+            {/* Looped Card Items styled like FormSection / edit profile form */}
             <div className="flex flex-col space-y-2.5">
               {menuItems.map((item) => {
                 const cardInner = (
                   <>
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-[#f4f4f5] text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 group-hover:bg-[#ececee] dark:group-hover:bg-zinc-700/80 transition-colors">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-l1 text-secondary border border-primary/5 group-hover:bg-container-hover transition-colors">
                         {item.icon}
                       </div>
                       <div className="flex flex-col text-right">
-                        <span className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100 leading-snug">
+                        <span className="text-xs font-bold text-foreground leading-snug">
                           {item.title}
                         </span>
-                        <span className="text-[11px] text-zinc-400 dark:text-zinc-400 font-normal mt-0.5">
+                        <span className="text-[11px] text-secondary font-normal mt-0.5">
                           {item.description}
                         </span>
                       </div>
                     </div>
-                    <ChevronLeft className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500 stroke-[1.75] group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors" aria-hidden="true" />
+                    <ChevronLeft className="size-4 shrink-0 text-secondary/60 stroke-[1.75] group-hover:text-secondary transition-colors" aria-hidden="true" />
                   </>
                 );
 
                 const cardClassName =
-                  'group flex w-full items-center justify-between rounded-[20px] border border-[#e4e4e7] bg-white px-4 py-3.5 transition-all duration-150 hover:bg-[#fafafa] hover:border-zinc-300 active:scale-[0.985] active:bg-[#f4f4f5] dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/60 dark:hover:border-zinc-700 cursor-pointer select-none';
+                  'group flex w-full items-center justify-between rounded-2xl border border-primary/5 bg-surface p-3.5 shadow-sm transition-all duration-150 hover:bg-container-base hover:border-primary/10 active:scale-[0.985] active:bg-container-hover cursor-pointer select-none';
 
                 if (item.href) {
                   return (

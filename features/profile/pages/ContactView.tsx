@@ -7,21 +7,21 @@ export function ContactView() {
   const contactMethods = [
     {
       id: 'phone',
-      icon: <Phone className="size-5 text-primary" />,
+      icon: <Phone className="size-5 text-secondary" />,
       title: 'تماس تلفنی با پشتیبانی',
       value: '۰۲۱-۹۱۰۰۰۰۰۰',
       description: 'شنبه تا چهارشنبه از ساعت ۹ الی ۱۸',
     },
     {
       id: 'email',
-      icon: <Mail className="size-5 text-primary" />,
+      icon: <Mail className="size-5 text-secondary" />,
       title: 'پست الکترونیک',
       value: 'support@inshop.ir',
       description: 'پاسخگویی حداکثر ظرف ۲۴ ساعت کاری',
     },
     {
       id: 'hours',
-      icon: <Clock className="size-5 text-primary" />,
+      icon: <Clock className="size-5 text-secondary" />,
       title: 'ساعات کاری پشتیبانی',
       value: 'همه روزه (به جز ایام تعطیل)',
       description: '۹:۰۰ الی ۱۸:۰۰',
@@ -39,10 +39,10 @@ export function ContactView() {
       <main className="hide-scrollbar flex-1 overflow-y-auto px-4 py-6">
         <div className="mx-auto max-w-md space-y-6">
           <div className="flex flex-col items-center text-center gap-3">
-            <div className="size-16 rounded-3xl bg-surface-l1 flex items-center justify-center text-primary border border-primary/10 shadow-sm">
+            <div className="size-16 rounded-3xl bg-surface-l1 flex items-center justify-center text-secondary border border-primary/5 shadow-sm">
               <MessageSquare className="size-8" />
             </div>
-            <h1 className="text-base font-extrabold text-primary">پشتیبانی و ارتباط با inShop</h1>
+            <h1 className="text-base font-bold text-foreground">پشتیبانی و ارتباط با inShop</h1>
             <p className="text-xs text-secondary leading-relaxed px-4">
               {text.menu.items.contact.description}
             </p>
@@ -52,13 +52,13 @@ export function ContactView() {
             {contactMethods.map((method) => (
               <div
                 key={method.id}
-                className="flex items-start gap-3.5 p-4 rounded-2xl border border-border bg-surface text-right"
+                className="flex items-start gap-3.5 p-3.5 rounded-2xl border border-primary/5 bg-surface shadow-sm text-right"
               >
-                <div className="size-10 rounded-xl bg-surface-l1 flex items-center justify-center shrink-0 border border-primary/10">
+                <div className="size-10 rounded-xl bg-surface-l1 flex items-center justify-center shrink-0 border border-primary/5 text-secondary">
                   {method.icon}
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-xs font-bold text-primary">{method.title}</span>
+                  <span className="text-xs font-bold text-foreground">{method.title}</span>
                   <span className="text-xs font-semibold text-foreground mt-0.5" dir="ltr">{method.value}</span>
                   <span className="text-[11px] text-secondary mt-1">{method.description}</span>
                 </div>

@@ -7,19 +7,19 @@ export function AboutView() {
   const features = [
     {
       id: 'boutique-shops',
-      icon: <Store className="size-5 text-primary" />,
+      icon: <Store className="size-5 text-secondary" />,
       title: 'فروشگاه‌های منتخب',
       description: 'گردآوری برترین فروشگاه‌های مد، پوشاک و اکسسوری در یک پلتفرم اختصاصی.',
     },
     {
       id: 'verified-sellers',
-      icon: <ShieldCheck className="size-5 text-primary" />,
+      icon: <ShieldCheck className="size-5 text-secondary" />,
       title: 'فروشندگان احراز هویت شده',
       description: 'بررسی دقیق هویت و مدارک فروشگاه‌ها برای خریدی امن و مطمئن.',
     },
     {
       id: 'direct-connection',
-      icon: <Heart className="size-5 text-primary" />,
+      icon: <Heart className="size-5 text-secondary" />,
       title: 'ارتباط مستقیم خریدار و فروشنده',
       description: 'امکان تماس مستقیم و هماهنگی خرید بدون واسطه اضافی.',
     },
@@ -37,8 +37,8 @@ export function AboutView() {
         <div className="mx-auto max-w-md space-y-6">
           <div className="flex flex-col items-center text-center gap-3">
             <AppLogo />
-            <h1 className="text-base font-extrabold text-primary">{text.menu.items.about.title}</h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+            <h1 className="text-base font-bold text-foreground">{text.menu.items.about.title}</h1>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-l1 text-secondary text-xs font-bold border border-primary/5">
               <Sparkles className="size-3.5" />
               <span>پلتفرم خرید و فروش اجتماعی</span>
             </span>
@@ -47,8 +47,8 @@ export function AboutView() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-5 text-right space-y-3">
-            <h2 className="text-sm font-bold text-primary">درباره inShop</h2>
+          <div className="rounded-2xl border border-primary/5 bg-surface p-4 text-right space-y-2.5 shadow-sm">
+            <h2 className="text-xs font-bold text-secondary">درباره inShop</h2>
             <p className="text-xs text-secondary leading-6 font-normal">
               inShop فضایی نوآورانه و پویا برای کشف محصولات فروشگاه‌های مد و زیبایی است. ما به فروشندگان کمک می‌کنیم ویترین آنلاین خود را بسازند و با مشتریان خود به صورت مستقیم و شفاف در ارتباط باشند.
             </p>
@@ -59,13 +59,13 @@ export function AboutView() {
             {features.map((feature) => (
               <div
                 key={feature.id}
-                className="flex items-start gap-3.5 p-3.5 rounded-2xl border border-border bg-surface text-right"
+                className="flex items-start gap-3.5 p-3.5 rounded-2xl border border-primary/5 bg-surface shadow-sm text-right"
               >
-                <div className="size-10 rounded-xl bg-surface-l1 flex items-center justify-center shrink-0 border border-primary/10">
+                <div className="size-10 rounded-xl bg-surface-l1 flex items-center justify-center shrink-0 border border-primary/5 text-secondary">
                   {feature.icon}
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-xs font-bold text-primary">{feature.title}</span>
+                  <span className="text-xs font-bold text-foreground">{feature.title}</span>
                   <span className="text-[11px] text-secondary leading-5 mt-0.5">{feature.description}</span>
                 </div>
               </div>
