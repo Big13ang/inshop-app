@@ -52,7 +52,7 @@ export function ProfileHeader({ username, isOwner = false, onBack }: ProfileHead
               title={text.overview.newPostAction}
               className="size-10 flex items-center justify-center text-primary active:scale-95"
             >
-              <Plus className="size-5 text-primary" strokeWidth={2.2} aria-hidden="true" />
+              <Plus className="size-7 text-primary" strokeWidth={2.75} aria-hidden="true" />
             </AnimatedIconButton>
           </Link>
         ) : (

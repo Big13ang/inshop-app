@@ -92,7 +92,7 @@ export function ProfileMenu({ username: _username, isOwner: _isOwner = false }: 
         title={text.menu.title}
         className="size-10 flex items-center justify-center text-primary active:scale-95"
       >
-        <HamburgerMenu className="size-5" aria-hidden="true" />
+        <HamburgerMenu className="size-7 text-primary" strokeWidth={2.75} aria-hidden="true" />
       </AnimatedIconButton>
 
       <Dialog.Root isOpen={isOpen} onClose={handleCloseMenu}>
