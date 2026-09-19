@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { Loader2 } from 'lucide-react';
 import { text } from '../constants';
 import { useMediaStore } from '../services/mediaStore';
-import { postsQueryService } from '../../services/postsQueryService';
+import { useSubmitPost } from '../services/submitPostService';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useUploadSession } from '../services/uploadSession';
@@ -17,7 +17,7 @@ export default function DetailsPhaseFooter() {
   const reset = useMediaStore((s) => s.reset);
 
   const { mutate: publishPost, isPending: isPublishing } =
-    postsQueryService.useSubmitPost(() => {
+    useSubmitPost(() => {
       toast.success(text.uploadSuccessTitle, {
         description: text.uploadSuccessDesc,
       });

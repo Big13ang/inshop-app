@@ -53,6 +53,10 @@ export const formatDescription = (desc?: string, shopName?: string | null): stri
   return shopName ? `${DEFAULT_DESCRIPTION} - ${shopName}` : DEFAULT_DESCRIPTION;
 };
 
+export function isDevEnvironment(): boolean {
+  return process.env.APP_ENV === 'dev' || process.env.NEXT_PUBLIC_APP_ENV === 'dev';
+}
+
 export function constructMetadata({
   title,
   description = DEFAULT_DESCRIPTION,
@@ -64,6 +68,7 @@ export function constructMetadata({
   const metaTitle = formatTitle(title, shopName);
   const metaDesc = formatDescription(description, shopName);
   const images = image ? [{ url: image }] : [];
+  const shouldNoIndex = noIndex || isDevEnvironment();
 
   return {
     ...(metaTitle ? { title: metaTitle } : {}),
@@ -80,7 +85,7 @@ export function constructMetadata({
       description: metaDesc,
       images: image ? [image] : [],
     },
-    ...(noIndex && {
+    ...(shouldNoIndex && {
       robots: { index: false, follow: false },
     }),
   };

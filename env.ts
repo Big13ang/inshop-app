@@ -3,12 +3,15 @@ import * as z from "zod";
 
 export const env = createEnv({
     server: {
+        APP_ENV: z.string().default("production"),
         E2E_MOCK: z.string().default("false"),
         GLITCHTIP_DSN: z.string().default("https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5"),
         SENTRY_RELEASE: z.string().default("production"),
         SENTRY_ENVIRONMENT: z.string().default("production"),
     },
     client: {
+        NEXT_PUBLIC_APP_ENV: z.string().default("production"),
+        NEXT_PUBLIC_APP_URL: z.string().default("https://inshop.social"),
         NEXT_PUBLIC_API_URL: z.url(),
         NEXT_PUBLIC_CDN_URL: z.url(),
         NEXT_PUBLIC_DEBUG_AUTH: z.enum(['true', 'false']),
@@ -19,6 +22,8 @@ export const env = createEnv({
         NEXT_PUBLIC_GTM_ID: z.string().default(""),
     },
     experimental__runtimeEnv: {
+        NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
         NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
         NEXT_PUBLIC_CDN_URL: process.env.NEXT_PUBLIC_CDN_URL,
         NEXT_PUBLIC_DEBUG_AUTH: process.env.NEXT_PUBLIC_DEBUG_AUTH,

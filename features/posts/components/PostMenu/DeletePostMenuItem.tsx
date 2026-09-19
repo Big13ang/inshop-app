@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Menu } from '@/components/ui/Menu';
 import { useUser } from '@/features/profile/context/UserContext';
-import { postsQueryService } from '../../services/postsQueryService';
+import { useDeletePendingPost } from '../../services/deletePostService';
 import DeletePostConfirmationBottomSheet from '../DeletePostConfirmationBottomSheet';
 
 interface DeletePostMenuItemProps {
@@ -25,7 +25,7 @@ export function DeletePostMenuItem({
   onClick,
 }: DeletePostMenuItemProps) {
   const { user } = useUser();
-  const deletePost = postsQueryService.useDeletePendingPost();
+  const deletePost = useDeletePendingPost();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const isOwner =

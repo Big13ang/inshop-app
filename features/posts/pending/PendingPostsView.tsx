@@ -6,7 +6,8 @@ import Header from '@/components/layout/Header';
 import MainFooter from '@/components/layout/MainFooter';
 import { Button } from '@/components/ui/button';
 import { PostMenu } from '../components/PostMenu';
-import { postsQueryService } from '../services/postsQueryService';
+import { usePendingRejectedPosts } from './services/pendingPostsService';
+import { useDeletePendingPost } from '../services/deletePostService';
 import DeletePostConfirmationBottomSheet from '../components/DeletePostConfirmationBottomSheet';
 import PendingPostCard from './components/PendingPostCard';
 import { text } from './constants';
@@ -16,8 +17,8 @@ interface PendingPostsViewProps {
 }
 
 export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
-  const { data: posts = [] } = postsQueryService.usePendingRejectedPosts();
-  const deletePost = postsQueryService.useDeletePendingPost();
+  const { data: posts = [] } = usePendingRejectedPosts();
+  const deletePost = useDeletePendingPost();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 

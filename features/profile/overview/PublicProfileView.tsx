@@ -3,7 +3,7 @@
 import { notFound } from 'next/navigation';
 import { ProfileView } from './ProfileView';
 import { profileService } from '../services/profileService';
-import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
+import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { useUser } from '../context/UserContext';
 import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
 
