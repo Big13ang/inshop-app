@@ -2,11 +2,11 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ProfileView from './ProfileView';
+import { ProfileView } from './ProfileView';
 import { useUser } from '../context/UserContext';
 import { PROFILE_ROUTES } from '../constants';
 
-export default function OwnProfileView() {
+export function OwnProfileView() {
   const { user: me, isVerifying } = useUser();
   const router = useRouter();
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import ProfileView from './ProfileView';
+import { ProfileView } from './ProfileView';
 import { profileService } from '../services/profileService';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { useUser } from '../context/UserContext';
@@ -12,7 +12,7 @@ interface PublicProfileViewProps {
   initialData?: SellerPostsByUsernameData | null;
 }
 
-export default function PublicProfileView({ username, initialData }: PublicProfileViewProps) {
+export function PublicProfileView({ username, initialData }: PublicProfileViewProps) {
   const { data: profileData, isLoading } = profileService.useUserProfile(username, {
     enabled: Boolean(username),
     initialData: initialData ?? undefined,

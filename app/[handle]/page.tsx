@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { USERNAME_REGEX } from "@/features/profile/edit/editProfileSchema";
-import PublicProfileView from "@/features/profile/overview/PublicProfileView";
+import { PublicProfileView } from "@/features/profile/overview/PublicProfileView";
 import { ProfileOverviewSkeleton } from "@/features/profile/components/ProfileSkeleton";
 import { getPublicSellerProfile } from "@/features/profile/services/profileServerService";
 

@@ -1,47 +1,42 @@
 'use client';
 
+import Link from 'next/link';
 import { ChevronLeft, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
-import { useRouter } from 'next/navigation';
 
 interface PendingPostsBannerProps {
   pendingCount: number;
 }
 
-export default function PendingPostsBanner({ pendingCount }: PendingPostsBannerProps) {
-  const router = useRouter();
-
+export function PendingPostsBanner({ pendingCount }: PendingPostsBannerProps) {
   if (pendingCount <= 0) return null;
 
-  const handleNavigatePending = () => {
-    router.push(PROFILE_ROUTES.pendingPosts);
-  };
-
   return (
-    <Button
-      id="profile-pending-banner"
-      variant="secondary"
-      onClick={handleNavigatePending}
-      dir="rtl"
-      className="tap-card mt-4 h-auto w-full justify-between rounded-xl border border-zinc-200 bg-surface-l2 p-3.5 text-right"
-    >
-      <span className="flex items-center gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-input bg-primary text-on-primary">
-          <Clock className="size-4" aria-hidden="true" />
-        </span>
-        <span className="flex flex-col text-right">
-          <span className="text-xs font-bold text-primary">{text.overview.pendingBannerTitle}</span>
-          <span className="mt-0.5 text-[10px] font-medium text-secondary">
-            {text.overview.pendingBannerSubtitle(pendingCount)}
+    <Link href={PROFILE_ROUTES.pendingPosts} className="block w-full">
+      <Button
+        id="profile-pending-banner"
+        variant="secondary"
+        dir="rtl"
+        className="tap-card mt-4 h-auto w-full justify-between rounded-xl border border-zinc-200 bg-surface-l2 p-3.5 text-right"
+      >
+        <span className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-input bg-primary text-on-primary">
+            <Clock className="size-4" aria-hidden="true" />
+          </span>
+          <span className="flex flex-col text-right">
+            <span className="text-xs font-bold text-primary">{text.overview.pendingBannerTitle}</span>
+            <span className="mt-0.5 text-[10px] font-medium text-secondary">
+              {text.overview.pendingBannerSubtitle(pendingCount)}
+            </span>
           </span>
         </span>
-      </span>
 
-      <span className="inline-flex items-center gap-1">
-        <span className="text-[10px] font-bold leading-none text-primary">{text.overview.pendingBannerAction}</span>
-        <ChevronLeft className="size-4 shrink-0 text-primary" aria-hidden="true" />
-      </span>
-    </Button>
+        <span className="inline-flex items-center gap-1">
+          <span className="text-[10px] font-bold leading-none text-primary">{text.overview.pendingBannerAction}</span>
+          <ChevronLeft className="size-4 shrink-0 text-primary" aria-hidden="true" />
+        </span>
+      </Button>
+    </Link>
   );
 }
