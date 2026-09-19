@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Dialog } from './Dialog';
 import { cn } from '@/lib/utils';
 
@@ -43,17 +44,14 @@ interface MenuItemProps {
   icon: React.ReactNode;
   label: string;
   hint?: string;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
   tone?: 'default' | 'danger';
 }
 
-function MenuItem({ icon, label, hint, onClick, tone = 'default' }: MenuItemProps) {
-  return (
-    <button
-      onClick={onClick}
-      className="tap-card flex w-full cursor-pointer items-center justify-between px-6 py-4 transition-colors hover:bg-accent/60 active:bg-accent"
-      dir="rtl"
-    >
+function MenuItem({ icon, label, hint, onClick, href, tone = 'default' }: MenuItemProps) {
+  const content = (
+    <>
       <div className="flex items-center gap-3.5">
         <span className={cn('flex size-5 shrink-0 items-center justify-center text-secondary', tone === 'danger' && 'text-error')}>
           {icon}
@@ -63,6 +61,27 @@ function MenuItem({ icon, label, hint, onClick, tone = 'default' }: MenuItemProp
         </span>
       </div>
       {hint ? <span className={cn('text-xs text-secondary/80', tone === 'danger' && 'text-error/80')}>{hint}</span> : null}
+    </>
+  );
+
+  const sharedClassName = 'tap-card flex w-full cursor-pointer items-center justify-between px-6 py-4 transition-colors hover:bg-accent/60 active:bg-accent select-none';
+
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={sharedClassName} dir="rtl">
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={sharedClassName}
+      dir="rtl"
+    >
+      {content}
     </button>
   );
 }

@@ -9,7 +9,7 @@ interface ProfileGridFeedProps {
   username?: string;
 }
 
-export default function ProfileGridFeed({
+export function ProfileGridFeed({
   username,
 }: ProfileGridFeedProps) {
   const {

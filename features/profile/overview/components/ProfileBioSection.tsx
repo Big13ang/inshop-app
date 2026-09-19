@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { MapPin, Phone, Share2, Settings, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
-import PendingPostsBanner from './PendingPostsBanner';
+import { PendingPostsBanner } from './PendingPostsBanner';
 import { type SellerProfile, type PublicSellerProfile } from '../../services/profileService';
 import { postsQueryService } from '@/features/posts/services/postsQueryService';
 import { ShopStats } from './ProfileShopStats';
@@ -17,12 +17,10 @@ interface ProfileBioSectionProps {
   isOwner?: boolean;
 }
 
-
-export default function ProfileBioSection({
+export function ProfileBioSection({
   sellerProfile,
   isOwner = false,
 }: ProfileBioSectionProps) {
-  const router = useRouter();
 
   const { data: pendingPosts = [] } = postsQueryService.usePendingRejectedPosts({
     enabled: isOwner,
@@ -54,11 +52,7 @@ export default function ProfileBioSection({
     await copyToClipboard(storeUrl, {
       onSuccess: () => toast.success(text.overview.shareCopied),
       onError: () => toast.error(text.overview.shareFailed),
-    })
-  };
-
-  const handleEditProfile = () => {
-    router.push(PROFILE_ROUTES.edit);
+    });
   };
 
   return (
@@ -116,17 +110,18 @@ export default function ProfileBioSection({
         </Button>
 
         {isOwner && (
-          <Button
-            id="profile-edit-btn"
-            variant="secondary"
-            onClick={handleEditProfile}
-            title={text.overview.editActionTitle}
-            aria-label={text.overview.editActionTitle}
-            className="px-3 h-12 font-bold text-xs rounded-xl gap-1.5 shrink-0 border border-zinc-200 active:scale-98"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline">{text.overview.editAction}</span>
-          </Button>
+          <Link href={PROFILE_ROUTES.edit} className="inline-flex shrink-0">
+            <Button
+              id="profile-edit-btn"
+              variant="secondary"
+              title={text.overview.editActionTitle}
+              aria-label={text.overview.editActionTitle}
+              className="px-3 h-12 font-bold text-xs rounded-xl gap-1.5 shrink-0 border border-zinc-200 active:scale-98"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">{text.overview.editAction}</span>
+            </Button>
+          </Link>
         )}
 
         <Button

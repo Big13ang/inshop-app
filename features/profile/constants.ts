@@ -95,4 +95,35 @@ export const text = {
     homeAction: 'صفحه اصلی',
     logoutAction: 'خروج از حساب کاربری',
   },
+
+  menu: {
+    title: 'منوی inShop',
+    closeAction: 'بستن منو',
+    items: {
+      about: {
+        title: 'درباره ما',
+        description: 'معرفی پلتفرم و فروشندگان',
+        href: '/about',
+      },
+      contact: {
+        title: 'تماس با ما',
+        description: 'ارتباط با پشتیبانی و مشاوره فروش',
+        href: '/contact',
+      },
+      privacy: {
+        title: 'حریم خصوصی',
+        description: 'سیاست‌های حفاظت از اطلاعات کاربران',
+        href: '/privacy',
+      },
+      terms: {
+        title: 'قوانین و مقررات',
+        description: 'شرایط استفاده و تعهدات خرید و فروش',
+        href: '/terms',
+      },
+      logout: {
+        title: 'خروج از حساب کاربری',
+        description: 'خروج امن از حساب فروشگاه',
+      },
+    },
+  },
 } as const;

@@ -2,13 +2,15 @@
 
 import { useRouter } from 'next/navigation';
 import BackButton from '@/components/ui/BackButton';
+import { ProfileMenu } from './ProfileMenu';
 
 interface ProfileHeaderProps {
   username?: string;
+  isOwner?: boolean;
   onBack?: () => void;
 }
 
-export default function ProfileHeader({ username, onBack }: ProfileHeaderProps) {
+export function ProfileHeader({ username, isOwner = false, onBack }: ProfileHeaderProps) {
   const router = useRouter();
   const displayUsername = username?.trim().replace(/^@/, '') || 'inShop';
 
@@ -31,6 +33,10 @@ export default function ProfileHeader({ username, onBack }: ProfileHeaderProps) 
         <h1 id="profile-handle-title" dir="ltr" className="font-rounded font-bold text-lg text-primary tracking-tight">
           @{displayUsername}
         </h1>
+      </div>
+
+      <div className="flex items-center justify-end">
+        <ProfileMenu username={displayUsername} isOwner={isOwner} />
       </div>
     </header>
   );
