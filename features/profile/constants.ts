@@ -37,6 +37,7 @@ export const text = {
     editActionTitle: 'ویرایش پروفایل فروشگاه',
     shareAction: 'اشتراک‌گذاری',
     shareActionTitle: 'اشتراک‌گذاری فروشگاه',
+    newPostAction: 'افزودن پست جدید',
 
     shareCopied: 'لینک فروشگاه کپی شد.',
     shareFailed: 'کپی کردن لینک انجام نشد. لطفا دوباره تلاش کنید.',

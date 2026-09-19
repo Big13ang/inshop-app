@@ -1,4 +1,4 @@
-import { Store, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { Store, ShieldCheck, Heart } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import AppLogo from '@/components/ui/AppLogo';
 import { text } from '../constants';
@@ -38,10 +38,6 @@ export function AboutView() {
           <div className="flex flex-col items-center text-center gap-3">
             <AppLogo />
             <h1 className="text-base font-bold text-foreground">{text.menu.items.about.title}</h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-l1 text-secondary text-xs font-bold border border-primary/5">
-              <Sparkles className="size-3.5" />
-              <span>پلتفرم خرید و فروش اجتماعی</span>
-            </span>
             <p className="text-xs text-secondary leading-relaxed px-2">
               {text.menu.items.about.description}
             </p>
