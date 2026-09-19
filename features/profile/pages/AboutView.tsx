@@ -46,6 +46,7 @@ export function AboutView() {
         <div className="mx-auto max-w-md space-y-6">
           <div className="flex flex-col items-center text-center gap-3">
             <AppLogo />
+            <h1 className="text-base font-extrabold text-primary">{text.menu.items.about.title}</h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
               <Sparkles className="size-3.5" />
               <span>پلتفرم خرید و فروش اجتماعی</span>
