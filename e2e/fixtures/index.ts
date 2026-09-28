@@ -62,17 +62,14 @@ export const test = base.extend<Fixtures>({
   addPostPage: async ({ page, context }, use) => {
     const E2E_MOCK = env.E2E_MOCK !== 'false';
 
-    if (E2E_MOCK) {
-      // Set a mock session token cookie to bypass proxy authentication check
-      await context.addCookies([
-        {
-          name: 'better-auth.session_token',
-          value: 'mock-session-token',
-          domain: 'localhost',
-          path: '/',
-        },
-      ]);
-    }
+    await context.addCookies([
+      {
+        name: 'better-auth.session_token',
+        value: E2E_MOCK ? 'mock-session-token' : 'w0WoIOwqTDWQ75kS230AprXIGTuKSG1F.6yhfYefEs8nMSUVrjUcVrnz%2BF9j%2BSb7zq0I56pdLe%2F0%3D',
+        domain: 'localhost',
+        path: '/',
+      },
+    ]);
 
     const addPostPage = new AddPostPage(page);
 
