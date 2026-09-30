@@ -110,27 +110,45 @@ describe('profileSchema shopPhoneNumber validation', () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('شماره تلفن باید فقط شامل اعداد باشد');
+      expect(result.error.issues[0].message).toBe(
+        'شماره تماس معتبر نیست (مثال: 02155555555 یا 09123456789)'
+      );
     }
   });
 
-  it('fails when shopPhoneNumber length is not 11', () => {
+  it('fails when shopPhoneNumber is invalid length', () => {
     const result = profileSchema.safeParse({
       ...validBaseProfile,
       shopPhoneNumber: '0912345',
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe('شماره تلفن فروشگاه الزامی است');
+      expect(result.error.issues[0].message).toBe(
+        'شماره تماس معتبر نیست (مثال: 02155555555 یا 09123456789)'
+      );
     }
   });
 
-  it('passes when shopPhoneNumber contains exactly 11 digits', () => {
+  it('passes when shopPhoneNumber is a valid Iranian mobile number', () => {
+    const result = profileSchema.safeParse({
+      ...validBaseProfile,
+      shopPhoneNumber: '09123456789',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.shopPhoneNumber).toBe('09123456789');
+    }
+  });
+
+  it('passes when shopPhoneNumber is a valid Iranian landline number with area code', () => {
     const result = profileSchema.safeParse({
       ...validBaseProfile,
       shopPhoneNumber: '02188888888',
     });
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.shopPhoneNumber).toBe('02188888888');
+    }
   });
 });
 

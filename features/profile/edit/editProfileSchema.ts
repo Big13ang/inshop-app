@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const USERNAME_REGEX = /^(?!.*\.\.)(?!^\.)[a-zA-Z0-9._]{1,30}(?<!\.)$/;
 
+export const IRANIAN_SHOP_PHONE_REGEX = /^0[1-9]\d{9}$/;
+
 export const profileSchema = z.object({
     shopName: z
         .string()
@@ -9,8 +11,10 @@ export const profileSchema = z.object({
         .max(45, 'نام فروشگاه باید کمتر از 45 کاراکتر باشد'),
     shopPhoneNumber: z
         .string()
-        .length(11, 'شماره تلفن فروشگاه الزامی است')
-        .regex(/^[0-9]+$/, 'شماره تلفن باید فقط شامل اعداد باشد'),
+        .regex(
+            IRANIAN_SHOP_PHONE_REGEX,
+            'شماره تماس معتبر نیست (مثال: 02155555555 یا 09123456789)'
+        ),
     username: z
         .string()
         .min(1, 'نام کاربری الزامی است')
