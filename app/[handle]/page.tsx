@@ -5,7 +5,7 @@ import { USERNAME_REGEX } from "@/features/profile/edit/editProfileSchema";
 import { PublicProfileView } from "@/features/profile/overview/PublicProfileView";
 import { ProfileOverviewSkeleton } from "@/features/profile/components/ProfileSkeleton";
 import { getPublicSellerProfile } from "@/features/profile/services/profileServerService";
-
+import { isCrawlerRequest } from "@/lib/utils/crawler";
 import { constructMetadata } from "@/lib/utils/metadata";
 
 interface ProfilePageProps {
@@ -18,6 +18,15 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     if (!handle.startsWith("@")) return {};
 
     const username = handle.slice(1);
+    const isCrawler = await isCrawlerRequest();
+
+    // Instant metadata for normal human users without blocking navigation
+    if (!isCrawler) {
+        return constructMetadata({
+            title: `@${username}`,
+        });
+    }
+
     const data = await getPublicSellerProfile(username);
 
     if (!data?.shop) {
@@ -52,7 +61,8 @@ async function ProfileHandleContent({ params }: ProfilePageProps) {
         notFound();
     }
 
-    const initialData = await getPublicSellerProfile(username);
+    const isCrawler = await isCrawlerRequest();
+    const initialData = isCrawler ? await getPublicSellerProfile(username) : null;
 
     return <PublicProfileView username={username} initialData={initialData} />;
 }
@@ -64,3 +74,4 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         </Suspense>
     );
 }
+

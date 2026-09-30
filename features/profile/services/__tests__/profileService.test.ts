@@ -3,9 +3,13 @@ import {
   shouldRetryProfileQuery,
   getProfileRetryDelay,
   fetchMe,
+  findSellerInQueryCache,
   type UserProfile,
 } from '../profileService';
+import { QueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 import { authHttp } from '@/lib/utils';
+
 
 jest.mock('@/lib/utils', () => {
   const actual = jest.requireActual('@/lib/utils');
@@ -138,4 +142,79 @@ describe('profileService authentication & error resilience', () => {
       await expect(fetchMe()).rejects.toThrow('Network disconnected');
     });
   });
+
+  describe('findSellerInQueryCache', () => {
+    let queryClient: QueryClient;
+
+    beforeEach(() => {
+      queryClient = new QueryClient();
+    });
+
+    afterEach(() => {
+      queryClient.clear();
+    });
+
+    it('returns seller from direct user profile cache', () => {
+      const mockSellerData = {
+        shop: {
+          username: 'coolshop',
+          shopName: 'Cool Shop',
+          profilePhotoUrl: 'https://cdn.example.com/shop.jpg',
+        },
+        products: [],
+      };
+      queryClient.setQueryData(queryKeys.user.byUsername('coolshop'), mockSellerData);
+
+      const found = findSellerInQueryCache(queryClient, 'coolshop');
+      expect(found).toEqual(mockSellerData);
+    });
+
+    it('finds seller from feed query cache', () => {
+      queryClient.setQueryData(['posts', 'feed', 'infinite', 15], {
+        pages: [
+          {
+            data: [
+              {
+                id: 'post-1',
+                owner: {
+                  username: 'feedshop',
+                  shopName: 'Feed Shop',
+                  profileUrl: 'https://cdn.example.com/feed.jpg',
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      const found = findSellerInQueryCache(queryClient, 'feedshop');
+      expect(found).toBeDefined();
+      expect(found?.shop.username).toBe('feedshop');
+      expect(found?.shop.shopName).toBe('Feed Shop');
+      expect(found?.shop.profilePhotoUrl).toBe('https://cdn.example.com/feed.jpg');
+    });
+
+    it('finds seller from post detail cache', () => {
+      queryClient.setQueryData(['posts', 'public-detail', 'post-100'], {
+        id: 'post-100',
+        owner: {
+          username: 'detailshop',
+          shopName: 'Detail Shop',
+          profilePhotoUrl: 'https://cdn.example.com/detail.jpg',
+        },
+      });
+
+
+      const found = findSellerInQueryCache(queryClient, 'detailshop');
+      expect(found).toBeDefined();
+      expect(found?.shop.username).toBe('detailshop');
+      expect(found?.shop.shopName).toBe('Detail Shop');
+    });
+
+    it('returns undefined when seller is not in cache or empty username', () => {
+      expect(findSellerInQueryCache(queryClient, 'unknown')).toBeUndefined();
+      expect(findSellerInQueryCache(queryClient, '')).toBeUndefined();
+    });
+  });
 });
+

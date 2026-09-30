@@ -1,8 +1,60 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
+import { getCachedFeedPosts } from '@/features/feed/services/feedService';
+import type { PublicPost } from '@/features/posts/services/publicPostService';
+
+export function findSellerInQueryCache(
+  queryClient: QueryClient,
+  username: string
+): SellerPostsByUsernameData | undefined {
+  const normalized = username.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  // 1. Direct profile cache
+  const exact = queryClient.getQueryData<SellerPostsByUsernameData>(queryKeys.user.byUsername(username.trim()));
+  if (exact?.shop) return exact;
+
+  // 2. Feed posts cache
+  const feedMatch = getCachedFeedPosts(queryClient).find(
+    (post) => post.owner?.username?.toLowerCase() === normalized
+  );
+  if (feedMatch?.owner) {
+    return {
+      shop: {
+        username: feedMatch.owner.username,
+        shopName: feedMatch.owner.shopName,
+        profilePhotoUrl: feedMatch.owner.profileUrl || null,
+      },
+      products: [],
+    };
+  }
+
+  // 3. Post details cache
+  const detailOwner = queryClient
+    .getQueriesData<PublicPost>({ queryKey: ['posts', 'public-detail'] })
+    .map(([, post]) => post?.owner || post?.shop)
+    .find((owner) => owner?.username?.toLowerCase() === normalized);
+
+
+  if (detailOwner) {
+    return {
+      shop: {
+        username: detailOwner.username,
+        shopName: detailOwner.shopName,
+        profilePhotoUrl: detailOwner.profilePhotoUrl || null,
+        bio: detailOwner.bio || null,
+      },
+      products: [],
+    };
+  }
+
+  return undefined;
+}
+
+
 
 export interface SellerProfilePhone {
   id: string;
@@ -177,8 +229,12 @@ export const profileService = {
     username?: string,
     options?: { initialData?: SellerPostsByUsernameData; enabled?: boolean }
   ) {
+    const queryClient = useQueryClient();
     const trimmed = (username || '').trim();
-    const { enabled = true, ...restOptions } = options || {};
+    const { enabled = true, initialData, ...restOptions } = options || {};
+
+    const cachedSeller = findSellerInQueryCache(queryClient, trimmed);
+    const resolvedInitialData = initialData ?? cachedSeller ?? undefined;
 
     return useQuery<SellerPostsByUsernameData>({
       queryKey: queryKeys.user.byUsername(trimmed),
@@ -189,6 +245,8 @@ export const profileService = {
         return res.data;
       },
       enabled: enabled && trimmed.length > 0,
+      initialData: resolvedInitialData,
+      initialDataUpdatedAt: initialData ? Date.now() : 0,
       staleTime: 1000 * 60 * 5,
       retry: false,
       ...restOptions,

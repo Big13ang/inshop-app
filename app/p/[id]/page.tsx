@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { isClientNavigation } from '@/lib/utils/serverNavigation';
+import { isCrawlerRequest } from '@/lib/utils/crawler';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
 import PublicPostView from '@/features/posts/public/PublicPostView';
 import { getMediaUrl } from '@/lib/utils/media';
@@ -10,6 +10,16 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const isCrawler = await isCrawlerRequest();
+
+  // Instant response for normal human users without blocking navigation
+  if (!isCrawler) {
+    return constructMetadata({
+      title: 'پست',
+      type: 'article',
+    });
+  }
+
   const { id } = await params;
   const post = await fetchPublicPostServer(id);
 
@@ -41,7 +51,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicPostPage({ params }: PageProps) {
   const { id } = await params;
-  const post = (await isClientNavigation()) ? null : await fetchPublicPostServer(id);
+  const isCrawler = await isCrawlerRequest();
+  const post = isCrawler ? await fetchPublicPostServer(id) : null;
 
   return <PublicPostView postId={id} initialPost={post} />;
 }
+
