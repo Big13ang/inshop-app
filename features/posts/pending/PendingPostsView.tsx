@@ -2,22 +2,29 @@
 
 import { useState } from 'react';
 import { Hourglass } from 'lucide-react';
+import { useInView } from 'react-intersection-observer';
 import Header from '@/components/layout/Header';
 import MainFooter from '@/components/layout/MainFooter';
 import { Button } from '@/components/ui/button';
 import { PostMenu } from '../components/PostMenu';
-import { usePendingRejectedPosts } from './services/pendingPostsService';
+import { useInfinitePendingRejectedPosts } from './services/pendingPostsService';
 import { useDeletePendingPost } from '../services/deletePostService';
 import DeletePostConfirmationBottomSheet from '../components/DeletePostConfirmationBottomSheet';
-import PendingPostCard from './components/PendingPostCard';
+import { PendingPostCard } from './components/PendingPostCard';
 import { text } from './constants';
 
 interface PendingPostsViewProps {
   onAddPost: () => void;
 }
 
-export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
-  const { data: posts = [] } = usePendingRejectedPosts();
+export function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
+  const {
+    posts,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfinitePendingRejectedPosts();
   const deletePost = useDeletePendingPost();
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
@@ -40,6 +47,17 @@ export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
     });
   }
 
+  function handleObserverChange(inView: boolean) {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }
+
+  const { ref: sentinelRef } = useInView({
+    rootMargin: '250px',
+    onChange: handleObserverChange,
+  });
+
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
       <Header.Root>
@@ -54,17 +72,35 @@ export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
         </div>
 
         {posts.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center" dir="rtl">
-            <Hourglass className="h-10 w-10 text-zinc-300" />
-            <h3 className="text-sm font-bold text-primary">{text.emptyTitle}</h3>
-            <p className="text-xs text-zinc-500">{text.emptyDescription}</p>
-            <Button onClick={onAddPost}>{text.emptyActionLabel}</Button>
-          </div>
+          isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="size-6 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 px-6 py-16 text-center" dir="rtl">
+              <Hourglass className="h-10 w-10 text-zinc-300" />
+              <h3 className="text-sm font-bold text-primary">{text.emptyTitle}</h3>
+              <p className="text-xs text-zinc-500">{text.emptyDescription}</p>
+              <Button onClick={onAddPost}>{text.emptyActionLabel}</Button>
+            </div>
+          )
         ) : (
           <div className="flex flex-col">
             {posts.map((post) => (
               <PendingPostCard key={post.id} post={post} onOpenMenu={setActiveMenuId} />
             ))}
+
+            {hasNextPage && (
+              <div
+                ref={sentinelRef}
+                className="flex h-16 w-full items-center justify-center py-4"
+                id="pending-infinite-scroll-sentinel"
+              >
+                {isFetchingNextPage && (
+                  <div className="size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+                )}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -95,4 +131,5 @@ export default function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
     </div>
   );
 }
+
 

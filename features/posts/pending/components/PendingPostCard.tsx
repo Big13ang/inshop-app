@@ -7,7 +7,7 @@ import { Post, usePostContext } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
 import { useUser } from '@/features/profile/context/UserContext';
 import { text } from '../constants';
-import RejectionOverlay from './RejectionOverlay';
+import { RejectionOverlay } from './RejectionOverlay';
 import { POST_STATUS, type SellerPost } from '@/features/posts/types';
 
 interface PendingPostCardProps {
@@ -19,15 +19,17 @@ function PendingStatusOverlay({ status, rejectReason }: { status: SellerPost['st
   const { state, actions } = usePostContext();
   const isRejected = status === POST_STATUS.REJECTED;
 
+  function handleDismiss() {
+    actions.dismissOverlay();
+    toast.info(text.rejectionDismissedToast);
+  }
+
   return (
     <>
       {isRejected && !state.isOverlayDismissed && rejectReason ? (
         <RejectionOverlay
           rejectionReason={rejectReason}
-          onDismiss={() => {
-            actions.dismissOverlay();
-            toast.info(text.rejectionDismissedToast);
-          }}
+          onDismiss={handleDismiss}
         />
       ) : null}
 
@@ -46,7 +48,7 @@ function PendingStatusOverlay({ status, rejectReason }: { status: SellerPost['st
   );
 }
 
-export default function PendingPostCard({ post, onOpenMenu }: PendingPostCardProps) {
+export function PendingPostCard({ post, onOpenMenu }: PendingPostCardProps) {
   const { user } = useUser();
 
   const sellerName = post.sellerName || user?.sellerProfile?.shopName || '';

@@ -151,15 +151,33 @@ export function removePostFromSellerApprovedCache(
   );
 }
 
+type PendingRejectedCacheData =
+  | SellerPost[]
+  | { pages?: { data?: { id?: string }[] }[] };
+
 export function removePostFromPendingRejectedCache(
   queryClient: QueryClient,
   deletedId: string
 ) {
-  queryClient.setQueriesData<SellerPost[]>(
+  queryClient.setQueriesData<PendingRejectedCacheData>(
     { queryKey: [...queryKeys.posts.seller(), 'pending-rejected'] },
     (oldData) => {
-      if (!Array.isArray(oldData)) return oldData;
-      return oldData.filter((post) => post.id !== deletedId);
+      if (!oldData) return oldData;
+      if (Array.isArray(oldData)) {
+        return oldData.filter((post) => post.id !== deletedId);
+      }
+      if (Array.isArray(oldData.pages)) {
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            data: Array.isArray(page.data)
+              ? page.data.filter((post) => post.id !== deletedId)
+              : page.data,
+          })),
+        };
+      }
+      return oldData;
     }
   );
 }

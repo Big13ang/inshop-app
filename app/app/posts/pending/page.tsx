@@ -1,5 +1,6 @@
-import PendingPostsClientWrapper from '@/features/posts/pending/PendingPostsClientWrapper';
+import { PendingPostsClientWrapper } from '@/features/posts/pending/PendingPostsClientWrapper';
 
 export default function PendingPostsPage() {
   return <PendingPostsClientWrapper />;
 }
+
