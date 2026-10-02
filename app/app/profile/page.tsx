@@ -5,6 +5,10 @@ import { ProfileOverviewSkeleton } from '@/features/profile/components/ProfileSk
 
 export const metadata: Metadata = {
   title: 'پروفایل فروشگاه',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function ProfilePage() {
