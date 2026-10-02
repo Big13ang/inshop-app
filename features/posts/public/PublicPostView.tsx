@@ -81,7 +81,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
 
           {/* Bottom Action CTA */}
           <div className="relative z-10 w-full max-w-xs mx-auto flex flex-col items-center gap-4 mt-auto">
-            <Link href="/" className="w-full">
+            <Link href="/" className="w-full" prefetch={false}>
               <Button
                 id="btn-home-not-found"
                 variant="filled"

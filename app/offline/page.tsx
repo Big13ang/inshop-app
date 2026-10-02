@@ -55,6 +55,7 @@ export default async function OfflinePage() {
         <Link
           id="link-home-offline"
           href="/"
+          prefetch={false}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-700 hover:text-black transition-colors py-2 cursor-pointer underline underline-offset-4"
         >
           <HomeIcon className="size-3.5" />
