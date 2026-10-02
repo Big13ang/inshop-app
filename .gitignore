@@ -50,3 +50,7 @@ graphify-out/
 temp/
 /tmp/
 /public/uploads/
+
+# Serwist / PWA generated service worker files
+public/sw*
+public/swe-worker*
