@@ -10,8 +10,8 @@
 #
 # 2. Release Tag (*) or Gitea Release:
 #    - Rebuilds project with production environment (api.inshop.social).
-#    - Uses BuildKit layer caching (cache-from prod-latest and dev-latest)
-#      and BuildKit inline cache for fast rebuilds.
+#    - Uses BuildKit layer caching (cache-deps-<hash> intermediate stage and release tags)
+#      with BUILDKIT_INLINE_CACHE for instant dependency cache hits and fast rebuilds.
 #    - Tags with <tag>, prod-<sha>, and prod-latest.
 #    - Deploys automatically to PROD environment: application_frontend (inshop.social).
 #
@@ -144,11 +144,74 @@ jobs:
       - name: Log in to the internal registry
         run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
 
-      - name: Pull cache images (for fast layer caching)
+      - name: Manage dependencies stage cache (cache-deps-<hash>)
+        id: deps-cache
         run: |
-          echo "Pulling existing Docker images for BuildKit cache..."
-          docker pull "${IMAGE}:prod-latest" || true
-          docker pull "${IMAGE}:dev-latest" || true
+          set -euo pipefail
+
+          # Compute content hash of package manifests and configuration
+          DEPS_FILES=("package.json" "package-lock.json")
+          if [ -f ".npmrc" ]; then
+            DEPS_FILES+=(".npmrc")
+          fi
+
+          if command -v sha256sum >/dev/null 2>&1; then
+            HASH_CMD="sha256sum"
+          else
+            HASH_CMD="shasum -a 256"
+          fi
+
+          DEPS_HASH=$($HASH_CMD "${DEPS_FILES[@]}" | $HASH_CMD | cut -c1-16)
+          CACHE_DEPS_TAG="${IMAGE}:cache-deps-${DEPS_HASH}"
+          CACHE_DEPS_LATEST="${IMAGE}:cache-deps-latest"
+
+          echo "deps_hash=${DEPS_HASH}" >> "$GITHUB_OUTPUT"
+          echo "cache_deps_tag=${CACHE_DEPS_TAG}" >> "$GITHUB_OUTPUT"
+          echo "cache_deps_latest=${CACHE_DEPS_LATEST}" >> "$GITHUB_OUTPUT"
+
+          echo "=========================================================="
+          echo "Dependencies Cache Key: ${DEPS_HASH}"
+          echo "Target Deps Cache Tag:  ${CACHE_DEPS_TAG}"
+          echo "=========================================================="
+
+          # Check if remote deps cache image already exists in registry
+          check_remote_image() {
+            local img="$1"
+            export DOCKER_CLI_EXPERIMENTAL=enabled
+            if docker manifest inspect "${img}" >/dev/null 2>&1; then
+              return 0
+            fi
+            if command -v docker >/dev/null 2>&1 && docker buildx imagetools inspect "${img}" >/dev/null 2>&1; then
+              return 0
+            fi
+            return 1
+          }
+
+          if check_remote_image "${CACHE_DEPS_TAG}"; then
+            echo "✓ Found existing deps cache in registry: ${CACHE_DEPS_TAG}"
+            echo "Skipping deps stage build and reusing registry cache."
+          else
+            echo "Dependencies modified or cache missed. Building deps stage..."
+            SECRET_ARGS=()
+            if [ -f ".npmrc.ci" ]; then
+              SECRET_ARGS+=(--secret id=npmrc,src=.npmrc.ci)
+            fi
+
+            docker build \
+              --target deps \
+              --cache-from "${CACHE_DEPS_LATEST}" \
+              --cache-from "${IMAGE}:prod-latest" \
+              --cache-from "${IMAGE}:dev-latest" \
+              --build-arg BUILDKIT_INLINE_CACHE=1 \
+              "${SECRET_ARGS[@]}" \
+              -t "${CACHE_DEPS_TAG}" \
+              -t "${CACHE_DEPS_LATEST}" .
+
+            echo "Pushing built deps cache to registry..."
+            docker push "${CACHE_DEPS_TAG}"
+            docker push "${CACHE_DEPS_LATEST}"
+            echo "✓ Successfully pushed deps cache to ${CACHE_DEPS_TAG}"
+          fi
 
       - name: Fetch centralized environment config
         run: |
@@ -235,8 +298,13 @@ jobs:
             TAG_ARGS+=(-t "${IMAGE}:${extra}")
           done
 
-          echo "Running docker build with caching from prod-latest and dev-latest..."
+          CACHE_DEPS_TAG="${{ steps.deps-cache.outputs.cache_deps_tag }}"
+          CACHE_DEPS_LATEST="${{ steps.deps-cache.outputs.cache_deps_latest }}"
+
+          echo "Running docker build with caching from deps cache and release tags..."
           docker build \
+            --cache-from "${CACHE_DEPS_TAG}" \
+            --cache-from "${CACHE_DEPS_LATEST}" \
             --cache-from "${IMAGE}:prod-latest" \
             --cache-from "${IMAGE}:dev-latest" \
             --secret id=npmrc,src=.npmrc.ci \
