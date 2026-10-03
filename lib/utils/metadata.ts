@@ -96,9 +96,9 @@ export function constructMetadata({
       description: metaDesc,
       images: image ? [image] : [],
     },
-    ...(shouldNoIndex && {
-      robots: { index: false, follow: false },
-    }),
+    robots: shouldNoIndex
+      ? { index: false, follow: false }
+      : { index: true, follow: true },
   };
 }
 
