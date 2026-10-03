@@ -5,8 +5,6 @@ import Providers from "./providers";
 import IosViewportFixer from "@/components/utils/IosViewportFixer";
 import Analytics from "@/components/utils/Analytics";
 
-import { isDevEnvironment } from "@/lib/utils/metadata";
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -24,9 +22,10 @@ export const metadata: Metadata = {
   description:
     "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
   applicationName: "اینشاپ",
-  robots: isDevEnvironment()
-    ? { index: false, follow: false }
-    : { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+  },
   // enamad validation & Bing Webmaster verification
   other: {
     enamad: "26426690",

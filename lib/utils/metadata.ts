@@ -65,7 +65,8 @@ export const formatDescription = (desc?: string, shopName?: string | null): stri
 };
 
 export function isDevEnvironment(): boolean {
-  return process.env.APP_ENV === 'dev' || process.env.NEXT_PUBLIC_APP_ENV === 'dev';
+  const env = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
+  return env === 'development' || env === 'dev';
 }
 
 export function constructMetadata({
