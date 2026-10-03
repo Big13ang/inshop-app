@@ -1,9 +1,12 @@
-import { cache } from 'react';
+import { cacheLife, cacheTag } from 'next/cache';
 import { http, Result, type ApiResponse } from '@/lib/utils';
 import type { PublicPost } from './publicPostService';
 
+export async function fetchPublicPostServer(id: string): Promise<PublicPost | null> {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(`post-${id}`);
 
-export const fetchPublicPostServer = cache(async (id: string): Promise<PublicPost | null> => {
   const resResult = await Result.try(() =>
     http.get<ApiResponse<PublicPost>>(`/posts/${id}`)
   );
@@ -13,4 +16,4 @@ export const fetchPublicPostServer = cache(async (id: string): Promise<PublicPos
   }
 
   return resResult.value.data;
-});
+}
