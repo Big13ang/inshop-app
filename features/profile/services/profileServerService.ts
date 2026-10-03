@@ -21,14 +21,16 @@ export async function getPublicSellerProfile(
     )
   );
 
-  if (!resResult.ok || !resResult.value?.data) {
-    if (!resResult.ok) {
-      console.warn(`[getPublicSellerProfile] Server fetch failed for "${trimmed}":`, resResult.error);
+  if (!resResult.ok) {
+    const errorObj = resResult.error as { response?: { status?: number } } | undefined;
+    if (errorObj?.response?.status === 404) {
+      return null;
     }
-    return null;
+    console.warn(`[getPublicSellerProfile] Server fetch transient error for "${trimmed}":`, resResult.error);
+    throw resResult.error;
   }
 
-  return resResult.value.data;
+  return resResult.value?.data ?? null;
 }
 
 export const AUTH_COOKIE_KEYS = [

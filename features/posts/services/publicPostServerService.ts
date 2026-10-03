@@ -14,12 +14,14 @@ export async function fetchPublicPostServer(id: string): Promise<PublicPost | nu
     })
   );
 
-  if (!resResult.ok || !resResult.value?.data) {
-    if (!resResult.ok) {
-      console.warn(`[fetchPublicPostServer] Failed to fetch post ${id}:`, resResult.error);
+  if (!resResult.ok) {
+    const errorObj = resResult.error as { response?: { status?: number } } | undefined;
+    if (errorObj?.response?.status === 404) {
+      return null;
     }
-    return null;
+    console.warn(`[fetchPublicPostServer] Transient error fetching post ${id}:`, resResult.error);
+    throw resResult.error;
   }
 
-  return resResult.value.data;
+  return resResult.value?.data ?? null;
 }
