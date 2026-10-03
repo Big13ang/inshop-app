@@ -4,6 +4,7 @@ import { fetchPublicPostServer } from '@/features/posts/services/publicPostServe
 import PublicPostView from '@/features/posts/public/PublicPostView';
 import { getMediaUrl } from '@/lib/utils/media';
 import { constructMetadata } from '@/lib/utils/metadata';
+import { extractPostTitle, formatPostMetaDescription } from '@/features/posts/utils/formatDescription';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -12,10 +13,11 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const isCrawler = await isCrawlerRequest();
 
-  // Instant response for normal human users without blocking navigation
+  // Instant response for normal human users without blocking navigation (CSR)
   if (!isCrawler) {
     return constructMetadata({
       title: 'پست',
+      description: 'مشاهده مشخصات و خرید آنلاین در اینشاپ',
       type: 'article',
     });
   }
@@ -25,14 +27,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!post) {
     return constructMetadata({
-      title: 'پست یافت نشد',
-      description: 'این پست وجود ندارد یا حذف شده است.',
-      noIndex: true,
+      title: 'پست',
+      description: 'مشاهده مشخصات و خرید آنلاین محصولات در اینشاپ',
+      type: 'article',
     });
   }
 
   const owner = post.owner || post.shop;
-  const rawShopName = owner?.shopName || undefined;
+  const rawShopName = owner?.shopName?.trim() || undefined;
   const shopName = rawShopName
     ? rawShopName.startsWith('فروشگاه')
       ? rawShopName
@@ -40,9 +42,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : undefined;
   const coverMedia = post.media?.[0];
   const image = coverMedia ? getMediaUrl(coverMedia) : null;
+  const postTitle = extractPostTitle(post.description);
+  const metaDescription = formatPostMetaDescription(post.description, shopName);
 
   return constructMetadata({
-    description: post.description,
+    title: postTitle,
+    description: metaDescription,
     image,
     shopName,
     type: 'article',
@@ -56,4 +61,5 @@ export default async function PublicPostPage({ params }: PageProps) {
 
   return <PublicPostView postId={id} initialPost={post} />;
 }
+
 

@@ -20,10 +20,11 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     const username = handle.slice(1);
     const isCrawler = await isCrawlerRequest();
 
-    // Instant metadata for normal human users without blocking navigation
+    // Instant metadata for normal human users without blocking navigation (CSR)
     if (!isCrawler) {
         return constructMetadata({
             title: `@${username}`,
+            description: `مشاهده پروفایل و محصولات فروشگاه @${username} در اینشاپ`,
         });
     }
 
@@ -31,19 +32,22 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
 
     if (!data?.shop) {
         return constructMetadata({
-            title: 'صفحه پیدا نشد',
-            description: 'این پروفایل وجود ندارد یا حذف شده است.',
-            noIndex: true,
+            title: `@${username}`,
+            description: `مشاهده پروفایل و محصولات فروشگاه @${username} در اینشاپ`,
         });
     }
 
     const profile = data.shop;
+    const rawShopName = profile.shopName?.trim();
+    const title = rawShopName ? `${rawShopName} (@${profile.username})` : `@${profile.username}`;
+    const description = profile.bio?.trim()
+        ? profile.bio.trim().slice(0, 160)
+        : `مشاهده محصولات و خرید آنلاین از ${rawShopName || `@${profile.username}`} در اینشاپ`;
 
     return constructMetadata({
-        title: `@${profile.username}`,
-        description: profile.bio || undefined,
+        title,
+        description,
         image: profile.profilePhotoUrl,
-        shopName: profile.shopName,
     });
 }
 
