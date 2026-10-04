@@ -53,10 +53,10 @@ export function EditProfileView() {
 
   useEffect(() => {
     if (isVerifying || !user) return;
-    if (!user.isVerifiedSeller) {
+    if (!user.isVerifiedSeller && activeTab === 'shop') {
       router.replace(PROFILE_ROUTES.unverified);
     }
-  }, [user, isVerifying, router]);
+  }, [user, isVerifying, router, activeTab]);
 
   const createProfileMutation = useCreateProfile(() => {
     router.push('/app/profile');

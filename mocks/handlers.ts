@@ -28,6 +28,32 @@ export function resetPendingPostsFixture() {
 
 export const handlers = [
   http.get('/api/posts', () => HttpResponse.json(posts)),
+  http.get('http://localhost:3000/posts/feed/viewed', () => {
+    return HttpResponse.json({
+      data: posts.map((post) => ({
+        post,
+        viewedAt: '2026-10-04T12:00:00.000Z',
+        viewCount: 1,
+      })),
+      pagination: {
+        nextCursor: null,
+        hasNext: false,
+      },
+    });
+  }),
+  http.get('/posts/feed/viewed', () => {
+    return HttpResponse.json({
+      data: posts.map((post) => ({
+        post,
+        viewedAt: '2026-10-04T12:00:00.000Z',
+        viewCount: 1,
+      })),
+      pagination: {
+        nextCursor: null,
+        hasNext: false,
+      },
+    });
+  }),
   http.delete('/api/posts/:id', ({ params }) => {
     const index = posts.findIndex((post) => post.id === params.id);
     if (index === -1) {

@@ -9,12 +9,21 @@ import { PROFILE_ROUTES, text } from '../../constants';
 
 interface ProfileHeaderProps {
   username?: string;
+  title?: string;
   isOwner?: boolean;
+  showAddPost?: boolean;
   onBack?: () => void;
 }
 
-export function ProfileHeader({ username, isOwner = false, onBack }: ProfileHeaderProps) {
+export function ProfileHeader({
+  username,
+  title,
+  isOwner = false,
+  showAddPost,
+  onBack,
+}: ProfileHeaderProps) {
   const displayUsername = username?.trim().replace(/^@/, '') || 'inShop';
+  const canAddPost = showAddPost ?? isOwner;
 
   return (
     <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-4 w-full h-16 border-b border-primary/5 shrink-0 relative" dir="rtl">
@@ -30,16 +39,22 @@ export function ProfileHeader({ username, isOwner = false, onBack }: ProfileHead
         )}
       </div>
 
-      {/* Center: Store Handle */}
+      {/* Center: Store Handle or Title */}
       <div className="flex-shrink-0 flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2 pointer-events-none">
-        <h1 id="profile-handle-title" dir="ltr" className="font-rounded font-bold text-lg text-primary tracking-tight">
-          @{displayUsername}
-        </h1>
+        {title ? (
+          <h1 id="profile-handle-title" className="font-bold text-base text-primary tracking-tight">
+            {title}
+          </h1>
+        ) : (
+          <h1 id="profile-handle-title" dir="ltr" className="font-rounded font-bold text-lg text-primary tracking-tight">
+            @{displayUsername}
+          </h1>
+        )}
       </div>
 
       {/* Left side (end of RTL): Add Post (+) button for owner, empty spacer for visitor */}
       <div className="flex items-center justify-end min-w-10">
-        {isOwner ? (
+        {canAddPost ? (
           <Link
             href={PROFILE_ROUTES.newPost}
             aria-label={text.overview.newPostAction}
