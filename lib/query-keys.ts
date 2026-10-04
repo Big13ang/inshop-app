@@ -9,6 +9,9 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.posts.details(), id] as const,
     uploadSession: () => [...queryKeys.posts.all, 'upload-session'] as const,
     viewed: () => [...queryKeys.posts.all, 'viewed'] as const,
+    events: () => [...queryKeys.posts.all, 'events'] as const,
+    event: (postId: string, eventType: string, sessionToken?: string) =>
+      [...queryKeys.posts.events(), postId, eventType, sessionToken ?? ''] as const,
   },
   auth: {
     session: ['auth', 'session'] as const,

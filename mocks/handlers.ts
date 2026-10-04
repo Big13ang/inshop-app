@@ -54,6 +54,12 @@ export const handlers = [
       },
     });
   }),
+  http.post('http://localhost:3000/posts/feed/events', () => {
+    return HttpResponse.json({ recorded: true });
+  }),
+  http.post('/posts/feed/events', () => {
+    return HttpResponse.json({ recorded: true });
+  }),
   http.delete('/api/posts/:id', ({ params }) => {
     const index = posts.findIndex((post) => post.id === params.id);
     if (index === -1) {

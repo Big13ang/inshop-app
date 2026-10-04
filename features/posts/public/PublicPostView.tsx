@@ -9,6 +9,10 @@ import { Post } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
 import { usePublicPostById, type PublicPost } from '@/features/posts/services/publicPostService';
 import { extractPostTitle } from '@/features/posts/utils/formatDescription';
+import {
+  usePassiveFeedEvent,
+  RECOMMENDATION_EVENT_TYPE,
+} from '@/features/posts/services/viewedPostsService';
 import { PublicPostMenuDrawer } from './components/PublicPostMenuDrawer';
 
 interface Props {
@@ -17,6 +21,11 @@ interface Props {
 }
 
 export default function PublicPostView({ postId, initialPost }: Props) {
+  usePassiveFeedEvent({
+    postId,
+    eventType: RECOMMENDATION_EVENT_TYPE.OPEN,
+  });
+
   const { data: post, isLoading } = usePublicPostById(postId, initialPost);
 
   if (isLoading && !post) {
