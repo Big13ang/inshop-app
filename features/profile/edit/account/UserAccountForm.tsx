@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { UserMe } from '@/features/profile/services/profileService';
 import {
   accountSchema,
+  type accountSchemaInput,
   type accountSchemaType,
   generateDefaultAccountValues,
 } from './accountSchema';
@@ -22,7 +23,7 @@ export function UserAccountForm({
   formId = 'edit-account-form',
   onSubmit,
 }: UserAccountFormProps) {
-  const methods = useForm<accountSchemaType>({
+  const methods = useForm<accountSchemaInput, unknown, accountSchemaType>({
     resolver: zodResolver(accountSchema),
     mode: 'onChange',
     values: generateDefaultAccountValues(user),

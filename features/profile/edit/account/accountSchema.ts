@@ -37,6 +37,7 @@ export const accountSchema = z.object({
 });
 
 export type accountSchemaType = z.infer<typeof accountSchema>;
+export type accountSchemaInput = z.input<typeof accountSchema>;
 
 export const DEFAULT_ACCOUNT_VALUES: accountSchemaType = {
   firstName: '',
