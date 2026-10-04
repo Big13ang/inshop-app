@@ -1,7 +1,9 @@
-import { useQuery, useSuspenseQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { getCachedFeedPosts } from '@/features/feed/services/feedService';
 import type { PublicPost } from '@/features/posts/services/publicPostService';
@@ -120,12 +122,23 @@ export interface UserMe {
   isVerifiedSeller: boolean;
   sellerActivatedAt: string | null;
   isAdmin: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
+  description?: string | null;
+  nationalId?: string | null;
+  birthDatePersian?: string | null;
+  usesWheelchair?: boolean;
+  isBlindOrLowVision?: boolean;
+  isDeafOrHardOfHearing?: boolean;
+  profilePicture?: string | null;
   profile?: UserPreRegisterProfile | null;
   businessData?: UserPreRegisterBusinessData | null;
   sellerProfile: SellerProfile | null;
 }
 
 export type UserProfile = UserMe;
+
+export type GetMeResponse = ApiResponse<UserMe>;
 
 export interface CheckUsernameResponse {
   username: string;
@@ -202,7 +215,65 @@ export async function fetchMe(): Promise<UserProfile | null> {
   return result.value.data;
 }
 
+export interface UpdateUserAccountPayload {
+  firstName?: string | null;
+  lastName?: string | null;
+  nationalId?: string | null;
+  birthDatePersian?: string | null;
+  description?: string | null;
+  usesWheelchair?: boolean;
+  isBlindOrLowVision?: boolean;
+  isDeafOrHardOfHearing?: boolean;
+}
+
+export async function updateUserAccount(payload: UpdateUserAccountPayload): Promise<UserMe> {
+  const allowedKeys: readonly (keyof UpdateUserAccountPayload)[] = [
+    'firstName',
+    'lastName',
+    'description',
+    'nationalId',
+    'birthDatePersian',
+    'usesWheelchair',
+    'isBlindOrLowVision',
+    'isDeafOrHardOfHearing',
+  ];
+
+  const sanitizedPayload: Partial<Record<keyof UpdateUserAccountPayload, unknown>> = {};
+  for (const key of allowedKeys) {
+    if (payload[key] !== undefined) {
+      sanitizedPayload[key] = payload[key];
+    }
+  }
+
+  const res = await authHttp.patch<ApiResponse<UserMe>>('/me', sanitizedPayload);
+  return res.data;
+}
+
+export function useUpdateUserAccount(onSaved?: () => void) {
+  const queryClient = useQueryClient();
+
+  const handleSuccess = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+    ]);
+    toast.success('اطلاعات حساب کاربری با موفقیت ذخیره شد.');
+    onSaved?.();
+  };
+
+  const handleError = (error: Error) => {
+    toast.error(error?.message || ERROR_MESSAGES.profile.updateFailed);
+  };
+
+  return useMutation({
+    mutationFn: updateUserAccount,
+    onSuccess: handleSuccess,
+    onError: handleError,
+  });
+}
+
 export const profileService = {
+  useUpdateUserAccount,
   useMe(options?: { initialData?: UserProfile | null; initialDataUpdatedAt?: number }) {
     return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,

@@ -8,8 +8,11 @@ import { useFormContext, useFormState } from 'react-hook-form';
 export interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     name?: string;
     label?: string;
+    isRequired?: boolean;
     error?: string;
     isError?: boolean;
+    helperText?: string;
+    hideLabel?: boolean;
     ref?: React.Ref<HTMLInputElement>;
 }
 
@@ -21,6 +24,9 @@ interface PhoneInputUIProps extends PhoneInputProps {
 
 function PhoneInputUI({
     label = 'شماره همراه',
+    isRequired = false,
+    hideLabel = false,
+    helperText,
     activeError,
     activeIsError,
     className,
@@ -32,9 +38,12 @@ function PhoneInputUI({
 }: PhoneInputUIProps) {
     return (
         <div className="flex flex-col gap-2">
-            <label htmlFor={id} className="text-xs font-semibold text-zinc-600 text-right pr-1">
-                {label}
-            </label>
+            {!hideLabel && label && (
+                <label htmlFor={id} className="text-xs font-semibold text-zinc-600 text-right pr-1">
+                    {label}
+                    {isRequired ? <span className="text-red-500"> *</span> : null}
+                </label>
+            )}
 
             <div className="relative flex items-center" suppressHydrationWarning={true}>
                 <Input
@@ -62,6 +71,10 @@ function PhoneInputUI({
                     <Phone className="w-4 h-4 stroke-2" />
                 </span>
             </div>
+
+            {!activeIsError && helperText && (
+                <p className="text-[11px] text-zinc-500 px-1">{helperText}</p>
+            )}
 
             {activeIsError && activeError && <ErrorMessage message={activeError} />}
         </div>
@@ -102,7 +115,7 @@ function StandalonePhoneInput(props: PhoneInputProps) {
     );
 }
 
-export default function PhoneInput({
+export function PhoneInput({
     name = 'phoneNumber',
     ...props
 }: PhoneInputProps) {
@@ -114,3 +127,5 @@ export default function PhoneInput({
 
     return <StandalonePhoneInput name={name} {...props} />;
 }
+
+export default PhoneInput;
