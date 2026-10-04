@@ -164,9 +164,9 @@ export async function fetchMe(): Promise<UserProfile | null> {
 }
 
 export interface UpdateUserAccountPayload {
-  firstName: string;
-  lastName: string;
-  nationalId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  nationalId?: string | null;
   birthDatePersian?: string | null;
   description?: string | null;
   usesWheelchair?: boolean;

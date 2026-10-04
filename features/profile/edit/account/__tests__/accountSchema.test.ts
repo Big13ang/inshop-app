@@ -5,7 +5,6 @@ describe('accountSchema validation', () => {
   const baseValidData = {
     firstName: 'محمد',
     lastName: 'رضایی',
-    nationalId: '1234567890',
     birthDatePersian: '1374-06-15',
     usesWheelchair: false,
     isBlindOrLowVision: false,
@@ -19,8 +18,10 @@ describe('accountSchema validation', () => {
     if (result.success) {
       expect(result.data.firstName).toBe('محمد');
       expect(result.data.lastName).toBe('رضایی');
-      expect(result.data.nationalId).toBe('1234567890');
       expect(result.data.birthDatePersian).toBe('1374-06-15');
+      expect(result.data.usesWheelchair).toBe(false);
+      expect(result.data.isBlindOrLowVision).toBe(false);
+      expect(result.data.isDeafOrHardOfHearing).toBe(false);
     }
   });
 
@@ -36,54 +37,71 @@ describe('accountSchema validation', () => {
     }
   });
 
-  it('succeeds when optional birthDatePersian is empty string', () => {
+  it('succeeds when all fields are empty or omitted (everything is optional)', () => {
+    const result = accountSchema.safeParse({});
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.firstName).toBe('');
+      expect(result.data.lastName).toBe('');
+      expect(result.data.birthDatePersian).toBe('');
+      expect(result.data.usesWheelchair).toBe(false);
+      expect(result.data.isBlindOrLowVision).toBe(false);
+      expect(result.data.isDeafOrHardOfHearing).toBe(false);
+    }
+  });
+
+  it('succeeds when optional firstName and lastName are empty strings or null', () => {
     const result = accountSchema.safeParse({
-      ...baseValidData,
+      firstName: '',
+      lastName: null,
       birthDatePersian: '',
     });
 
     expect(result.success).toBe(true);
     if (result.success) {
+      expect(result.data.firstName).toBe('');
+      expect(result.data.lastName).toBe('');
       expect(result.data.birthDatePersian).toBe('');
     }
   });
 
-  it('fails when required nationalId is missing or empty', () => {
+  it('fails when firstName exceeds 50 characters', () => {
     const result = accountSchema.safeParse({
       ...baseValidData,
-      nationalId: '',
-    });
-
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      const errorMsg = result.error.issues.find((e) => e.path.includes('nationalId'))?.message;
-      expect(errorMsg).toBe('کد ملی الزامی است');
-    }
-  });
-
-  it('fails when required firstName is empty', () => {
-    const result = accountSchema.safeParse({
-      ...baseValidData,
-      firstName: '',
+      firstName: 'a'.repeat(51),
     });
 
     expect(result.success).toBe(false);
     if (!result.success) {
       const errorMsg = result.error.issues.find((e) => e.path.includes('firstName'))?.message;
-      expect(errorMsg).toBe('نام الزامی است');
+      expect(errorMsg).toBe('نام نباید بیشتر از ۵۰ کاراکتر باشد');
     }
   });
 
-  it('fails when required lastName is empty', () => {
+  it('fails when lastName exceeds 50 characters', () => {
     const result = accountSchema.safeParse({
       ...baseValidData,
-      lastName: '',
+      lastName: 'a'.repeat(51),
     });
 
     expect(result.success).toBe(false);
     if (!result.success) {
       const errorMsg = result.error.issues.find((e) => e.path.includes('lastName'))?.message;
-      expect(errorMsg).toBe('نام خانوادگی الزامی است');
+      expect(errorMsg).toBe('نام خانوادگی نباید بیشتر از ۵۰ کاراکتر باشد');
+    }
+  });
+
+  it('fails when birthDatePersian is invalid format', () => {
+    const result = accountSchema.safeParse({
+      ...baseValidData,
+      birthDatePersian: 'invalid-date',
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const errorMsg = result.error.issues.find((e) => e.path.includes('birthDatePersian'))?.message;
+      expect(errorMsg).toBe('فرمت تاریخ تولد نامعتبر است');
     }
   });
 });
@@ -123,7 +141,6 @@ describe('generateDefaultAccountValues', () => {
     expect(values).toEqual({
       firstName: 'محمد',
       lastName: 'بهشتی',
-      nationalId: '1234567890',
       birthDatePersian: '1370-05-20',
       usesWheelchair: true,
       isBlindOrLowVision: false,
@@ -131,7 +148,7 @@ describe('generateDefaultAccountValues', () => {
     });
   });
 
-  it('falls back to profile and sellerProfile when top-level fields are null', () => {
+  it('falls back to default empty strings when top-level fields are null', () => {
     const user: UserMe = {
       id: 'xsm61u9Bi10HFEqiqKiryqYwLJWQeshl',
       name: '09035703067',
@@ -148,17 +165,6 @@ describe('generateDefaultAccountValues', () => {
       isBlindOrLowVision: false,
       isDeafOrHardOfHearing: false,
       profilePicture: null,
-      profile: {
-        id: 1,
-        name: 'محم',
-        lastName: 'بهشت آئين',
-        phoneNumber: '09035703067',
-        nationalIdNumber: '2228666611',
-        province: 'آذربایجان شرقی',
-        city: 'مرند',
-        createdAt: '2026-05-27T17:13:06.758Z',
-        updatedAt: '2026-05-27T17:13:06.758Z',
-      },
       sellerProfile: null,
     };
 
@@ -166,7 +172,6 @@ describe('generateDefaultAccountValues', () => {
     expect(values).toEqual({
       firstName: '',
       lastName: '',
-      nationalId: '2228666611',
       birthDatePersian: '',
       usesWheelchair: false,
       isBlindOrLowVision: false,

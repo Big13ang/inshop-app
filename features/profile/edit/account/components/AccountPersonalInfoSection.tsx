@@ -25,7 +25,6 @@ export function AccountPersonalInfoSection() {
         <FormSection.Field
           label="نام"
           htmlFor="account-first-name"
-          isRequired
           error={errors.firstName?.message}
         >
           <Input
@@ -40,7 +39,6 @@ export function AccountPersonalInfoSection() {
         <FormSection.Field
           label="نام خانوادگی"
           htmlFor="account-last-name"
-          isRequired
           error={errors.lastName?.message}
         >
           <Input
@@ -52,26 +50,6 @@ export function AccountPersonalInfoSection() {
           />
         </FormSection.Field>
       </div>
-
-      {/* 2. National ID */}
-      <FormSection.Field
-        label="کد ملی"
-        htmlFor="account-national-id"
-        isRequired
-        helperText="کد ملی باید ۱۰ رقم و منطبق با مشخصات صاحب حساب و شماره موبایل باشد."
-        error={errors.nationalId?.message}
-      >
-        <Input
-          id="account-national-id"
-          inputSize="sm"
-          placeholder="کد ملی ۱۰ رقمی"
-          maxLength={10}
-          dir="ltr"
-          isError={Boolean(errors.nationalId)}
-          className="font-mono tracking-widest text-left"
-          {...register('nationalId')}
-        />
-      </FormSection.Field>
 
       {/* 3. Birth Date with Controller */}
       <FormSection.Field
