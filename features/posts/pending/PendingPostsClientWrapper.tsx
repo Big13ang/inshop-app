@@ -1,14 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import PendingPostsView from './PendingPostsView';
+import { PendingPostsView } from './PendingPostsView';
 
-export default function PendingPostsClientWrapper() {
+export function PendingPostsClientWrapper() {
   const router = useRouter();
 
-  const handleAddPost = () => {
+  function handleAddPost() {
     router.push('/app/posts/new');
-  };
+  }
 
   return <PendingPostsView onAddPost={handleAddPost} />;
 }
+

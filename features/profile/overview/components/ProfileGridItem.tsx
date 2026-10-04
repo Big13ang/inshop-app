@@ -63,7 +63,7 @@ export function ProfileGridItem({ post }: Props) {
     'aspect-square overflow-hidden bg-surface relative block cursor-pointer outline-none focus:ring-1 focus:ring-zinc-800';
 
   return (
-    <Link href={`/p/${post.id}`} className={className}>
+    <Link href={`/p/${post.id}`} className={className} prefetch={false}>
       {content}
     </Link>
   );

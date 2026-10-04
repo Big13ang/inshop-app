@@ -31,5 +31,16 @@ export function PublicProfileView({ username, initialData }: PublicProfileViewPr
   if (!isLoading && !activeData?.shop) notFound();
   if (!activeData?.shop) return <ProfileOverviewSkeleton />;
 
-  return <ProfileView profile={activeData.shop} isOwner={isOwner} />;
+  const shop = activeData.shop;
+  const rawShopName = shop.shopName?.trim();
+  const pageTitle = rawShopName
+    ? `${rawShopName} (@${shop.username}) | اینشاپ`
+    : `@${shop.username} | اینشاپ`;
+
+  return (
+    <>
+      <title>{pageTitle}</title>
+      <ProfileView profile={shop} isOwner={isOwner} />
+    </>
+  );
 }

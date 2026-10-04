@@ -36,6 +36,10 @@ export function getBaseUrl(overrideUrl?: string): string {
   }
 
   // 2. Node.js environment variable check (SSR / Node.js runtime)
+  if (process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL.replace(/\/$/, '');
+  }
+
   const appEnv = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
   if (appEnv === 'dev' || appEnv === 'development') {
     return (process.env.DEV_API_URL || process.env.NEXT_PUBLIC_DEV_API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.dev.inshop.social').replace(/\/$/, '');

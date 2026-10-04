@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Post } from '@/features/posts/components/Post';
 import type { BasePostData } from '@/features/posts/components/Post/types';
 import { usePublicPostById, type PublicPost } from '@/features/posts/services/publicPostService';
+import { extractPostTitle } from '@/features/posts/utils/formatDescription';
 import { PublicPostMenuDrawer } from './components/PublicPostMenuDrawer';
 
 interface Props {
@@ -81,7 +82,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
 
           {/* Bottom Action CTA */}
           <div className="relative z-10 w-full max-w-xs mx-auto flex flex-col items-center gap-4 mt-auto">
-            <Link href="/" className="w-full">
+            <Link href="/" className="w-full" prefetch={false}>
               <Button
                 id="btn-home-not-found"
                 variant="filled"
@@ -103,6 +104,18 @@ export default function PublicPostView({ postId, initialPost }: Props) {
   const owner = post.owner || post.shop;
   const username = owner?.username || '';
   const shopHref = username ? `/@${username}` : '#';
+  const rawShopName = owner?.shopName?.trim();
+  const shopName = rawShopName
+    ? rawShopName.startsWith('فروشگاه')
+      ? rawShopName
+      : `فروشگاه ${rawShopName}`
+    : undefined;
+  const postTitle = extractPostTitle(post.description);
+  const pageTitle = postTitle
+    ? `${postTitle}${shopName ? ` - ${shopName}` : ''} | اینشاپ`
+    : shopName
+      ? `${shopName} | اینشاپ`
+      : 'پست | اینشاپ';
 
   const basePostData: BasePostData = {
     id: post.id,
@@ -124,6 +137,7 @@ export default function PublicPostView({ postId, initialPost }: Props) {
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
+      <title>{pageTitle}</title>
       <Header.Root>
         <Header.Back id="public-post-back-btn" />
         <Header.Title>پست</Header.Title>

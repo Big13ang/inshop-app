@@ -49,6 +49,7 @@ jest.mock('sonner', () => ({
 
 jest.mock('@/env', () => ({
   env: {
+    NODE_ENV: 'test',
     NEXT_PUBLIC_API_URL: 'http://localhost:3000',
     NEXT_PUBLIC_CDN_URL: 'http://localhost:9000/inshop-uploads',
     NEXT_PUBLIC_DEBUG_AUTH: 'false',

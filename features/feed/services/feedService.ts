@@ -1,5 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, type QueryClient } from '@tanstack/react-query';
 import { http } from '@/lib/utils';
+
 
 export interface FeedPostOwner {
   shopName: string;
@@ -98,3 +99,10 @@ export function useInfiniteFeedPosts(limit: number = 15) {
     posts: query.data?.posts ?? [],
   };
 }
+
+export function getCachedFeedPosts(queryClient: QueryClient): BackendFeedPost[] {
+  return queryClient
+    .getQueriesData<{ pages?: Array<{ data?: BackendFeedPost[] }> }>({ queryKey: ['posts', 'feed'] })
+    .flatMap(([, data]) => data?.pages?.flatMap((page) => page.data ?? []) ?? []);
+}
+

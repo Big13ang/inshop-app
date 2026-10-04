@@ -4,6 +4,10 @@ import { UnverifiedSellerView } from '@/features/profile/unverified/UnverifiedSe
 
 export const metadata: Metadata = {
   title: 'فروشنده تأیید نشده',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function UnverifiedProfilePage() {

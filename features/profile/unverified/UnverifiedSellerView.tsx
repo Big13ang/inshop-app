@@ -49,7 +49,7 @@ export function UnverifiedSellerView() {
 
         {/* Home Button centered within page content */}
         <div className="w-full max-w-xs pt-2">
-          <Link href="/" className="w-full">
+          <Link href="/" className="w-full" prefetch={false}>
             <Button
               id="btn-go-home-unverified"
               variant="filled"

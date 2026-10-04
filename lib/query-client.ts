@@ -7,6 +7,8 @@ function makeQueryClient() {
         // SSR queries should typically have a stale time above 0
         // to avoid refetching immediately on the client
         staleTime: 60 * 1000,
+        refetchOnWindowFocus: false,
+        retry: 1,
       },
       dehydrate: {
         // Include pending queries in dehydration

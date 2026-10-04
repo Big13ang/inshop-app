@@ -5,8 +5,8 @@ import { USERNAME_REGEX } from "@/features/profile/edit/editProfileSchema";
 import { PublicProfileView } from "@/features/profile/overview/PublicProfileView";
 import { ProfileOverviewSkeleton } from "@/features/profile/components/ProfileSkeleton";
 import { getPublicSellerProfile } from "@/features/profile/services/profileServerService";
-
 import { constructMetadata } from "@/lib/utils/metadata";
+import { Result } from "@/lib/utils/result";
 
 interface ProfilePageProps {
     params: Promise<{ handle: string }>;
@@ -18,23 +18,27 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     if (!handle.startsWith("@")) return {};
 
     const username = handle.slice(1);
-    const data = await getPublicSellerProfile(username);
+    const dataResult = await Result.try(() => getPublicSellerProfile(username));
+    const data = dataResult.ok ? dataResult.value : null;
 
     if (!data?.shop) {
         return constructMetadata({
-            title: 'صفحه پیدا نشد',
-            description: 'این پروفایل وجود ندارد یا حذف شده است.',
-            noIndex: true,
+            title: `@${username}`,
+            description: `مشاهده پروفایل و محصولات فروشگاه @${username} در اینشاپ`,
         });
     }
 
     const profile = data.shop;
+    const rawShopName = profile.shopName?.trim();
+    const title = rawShopName ? `${rawShopName} (@${profile.username})` : `@${profile.username}`;
+    const description = profile.bio?.trim()
+        ? profile.bio.trim().slice(0, 160)
+        : `مشاهده محصولات و خرید آنلاین از ${rawShopName || `@${profile.username}`} در اینشاپ`;
 
     return constructMetadata({
-        title: `@${profile.username}`,
-        description: profile.bio || undefined,
+        title,
+        description,
         image: profile.profilePhotoUrl,
-        shopName: profile.shopName,
     });
 }
 
@@ -52,7 +56,8 @@ async function ProfileHandleContent({ params }: ProfilePageProps) {
         notFound();
     }
 
-    const initialData = await getPublicSellerProfile(username);
+    const dataResult = await Result.try(() => getPublicSellerProfile(username));
+    const initialData = dataResult.ok ? dataResult.value : null;
 
     return <PublicProfileView username={username} initialData={initialData} />;
 }
@@ -64,3 +69,4 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         </Suspense>
     );
 }
+

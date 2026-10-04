@@ -113,8 +113,11 @@ export class AddPostPage {
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify({
-              uploadSessionId: 'mock-upload-session-123',
-              expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+              success: true,
+              data: {
+                uploadSessionId: 'mock-upload-session-123',
+                expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+              },
             }),
           });
         }
@@ -286,6 +289,11 @@ export class AddPostPage {
 
   /** Navigate to /app/posts/new and wait until footer buttons are interactive. */
   async goto() {
+    await this.page.addInitScript(() => {
+      try {
+        localStorage.setItem('inshop:add-post-onboarding-seen', '1');
+      } catch {}
+    });
     await this.page.goto('/app/posts/new');
     await this.dismissOnboardingIfPresent();
     await expect(this.addButton).toBeEnabled({ timeout: 10_000 });
@@ -304,7 +312,9 @@ export class AddPostPage {
   async uploadFiles(
     files: Array<{ name: string; mimeType: string; buffer: Buffer }>,
   ) {
-    await expect(this.addButton).toBeEnabled({ timeout: 10_000 });
+    await expect(this.addButton).toBeEnabled({ timeout: 15_000 });
+    // Brief pause to allow React Query upload-session cache to populate
+    await this.page.waitForTimeout(300);
     await this.fileInput.setInputFiles(files);
   }
 

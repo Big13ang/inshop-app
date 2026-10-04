@@ -1,31 +1,37 @@
-import { cache } from 'react';
+import { cacheLife, cacheTag } from 'next/cache';
 import { cookies } from 'next/headers';
 import { http, Result, type ApiResponse } from '@/lib/utils';
 import type { UserMe } from './profileService';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { debugAuth } from '@/lib/utils/authDebug';
 
-export const getPublicSellerProfile = cache(
-  async (username: string): Promise<SellerPostsByUsernameData | null> => {
-    const trimmed = (username || '').trim();
-    if (!trimmed) return null;
+export async function getPublicSellerProfile(
+  username: string
+): Promise<SellerPostsByUsernameData | null> {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(`seller-${username.trim().toLowerCase()}`);
 
-    const resResult = await Result.try(
-      http.get<ApiResponse<SellerPostsByUsernameData>>(
-        `/posts/seller/username/${encodeURIComponent(trimmed)}`
-      )
-    );
+  const trimmed = (username || '').trim();
+  if (!trimmed) return null;
 
-    if (!resResult.ok || !resResult.value?.data) {
-      if (!resResult.ok) {
-        console.warn(`[getPublicSellerProfile] Server fetch failed for "${trimmed}":`, resResult.error);
-      }
+  const resResult = await Result.try(
+    http.get<ApiResponse<SellerPostsByUsernameData>>(
+      `/posts/seller/username/${encodeURIComponent(trimmed)}`
+    )
+  );
+
+  if (!resResult.ok) {
+    const errorObj = resResult.error as { response?: { status?: number } } | undefined;
+    if (errorObj?.response?.status === 404) {
       return null;
     }
-
-    return resResult.value.data;
+    console.warn(`[getPublicSellerProfile] Server fetch transient error for "${trimmed}":`, resResult.error);
+    throw resResult.error;
   }
-);
+
+  return resResult.value?.data ?? null;
+}
 
 export const AUTH_COOKIE_KEYS = [
   'session_token',
