@@ -1,10 +1,28 @@
 /* eslint-disable @next/next/no-img-element */
-import { User, CreditCard, Calendar, Phone, Accessibility, Eye, VolumeX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  User,
+  CreditCard,
+  Calendar,
+  Phone,
+  Accessibility,
+  Eye,
+  VolumeX,
+  ShieldCheck,
+  MapPin,
+  Copy,
+  Edit3,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 import type { UserMe } from '@/features/profile/services/profileService';
 import { formatPersianDisplayDate, toPersianDigits } from '@/components/ui/PersianDatePicker/persianDateUtils';
+import { PROFILE_ROUTES } from '../../constants';
 
 export interface UserBioInfoProps {
   user: UserMe;
+  onEditProfile?: () => void;
 }
 
 function extractNameAndFamily(user: UserMe): { firstName: string; lastName: string } {
@@ -34,22 +52,44 @@ function extractNameAndFamily(user: UserMe): { firstName: string; lastName: stri
   };
 }
 
-export function UserBioInfo({ user }: UserBioInfoProps) {
+export function UserBioInfo({ user, onEditProfile }: UserBioInfoProps) {
+  const router = useRouter();
   const { firstName, lastName } = extractNameAndFamily(user);
   const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
   const displayName = fullName || user.name || 'کاربر این‌شاپ';
   const phoneNumber = user.profile?.phoneNumber;
   const nationalId = user.nationalId || user.profile?.nationalIdNumber;
   const birthDate = user.birthDatePersian;
+  const bio = (user.description || user.businessData?.bio || '').trim();
+  const province = user.profile?.province?.trim();
+  const city = user.profile?.city?.trim();
+  const location = [province, city].filter(Boolean).join('، ');
+
   const hasAnyAccessibility = Boolean(
     user.usesWheelchair || user.isBlindOrLowVision || user.isDeafOrHardOfHearing
   );
 
+  const handleEdit = () => {
+    if (onEditProfile) {
+      onEditProfile();
+    } else {
+      router.push(PROFILE_ROUTES.edit);
+    }
+  };
+
+  const handleCopyPhoneNumber = async () => {
+    if (!phoneNumber) return;
+    await copyToClipboard(phoneNumber, {
+      onSuccess: () => toast.success('شماره تماس کپی شد'),
+      onError: () => toast.error('خطا در کپی شماره تماس'),
+    });
+  };
+
   return (
     <div className="flex flex-col text-right w-full" dir="rtl">
-      {/* 1. Header Identity: Avatar & User Title */}
-      <div className="flex items-center gap-3.5 mb-3.5">
-        <div className="size-14 rounded-full overflow-hidden bg-surface-l2 border border-outline/30 flex items-center justify-center text-secondary shrink-0 shadow-xs">
+      {/* 1. Hero Identity: Avatar & User Metadata */}
+      <div className="flex items-center gap-4 py-1">
+        <div className="size-20 rounded-full overflow-hidden bg-surface-l1 border-2 border-outline/20 flex items-center justify-center text-secondary shrink-0 shadow-xs">
           {user.profilePicture ? (
             <img
               src={user.profilePicture}
@@ -57,63 +97,97 @@ export function UserBioInfo({ user }: UserBioInfoProps) {
               className="size-full object-cover"
             />
           ) : (
-            <User className="size-7 text-secondary/70" aria-hidden="true" />
+            <User className="size-9 text-secondary/60" aria-hidden="true" />
           )}
         </div>
 
-        <div className="flex flex-col gap-1 min-w-0">
-          <h2 className="text-base font-bold text-foreground truncate">
+        <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+          <h2 className="text-lg font-bold text-foreground truncate tracking-tight">
             {displayName}
           </h2>
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-l1 border border-outline/25 text-[10px] font-semibold text-secondary w-fit">
-            حساب کاربری شخصی
-          </span>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-surface-l1 border border-outline/25 text-[11px] font-semibold text-secondary">
+              حساب کاربری شخصی
+            </span>
+
+            {phoneNumber && (
+              <span
+                className="text-xs font-semibold text-secondary/80 font-sans tracking-wide"
+                dir="ltr"
+              >
+                {toPersianDigits(phoneNumber)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 2. Structured Information Card */}
-      <div className="rounded-2xl border border-outline/30 bg-surface-l3 p-3.5 shadow-raised space-y-3">
-        {/* Separated Name and Family */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-l1/70 border border-outline/20">
-            <span className="text-[11px] font-medium text-secondary flex items-center gap-1">
-              <User className="size-3 text-secondary/70" aria-hidden="true" />
-              <span>نام</span>
-            </span>
-            <span className="text-xs font-bold text-foreground truncate">
-              {firstName || <span className="text-secondary/50 font-normal">ثبت‌نشده</span>}
-            </span>
-          </div>
+      {/* 2. User Bio / Description (if provided) */}
+      {bio && (
+        <div className="mt-3 text-right">
+          <p className="text-[13px] text-secondary leading-6 whitespace-pre-wrap">
+            {bio}
+          </p>
+        </div>
+      )}
 
-          <div className="flex flex-col gap-1 p-2.5 rounded-xl bg-surface-l1/70 border border-outline/20">
-            <span className="text-[11px] font-medium text-secondary flex items-center gap-1">
-              <User className="size-3 text-secondary/70" aria-hidden="true" />
-              <span>نام خانوادگی</span>
-            </span>
-            <span className="text-xs font-bold text-foreground truncate">
-              {lastName || <span className="text-secondary/50 font-normal">ثبت‌نشده</span>}
-            </span>
-          </div>
+      {/* 3. Personal & Contact Details Card */}
+      <div className="mt-3.5 rounded-2xl border border-outline/25 bg-surface-l3 p-3.5 shadow-raised space-y-3">
+        <div className="flex items-center gap-1.5 pb-2 border-b border-outline/15 text-xs font-bold text-foreground">
+          <ShieldCheck className="size-4 text-secondary/80" aria-hidden="true" />
+          <span>اطلاعات هویتی و تماس</span>
         </div>
 
-        {/* Contact and Identification Details */}
-        <div className="space-y-2 pt-1">
+        <div className="space-y-2.5 divide-y divide-outline/10 text-xs">
+          {/* نام و نام خانوادگی */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-2 text-secondary">
+              <div className="size-7 rounded-lg bg-surface-l1 flex items-center justify-center text-secondary/70 shrink-0">
+                <User className="size-3.5" aria-hidden="true" />
+              </div>
+              <span className="font-medium text-[11px]">نام و نام خانوادگی</span>
+            </div>
+            <span className="font-bold text-foreground text-xs truncate max-w-[55%]">
+              {displayName}
+            </span>
+          </div>
+
+          {/* شماره تماس همراه */}
           {phoneNumber && (
-            <div className="flex items-center justify-between text-xs py-1.5 border-t border-outline/15">
+            <div className="flex items-center justify-between pt-2.5">
               <div className="flex items-center gap-2 text-secondary">
-                <Phone className="size-3.5 text-secondary/70 shrink-0" aria-hidden="true" />
+                <div className="size-7 rounded-lg bg-surface-l1 flex items-center justify-center text-secondary/70 shrink-0">
+                  <Phone className="size-3.5" aria-hidden="true" />
+                </div>
                 <span className="font-medium text-[11px]">شماره تماس</span>
               </div>
-              <span className="font-sans font-bold text-foreground text-xs" dir="ltr">
-                {toPersianDigits(phoneNumber)}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-sans font-bold text-foreground text-xs" dir="ltr">
+                  {toPersianDigits(phoneNumber)}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyPhoneNumber}
+                  title="کپی شماره تماس"
+                  aria-label="کپی شماره تماس"
+                  className="size-6 rounded-md text-secondary hover:text-foreground hover:bg-surface-l1 transition-colors"
+                >
+                  <Copy className="size-3" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
           )}
 
+          {/* کد ملی */}
           {nationalId && (
-            <div className="flex items-center justify-between text-xs py-1.5 border-t border-outline/15">
+            <div className="flex items-center justify-between pt-2.5">
               <div className="flex items-center gap-2 text-secondary">
-                <CreditCard className="size-3.5 text-secondary/70 shrink-0" aria-hidden="true" />
+                <div className="size-7 rounded-lg bg-surface-l1 flex items-center justify-center text-secondary/70 shrink-0">
+                  <CreditCard className="size-3.5" aria-hidden="true" />
+                </div>
                 <span className="font-medium text-[11px]">کد ملی</span>
               </div>
               <span className="font-sans font-bold text-foreground text-xs" dir="ltr">
@@ -122,10 +196,13 @@ export function UserBioInfo({ user }: UserBioInfoProps) {
             </div>
           )}
 
+          {/* تاریخ تولد */}
           {birthDate && (
-            <div className="flex items-center justify-between text-xs py-1.5 border-t border-outline/15">
+            <div className="flex items-center justify-between pt-2.5">
               <div className="flex items-center gap-2 text-secondary">
-                <Calendar className="size-3.5 text-secondary/70 shrink-0" aria-hidden="true" />
+                <div className="size-7 rounded-lg bg-surface-l1 flex items-center justify-center text-secondary/70 shrink-0">
+                  <Calendar className="size-3.5" aria-hidden="true" />
+                </div>
                 <span className="font-medium text-[11px]">تاریخ تولد</span>
               </div>
               <span className="font-sans font-bold text-foreground text-xs">
@@ -133,27 +210,44 @@ export function UserBioInfo({ user }: UserBioInfoProps) {
               </span>
             </div>
           )}
+
+          {/* استان و شهر */}
+          {location && (
+            <div className="flex items-center justify-between pt-2.5">
+              <div className="flex items-center gap-2 text-secondary">
+                <div className="size-7 rounded-lg bg-surface-l1 flex items-center justify-center text-secondary/70 shrink-0">
+                  <MapPin className="size-3.5" aria-hidden="true" />
+                </div>
+                <span className="font-medium text-[11px]">استان و شهر</span>
+              </div>
+              <span className="font-bold text-foreground text-xs truncate max-w-[55%]">
+                {location}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Accessibility Badges */}
+        {/* 4. Accessibility Preferences */}
         {hasAnyAccessibility && (
-          <div className="pt-2 border-t border-outline/15 flex flex-col gap-2">
-            <span className="text-[11px] font-medium text-secondary">دسترسی‌پذیری</span>
-            <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="pt-3 border-t border-outline/15 flex flex-col gap-2">
+            <span className="text-[11px] font-medium text-secondary">
+              تنظیمات دسترسی‌پذیری
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
               {user.usesWheelchair && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-l1 border border-outline/25 rounded-full text-[11px] font-medium text-foreground shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-l1 border border-outline/25 rounded-full text-xs font-medium text-foreground shadow-2xs">
                   <Accessibility className="size-3.5 text-foreground" aria-hidden="true" />
                   <span>ویلچر</span>
                 </span>
               )}
               {user.isBlindOrLowVision && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-l1 border border-outline/25 rounded-full text-[11px] font-medium text-foreground shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-l1 border border-outline/25 rounded-full text-xs font-medium text-foreground shadow-2xs">
                   <Eye className="size-3.5 text-foreground" aria-hidden="true" />
                   <span>کم‌بینا</span>
                 </span>
               )}
               {user.isDeafOrHardOfHearing && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-l1 border border-outline/25 rounded-full text-[11px] font-medium text-foreground shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-l1 border border-outline/25 rounded-full text-xs font-medium text-foreground shadow-2xs">
                   <VolumeX className="size-3.5 text-foreground" aria-hidden="true" />
                   <span>کم‌شنوا</span>
                 </span>
@@ -161,6 +255,19 @@ export function UserBioInfo({ user }: UserBioInfoProps) {
             </div>
           </div>
         )}
+
+        {/* 5. Edit Profile Button inside the information card */}
+        <div className="pt-2 border-t border-outline/15">
+          <Button
+            id="user-profile-edit-btn"
+            variant="filled"
+            onClick={handleEdit}
+            className="w-full h-11 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-98"
+          >
+            <Edit3 className="size-4" aria-hidden="true" />
+            <span>ویرایش مشخصات</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

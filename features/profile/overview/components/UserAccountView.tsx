@@ -1,9 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Edit3 } from 'lucide-react';
 import MainFooter from '@/components/layout/MainFooter';
-import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES } from '../../constants';
 import type { UserMe } from '../../services/profileService';
 import { ProfileHeader } from './ProfileHeader';
@@ -61,24 +59,10 @@ export function UserAccountView({
             /> */}
 
             {/* 3. User Bio Info */}
-            <UserBioInfo user={user} />
+            <UserBioInfo user={user} onEditProfile={handleEditProfile} />
 
             {/* 4. Addresses Banner Card */}
             <UserAddressesBanner />
-
-            {/* 5. Full-width Edit Profile Button */}
-            <div className="w-full mt-4" dir="rtl">
-              <Button
-                id="user-profile-edit-btn"
-                variant="filled"
-                size="xl"
-                onClick={handleEditProfile}
-                className="w-full font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm active:scale-98"
-              >
-                <Edit3 className="size-4" aria-hidden="true" />
-                <span>ویرایش مشخصات</span>
-              </Button>
-            </div>
           </div>
 
           {/* Bottom Section: 3-Column Viewed Posts Grid with Infinite Scrolling */}
