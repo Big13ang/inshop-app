@@ -3,13 +3,12 @@
 
 import { useTransition, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { User } from 'lucide-react';
+import { User, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/features/profile/context/UserContext';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/lib/utils/media';
 import { HomeIcon } from '@/components/icons/HomeIcon';
-import { AddIcon } from '@/components/icons/AddIcon';
 import { ChatIcon } from '@/components/icons/ChatIcon';
 import Footer, { type FooterTabConfig } from './Footer';
 import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet';
@@ -17,7 +16,6 @@ import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet
 const ROUTES = {
     home: '/',
     profile: '/app/profile',
-    newPost: '/app/posts/new',
     login: '/auth/login',
 } as const;
 
@@ -42,6 +40,10 @@ export default function MainFooterNav() {
 
     function handleMessageClick() {
         toast.info('چت درون برنامه به‌زودی اضافه خواهد شد');
+    }
+
+    function handleTrackingClick() {
+        toast.info('امکان پیگیری محصول به‌زودی اضافه خواهد شد');
     }
 
     const tabs: FooterTabConfig[] = [
@@ -112,19 +114,25 @@ export default function MainFooterNav() {
             ),
         },
         {
-            id: ROUTES.newPost,
-            label: 'پست جدید',
-            onPress: navigate,
+            id: 'tracking',
+            label: 'پیگیری محصول - بزودی',
+            isActionButton: true,
+            onPress: handleTrackingClick,
             customRender: (isActive: boolean) => (
-                <span className="flex flex-col items-center">
-                    <AddIcon
+                <span className={cn(
+                    "relative inline-flex items-center justify-center size-8 !overflow-visible",
+                    "after:content-['بزودی'] after:absolute after:-top-2 after:-left-3",
+                    "after:rounded-full after:bg-primary after:px-1.5 after:py-0.5",
+                    "after:text-[9px] after:font-bold after:text-on-primary",
+                    "after:leading-none after:whitespace-nowrap after:pointer-events-none after:z-50"
+                )}>
+                    <Truck
                         data-testid="tab-icon"
-                        width={32}
-                        height={32}
                         className={cn(
                             'size-8',
                             isActive ? 'text-primary' : 'text-secondary',
                         )}
+                        strokeWidth={isActive ? 2.5 : 2}
                         aria-hidden="true"
                     />
                 </span>
