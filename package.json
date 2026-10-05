@@ -5,6 +5,7 @@
   "scripts": {
     "check": "tsgo --noEmit",
     "dev": "next dev -H 0.0.0.0 -p 4000",
+    "dev:remote": "node scripts/dev-proxy.mjs & next dev -H 0.0.0.0 -p 4000",
     "build": "next build && npm run build:pwa",
     "build:pwa": "serwist build serwist.config.mjs",
     "start": "next start",
