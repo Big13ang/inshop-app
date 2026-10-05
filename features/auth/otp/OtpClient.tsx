@@ -1,22 +1,36 @@
 'use client';
 
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import Otp from '@/features/auth/otp/Otp';
 import { useSendPhoneNumberOTPMutation } from '@/features/auth/hooks/useAuthMutations';
 
-interface OtpClientProps {
-  phone: string;
-}
+export function OtpClient() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const phone = searchParams.get('phone');
 
-export default function OtpClient({ phone }: OtpClientProps) {
+  useEffect(() => {
+    if (!phone) {
+      router.replace('/auth/login');
+    }
+  }, [phone, router]);
+
   const sendOtpMutation = useSendPhoneNumberOTPMutation();
 
   const handleResend = () => {
-    sendOtpMutation.mutate({ phoneNumber: phone });
+    if (phone) {
+      sendOtpMutation.mutate({ phoneNumber: phone });
+    }
   };
 
   const handleCompleteLogin = (_code: string) => {
     // Handled via main sign up / OTP form
   };
+
+  if (!phone) {
+    return null;
+  }
 
   return (
     <Otp

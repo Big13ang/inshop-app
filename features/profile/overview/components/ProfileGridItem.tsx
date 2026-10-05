@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import Link from 'next/link';
-import type { SellerPost } from '@/features/posts/services/postsQueryService';
+import type { SellerPost } from '@/features/posts/types';
 import type { BackendFeedPost } from '@/features/feed/services/feedService';
 import type { PostResponseDto } from '@/features/search/types';
 import { getThumbnailUrl } from '@/lib/utils/media';
@@ -63,7 +63,7 @@ export function ProfileGridItem({ post }: Props) {
     'aspect-square overflow-hidden bg-surface relative block cursor-pointer outline-none focus:ring-1 focus:ring-zinc-800';
 
   return (
-    <Link href={`/p/${post.id}`} className={className}>
+    <Link href={`/p/${post.id}`} className={className} prefetch={false}>
       {content}
     </Link>
   );

@@ -5,6 +5,10 @@ import { ProfileEditSkeleton } from '@/features/profile/components/ProfileSkelet
 
 export const metadata: Metadata = {
   title: 'ویرایش پروفایل',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function EditProfilePage() {

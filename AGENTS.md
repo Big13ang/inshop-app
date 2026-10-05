@@ -67,6 +67,7 @@ Rules:
 ## Developer Directives
 
 - **RTK Usage**: Always prepend `rtk` to any shell command you run on this machine (e.g., `rtk git status`, `rtk npm test`).
+- **Exact Types from Backend (No Guessing or Piped Types)**: You MUST ALWAYS use exact, deterministic TypeScript types for all API responses, payloads, and DTOs. NEVER guess response shapes, NEVER use union/piped fallback types (e.g., `TypeA | TypeB | TypeC`), and NEVER write speculative multi-branch runtime parsers. Always inspect the backend source code in `/data/InShop/inshop-back-end` (controllers, DTOs, and entities) or official API reference docs to read the exact response contract and implement it directly in the frontend types.
 - **No Try/Catch — Mandatory Result Pattern**: You MUST NOT use standard `try/catch` blocks anywhere in client-side code, services, or utils. Always use the `Result` pattern (`Result.try`, `Result.ok`, `Result.err`, `Result.unwrap`) for clean, exception-free error handling.
 - **Mandatory HTTP Client Usage**: All client-side network requests anywhere in the app MUST use `http` (for general API requests) or `authHttp` (for authentication requests) from `@/lib/utils`. Direct `fetch` API calls or unapproved third-party callers are strictly forbidden.
 - **Extract Functions**: Avoid defining inline functions that span more than one line (e.g., multiline callback handlers or event listeners). Always extract them into named helper functions/handlers within the component or module to improve readability and testability.

@@ -1,8 +1,62 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
-import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import type { SellerPostsByUsernameData } from '@/features/posts/types';
+import { getCachedFeedPosts } from '@/features/feed/services/feedService';
+import type { PublicPost } from '@/features/posts/services/publicPostService';
+
+export function findSellerInQueryCache(
+  queryClient: QueryClient,
+  username: string
+): SellerPostsByUsernameData | undefined {
+  const normalized = username.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  // 1. Direct profile cache
+  const exact = queryClient.getQueryData<SellerPostsByUsernameData>(queryKeys.user.byUsername(username.trim()));
+  if (exact?.shop) return exact;
+
+  // 2. Feed posts cache
+  const feedMatch = getCachedFeedPosts(queryClient).find(
+    (post) => post.owner?.username?.toLowerCase() === normalized
+  );
+  if (feedMatch?.owner) {
+    return {
+      shop: {
+        username: feedMatch.owner.username,
+        shopName: feedMatch.owner.shopName,
+        profilePhotoUrl: feedMatch.owner.profileUrl || null,
+      },
+      products: [],
+    };
+  }
+
+  // 3. Post details cache
+  const detailOwner = queryClient
+    .getQueriesData<PublicPost>({ queryKey: ['posts', 'public-detail'] })
+    .map(([, post]) => post?.owner || post?.shop)
+    .find((owner) => owner?.username?.toLowerCase() === normalized);
+
+
+  if (detailOwner) {
+    return {
+      shop: {
+        username: detailOwner.username,
+        shopName: detailOwner.shopName,
+        profilePhotoUrl: detailOwner.profilePhotoUrl || null,
+        bio: detailOwner.bio || null,
+      },
+      products: [],
+    };
+  }
+
+  return undefined;
+}
+
+
 
 export interface SellerProfilePhone {
   id: string;
@@ -68,12 +122,23 @@ export interface UserMe {
   isVerifiedSeller: boolean;
   sellerActivatedAt: string | null;
   isAdmin: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
+  description?: string | null;
+  nationalId?: string | null;
+  birthDatePersian?: string | null;
+  usesWheelchair?: boolean;
+  isBlindOrLowVision?: boolean;
+  isDeafOrHardOfHearing?: boolean;
+  profilePicture?: string | null;
   profile?: UserPreRegisterProfile | null;
   businessData?: UserPreRegisterBusinessData | null;
   sellerProfile: SellerProfile | null;
 }
 
 export type UserProfile = UserMe;
+
+export type GetMeResponse = ApiResponse<UserMe>;
 
 export interface CheckUsernameResponse {
   username: string;
@@ -150,7 +215,65 @@ export async function fetchMe(): Promise<UserProfile | null> {
   return result.value.data;
 }
 
+export interface UpdateUserAccountPayload {
+  firstName?: string | null;
+  lastName?: string | null;
+  nationalId?: string | null;
+  birthDatePersian?: string | null;
+  description?: string | null;
+  usesWheelchair?: boolean;
+  isBlindOrLowVision?: boolean;
+  isDeafOrHardOfHearing?: boolean;
+}
+
+export async function updateUserAccount(payload: UpdateUserAccountPayload): Promise<UserMe> {
+  const allowedKeys: readonly (keyof UpdateUserAccountPayload)[] = [
+    'firstName',
+    'lastName',
+    'description',
+    'nationalId',
+    'birthDatePersian',
+    'usesWheelchair',
+    'isBlindOrLowVision',
+    'isDeafOrHardOfHearing',
+  ];
+
+  const sanitizedPayload: Partial<Record<keyof UpdateUserAccountPayload, unknown>> = {};
+  for (const key of allowedKeys) {
+    if (payload[key] !== undefined) {
+      sanitizedPayload[key] = payload[key];
+    }
+  }
+
+  const res = await authHttp.patch<ApiResponse<UserMe>>('/me', sanitizedPayload);
+  return res.data;
+}
+
+export function useUpdateUserAccount(onSaved?: () => void) {
+  const queryClient = useQueryClient();
+
+  const handleSuccess = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.me }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.profile }),
+    ]);
+    toast.success('اطلاعات حساب کاربری با موفقیت ذخیره شد.');
+    onSaved?.();
+  };
+
+  const handleError = (error: Error) => {
+    toast.error(error?.message || ERROR_MESSAGES.profile.updateFailed);
+  };
+
+  return useMutation({
+    mutationFn: updateUserAccount,
+    onSuccess: handleSuccess,
+    onError: handleError,
+  });
+}
+
 export const profileService = {
+  useUpdateUserAccount,
   useMe(options?: { initialData?: UserProfile | null; initialDataUpdatedAt?: number }) {
     return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
@@ -177,8 +300,12 @@ export const profileService = {
     username?: string,
     options?: { initialData?: SellerPostsByUsernameData; enabled?: boolean }
   ) {
+    const queryClient = useQueryClient();
     const trimmed = (username || '').trim();
-    const { enabled = true, ...restOptions } = options || {};
+    const { enabled = true, initialData, ...restOptions } = options || {};
+
+    const cachedSeller = findSellerInQueryCache(queryClient, trimmed);
+    const resolvedInitialData = initialData ?? cachedSeller ?? undefined;
 
     return useQuery<SellerPostsByUsernameData>({
       queryKey: queryKeys.user.byUsername(trimmed),
@@ -189,6 +316,8 @@ export const profileService = {
         return res.data;
       },
       enabled: enabled && trimmed.length > 0,
+      initialData: resolvedInitialData,
+      initialDataUpdatedAt: initialData ? Date.now() : 0,
       staleTime: 1000 * 60 * 5,
       retry: false,
       ...restOptions,

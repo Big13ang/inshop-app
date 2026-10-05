@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
-import { getServerProfile } from "@/features/profile/services/profileServerService";
-import { Suspense } from "react";
 import IosViewportFixer from "@/components/utils/IosViewportFixer";
 import Analytics from "@/components/utils/Analytics";
 
@@ -24,6 +22,10 @@ export const metadata: Metadata = {
   description:
     "اینشاپ کالاهای باکیفیت فروشگاههای مستقل را یکجا پیش روی شما میگذارد تا راحتتر کشف کنید، دقیقتر بررسی کنید و مطمئنتر بخرید.",
   applicationName: "اینشاپ",
+  robots: {
+    index: true,
+    follow: true,
+  },
   // enamad validation & Bing Webmaster verification
   other: {
     enamad: "26426690",
@@ -64,10 +66,6 @@ export const metadata: Metadata = {
   },
 };
 
-async function ProvidersWithProfile({ children }: { children: React.ReactNode }) {
-  const user = await getServerProfile();
-  return <Providers initialUser={user}>{children}</Providers>;
-}
 
 export default function RootLayout({
   children,
@@ -90,11 +88,9 @@ export default function RootLayout({
       <body className="flex flex-col overflow-hidden w-full max-w-full md:items-center bg-background">
         <div className="safe-area h-full w-full max-w-full md:max-w-app md:shadow-app-shell overflow-x-hidden">
           <div className="app-shell flex flex-col h-full w-full overflow-x-hidden overflow-y-hidden md:bg-background">
-            <Suspense fallback={<div className="h-full w-full bg-background" />}>
-              <ProvidersWithProfile>
-                {children}
-              </ProvidersWithProfile>
-            </Suspense>
+            <Providers>
+              {children}
+            </Providers>
           </div>
         </div>
         <Toaster position="top-center" dir="rtl" />

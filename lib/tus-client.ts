@@ -1,7 +1,6 @@
 import * as tus from 'tus-js-client';
 import { Result } from '@/lib/utils'; // Project's Result helper
 import { env } from '@/env';
-import { getBaseUrl } from './utils/httpConfig';
 import { FetchHttpStack } from './fetchHttpStack';
 
 export interface TusUploadOptions {

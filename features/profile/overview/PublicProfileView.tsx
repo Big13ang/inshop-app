@@ -1,9 +1,9 @@
 'use client';
 
 import { notFound } from 'next/navigation';
-import ProfileView from './ProfileView';
+import { ProfileView } from './ProfileView';
 import { profileService } from '../services/profileService';
-import type { SellerPostsByUsernameData } from '@/features/posts/services/postsQueryService';
+import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { useUser } from '../context/UserContext';
 import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
 
@@ -12,7 +12,7 @@ interface PublicProfileViewProps {
   initialData?: SellerPostsByUsernameData | null;
 }
 
-export default function PublicProfileView({ username, initialData }: PublicProfileViewProps) {
+export function PublicProfileView({ username, initialData }: PublicProfileViewProps) {
   const { data: profileData, isLoading } = profileService.useUserProfile(username, {
     enabled: Boolean(username),
     initialData: initialData ?? undefined,
@@ -31,5 +31,16 @@ export default function PublicProfileView({ username, initialData }: PublicProfi
   if (!isLoading && !activeData?.shop) notFound();
   if (!activeData?.shop) return <ProfileOverviewSkeleton />;
 
-  return <ProfileView profile={activeData.shop} isOwner={isOwner} />;
+  const shop = activeData.shop;
+  const rawShopName = shop.shopName?.trim();
+  const pageTitle = rawShopName
+    ? `${rawShopName} (@${shop.username}) | اینشاپ`
+    : `@${shop.username} | اینشاپ`;
+
+  return (
+    <>
+      <title>{pageTitle}</title>
+      <ProfileView profile={shop} isOwner={isOwner} />
+    </>
+  );
 }

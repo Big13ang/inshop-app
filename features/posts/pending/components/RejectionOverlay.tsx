@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { AlertOctagon } from 'lucide-react';
 import { text } from '../constants';
 import { Button } from '@/components/ui/button';
-import RejectionDetailsList from './RejectionDetailsList';
+import { RejectionDetailsList } from './RejectionDetailsList';
 
 interface RejectionOverlayProps {
   rejectionReason?: string;
   onDismiss: () => void;
 }
 
-export default function RejectionOverlay({ rejectionReason, onDismiss }: RejectionOverlayProps) {
+export function RejectionOverlay({ rejectionReason, onDismiss }: RejectionOverlayProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useInView } from 'react-intersection-observer';
-import { postsQueryService } from '@/features/posts/services/postsQueryService';
+import { useInfinitePostsByUsername } from '@/features/posts/services/sellerPostsService';
 import { ProfileEmptyState } from './ProfileGridEmptyState';
 import { ProfileGridItem } from './ProfileGridItem';
 
@@ -9,7 +9,7 @@ interface ProfileGridFeedProps {
   username?: string;
 }
 
-export default function ProfileGridFeed({
+export function ProfileGridFeed({
   username,
 }: ProfileGridFeedProps) {
   const {
@@ -17,7 +17,7 @@ export default function ProfileGridFeed({
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = postsQueryService.useInfinitePostsByUsername(username);
+  } = useInfinitePostsByUsername(username);
 
   const posts = infiniteData
     ? infiniteData.pages.flatMap((page) => page.data)

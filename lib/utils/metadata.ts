@@ -20,6 +20,7 @@ const cleanTitlePart = (str?: string | null): string | undefined => {
   if (!trimmed) return undefined;
   // Strip trailing " | اینشاپ" or " | SITE_NAME" if present
   trimmed = trimmed.replace(new RegExp(`\\s*\\|\\s*${SITE_NAME}\\s*$`, 'i'), '').trim();
+  trimmed = trimmed.replace(new RegExp(`\\s*در\\s*${SITE_NAME}\\s*$`, 'i'), '').trim();
   return trimmed || undefined;
 };
 
@@ -35,7 +36,17 @@ const cleanTitlePart = (str?: string | null): string | undefined => {
 export const formatTitle = (title?: string, shopName?: string | null): string | undefined => {
   const cleanTitle = cleanTitlePart(title);
   const cleanShop = cleanTitlePart(shopName);
-  const heading = [cleanTitle, cleanShop].filter(Boolean).join(' - ');
+
+  let heading: string | undefined;
+  if (cleanTitle && cleanShop) {
+    if (cleanTitle === cleanShop || cleanTitle.includes(cleanShop)) {
+      heading = cleanTitle;
+    } else {
+      heading = `${cleanTitle} - ${cleanShop}`;
+    }
+  } else {
+    heading = cleanTitle || cleanShop;
+  }
 
   if (!heading || heading === SITE_NAME || heading === DEFAULT_TITLE) {
     return undefined;
@@ -53,6 +64,11 @@ export const formatDescription = (desc?: string, shopName?: string | null): stri
   return shopName ? `${DEFAULT_DESCRIPTION} - ${shopName}` : DEFAULT_DESCRIPTION;
 };
 
+export function isDevEnvironment(): boolean {
+  const env = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
+  return env === 'development' || env === 'dev';
+}
+
 export function constructMetadata({
   title,
   description = DEFAULT_DESCRIPTION,
@@ -64,6 +80,7 @@ export function constructMetadata({
   const metaTitle = formatTitle(title, shopName);
   const metaDesc = formatDescription(description, shopName);
   const images = image ? [{ url: image }] : [];
+  const shouldNoIndex = noIndex || isDevEnvironment();
 
   return {
     ...(metaTitle ? { title: metaTitle } : {}),
@@ -80,9 +97,9 @@ export function constructMetadata({
       description: metaDesc,
       images: image ? [image] : [],
     },
-    ...(noIndex && {
-      robots: { index: false, follow: false },
-    }),
+    robots: shouldNoIndex
+      ? { index: false, follow: false }
+      : { index: true, follow: true },
   };
 }
 

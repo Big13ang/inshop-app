@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "ورود به حساب کاربری",
+  title: "ورود به حساب کاربری",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function AuthLayout({

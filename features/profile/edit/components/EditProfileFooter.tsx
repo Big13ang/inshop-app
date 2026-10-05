@@ -4,14 +4,14 @@ import { Check, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { text } from '../../constants';
 
-interface EditProfileFooterProps {
+export interface EditProfileFooterProps {
   formId?: string;
   isSaving?: boolean;
   onCancel?: () => void;
   submitText?: string;
 }
 
-export default function EditProfileFooter({
+export function EditProfileFooter({
   formId = 'edit-profile-form',
   isSaving = false,
   onCancel,
@@ -20,7 +20,7 @@ export default function EditProfileFooter({
   const label = submitText || text.edit.saveAction;
 
   return (
-    <footer className="sticky bottom-0 left-0 right-0 z-40 w-full shrink-0 border-t border-zinc-200 bg-surface/95 p-3.5 shadow-lg backdrop-blur-md">
+    <footer className="sticky bottom-0 left-0 right-0 z-40 w-full shrink-0 border-t border-outline/30 bg-surface-l3/95 p-3.5 shadow-lg backdrop-blur-md">
       <div className="mx-auto flex max-w-lg items-center justify-between gap-3" dir="rtl">
         {/* Right Button: Save / Create */}
         <Button
@@ -46,7 +46,7 @@ export default function EditProfileFooter({
           variant="outline"
           onClick={onCancel}
           disabled={isSaving}
-          className="flex-1 shrink min-w-0 h-12 font-bold text-xs rounded-xl gap-1.5 border border-zinc-200 active:scale-98"
+          className="flex-1 shrink min-w-0 h-12 font-bold text-xs rounded-xl gap-1.5 border border-outline/40 active:scale-98"
         >
           <span>{text.edit.cancelAction}</span>
         </Button>
