@@ -20,7 +20,7 @@ interface Props {
   initialPost?: PublicPost | null;
 }
 
-export default function PublicPostView({ postId, initialPost }: Props) {
+export function PublicPostView({ postId, initialPost }: Props) {
   usePassiveFeedEvent({
     postId,
     eventType: RECOMMENDATION_EVENT_TYPE.OPEN,
@@ -193,4 +193,3 @@ export default function PublicPostView({ postId, initialPost }: Props) {
     </div>
   );
 }
-

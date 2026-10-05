@@ -102,7 +102,7 @@ function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps
 
 interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   ref?: React.Ref<HTMLDivElement>;
-  variant?: 'center' | 'drawer';
+  variant?: 'center' | 'drawer' | 'fullscreen';
   dragToDismiss?: boolean;
 }
 
@@ -120,6 +120,7 @@ function DialogContent({
   React.useEffect(() => {
     const node = contentRef.current;
     if (!node) return;
+    if (variant === 'fullscreen') return;
 
     if (variant === 'drawer') {
       gsap.to(node, {
@@ -198,6 +199,22 @@ function DialogContent({
     contentRef.current = node;
     assignRef(ref, node);
   };
+
+  if (variant === 'fullscreen') {
+    return (
+      <div
+        ref={setContentRef}
+        className={cn(
+          'fixed bottom-[var(--app-offset-bottom)] left-0 right-0 top-[var(--app-offset-top)] z-[101] mx-auto w-full max-w-[var(--container-app)] overflow-hidden bg-surface-l3 text-right font-sans',
+          className
+        )}
+        onClick={(event) => event.stopPropagation()}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  }
 
   if (variant === 'drawer') {
     return (
