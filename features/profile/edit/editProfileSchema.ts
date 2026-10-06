@@ -1,8 +1,20 @@
 import { z } from 'zod';
+import { toEnglishDigits } from '@/components/ui/PersianDatePicker/persianDateUtils';
 
 export const USERNAME_REGEX = /^(?!.*\.\.)(?!^\.)[a-zA-Z0-9._]{1,30}(?<!\.)$/;
 
-export const IRANIAN_SHOP_PHONE_REGEX = /^0[1-9]\d{9}$/;
+export const IRANIAN_SHOP_PHONE_REGEX = /^0[1-9]\d{9,10}$/;
+
+export function normalizeShopPhoneNumber(val: string): string {
+    const cleaned = toEnglishDigits(val?.trim() ?? '').replace(/[\s\-()]/g, '');
+    if (cleaned.startsWith('+98')) {
+        return `0${cleaned.slice(3)}`;
+    }
+    if (cleaned.startsWith('0098')) {
+        return `0${cleaned.slice(4)}`;
+    }
+    return cleaned;
+}
 
 export const profileSchema = z.object({
     shopName: z
@@ -11,9 +23,12 @@ export const profileSchema = z.object({
         .max(45, 'نام فروشگاه باید کمتر از 45 کاراکتر باشد'),
     shopPhoneNumber: z
         .string()
-        .regex(
-            IRANIAN_SHOP_PHONE_REGEX,
-            'شماره تماس معتبر نیست (مثال: 02155555555 یا 09123456789)'
+        .transform((val) => normalizeShopPhoneNumber(val))
+        .pipe(
+            z.string().regex(
+                IRANIAN_SHOP_PHONE_REGEX,
+                'شماره تماس معتبر نیست (مثال: 02155555555 یا 09123456789)'
+            )
         ),
     username: z
         .string()

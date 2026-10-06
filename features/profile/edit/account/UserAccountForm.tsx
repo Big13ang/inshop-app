@@ -1,6 +1,6 @@
 'use client';
 
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UserMe } from '@/features/profile/services/profileService';
 import {
@@ -16,19 +16,23 @@ export interface UserAccountFormProps {
   user: UserMe | null;
   formId?: string;
   onSubmit: (data: accountSchemaType) => void;
+  formMethods?: UseFormReturn<accountSchemaInput, unknown, accountSchemaType>;
 }
 
 export function UserAccountForm({
   user,
   formId = 'edit-account-form',
   onSubmit,
+  formMethods,
 }: UserAccountFormProps) {
-  const methods = useForm<accountSchemaInput, unknown, accountSchemaType>({
+  const internalMethods = useForm<accountSchemaInput, unknown, accountSchemaType>({
     resolver: zodResolver(accountSchema),
     mode: 'onChange',
     values: generateDefaultAccountValues(user),
+    resetOptions: { keepDirtyValues: false },
   });
 
+  const methods = formMethods ?? internalMethods;
   const handleSubmit = methods.handleSubmit(onSubmit);
 
   return (
@@ -40,3 +44,4 @@ export function UserAccountForm({
     </FormProvider>
   );
 }
+

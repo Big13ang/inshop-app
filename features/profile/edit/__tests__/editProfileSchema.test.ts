@@ -150,7 +150,36 @@ describe('profileSchema shopPhoneNumber validation', () => {
       expect(result.data.shopPhoneNumber).toBe('02188888888');
     }
   });
+
+  it.each([
+    ['07137515386', '11-digit Shiraz landline'],
+    ['021910999612', '12-digit VoIP/enterprise landline'],
+    ['02191099961', '11-digit VoIP/enterprise landline'],
+    ['09035703067', '11-digit Irancell mobile'],
+    ['09231045538', '11-digit RighTel mobile'],
+  ])('passes for valid shop number %s (%s)', (phoneNumber) => {
+    const result = profileSchema.safeParse({
+      ...validBaseProfile,
+      shopPhoneNumber: phoneNumber,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.shopPhoneNumber).toBe(phoneNumber);
+    }
+  });
+
+  it('normalizes Persian digits and spaces in shopPhoneNumber', () => {
+    const result = profileSchema.safeParse({
+      ...validBaseProfile,
+      shopPhoneNumber: '۰۲۱۹۱۰۹۹۹۶۱۲',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.shopPhoneNumber).toBe('021910999612');
+    }
+  });
 });
+
 
 describe('profileSchema shopName validation', () => {
   const validBaseProfile = {

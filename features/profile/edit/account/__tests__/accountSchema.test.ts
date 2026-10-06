@@ -37,13 +37,16 @@ describe('accountSchema validation', () => {
     }
   });
 
-  it('succeeds when all fields are empty or omitted (everything is optional)', () => {
-    const result = accountSchema.safeParse({});
+  it('succeeds when required firstName and lastName are provided and optional fields are omitted', () => {
+    const result = accountSchema.safeParse({
+      firstName: 'محمد',
+      lastName: 'رضایی',
+    });
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.firstName).toBe('');
-      expect(result.data.lastName).toBe('');
+      expect(result.data.firstName).toBe('محمد');
+      expect(result.data.lastName).toBe('رضایی');
       expect(result.data.birthDatePersian).toBe('');
       expect(result.data.usesWheelchair).toBe(false);
       expect(result.data.isBlindOrLowVision).toBe(false);
@@ -51,18 +54,59 @@ describe('accountSchema validation', () => {
     }
   });
 
-  it('succeeds when optional firstName and lastName are empty strings or null', () => {
-    const result = accountSchema.safeParse({
+  it('fails when firstName is empty, whitespace, null, or omitted', () => {
+    const emptyResult = accountSchema.safeParse({
+      ...baseValidData,
       firstName: '',
-      lastName: null,
-      birthDatePersian: '',
     });
+    expect(emptyResult.success).toBe(false);
+    if (!emptyResult.success) {
+      expect(emptyResult.error.issues.find((e) => e.path.includes('firstName'))?.message).toBe('نام الزامی است');
+    }
 
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.firstName).toBe('');
-      expect(result.data.lastName).toBe('');
-      expect(result.data.birthDatePersian).toBe('');
+    const whitespaceResult = accountSchema.safeParse({
+      ...baseValidData,
+      firstName: '   ',
+    });
+    expect(whitespaceResult.success).toBe(false);
+    if (!whitespaceResult.success) {
+      expect(whitespaceResult.error.issues.find((e) => e.path.includes('firstName'))?.message).toBe('نام الزامی است');
+    }
+
+    const omittedResult = accountSchema.safeParse({
+      lastName: 'رضایی',
+    });
+    expect(omittedResult.success).toBe(false);
+    if (!omittedResult.success) {
+      expect(omittedResult.error.issues.find((e) => e.path.includes('firstName'))?.message).toBe('نام الزامی است');
+    }
+  });
+
+  it('fails when lastName is empty, whitespace, null, or omitted', () => {
+    const emptyResult = accountSchema.safeParse({
+      ...baseValidData,
+      lastName: '',
+    });
+    expect(emptyResult.success).toBe(false);
+    if (!emptyResult.success) {
+      expect(emptyResult.error.issues.find((e) => e.path.includes('lastName'))?.message).toBe('نام خانوادگی الزامی است');
+    }
+
+    const whitespaceResult = accountSchema.safeParse({
+      ...baseValidData,
+      lastName: '   ',
+    });
+    expect(whitespaceResult.success).toBe(false);
+    if (!whitespaceResult.success) {
+      expect(whitespaceResult.error.issues.find((e) => e.path.includes('lastName'))?.message).toBe('نام خانوادگی الزامی است');
+    }
+
+    const omittedResult = accountSchema.safeParse({
+      firstName: 'محمد',
+    });
+    expect(omittedResult.success).toBe(false);
+    if (!omittedResult.success) {
+      expect(omittedResult.error.issues.find((e) => e.path.includes('lastName'))?.message).toBe('نام خانوادگی الزامی است');
     }
   });
 
@@ -148,7 +192,7 @@ describe('generateDefaultAccountValues', () => {
     });
   });
 
-  it('falls back to default empty strings when top-level fields are null', () => {
+  it('falls back to default empty strings when top-level fields are null and name is phone number', () => {
     const user: UserMe = {
       id: 'xsm61u9Bi10HFEqiqKiryqYwLJWQeshl',
       name: '09035703067',
@@ -178,4 +222,52 @@ describe('generateDefaultAccountValues', () => {
       isDeafOrHardOfHearing: false,
     });
   });
+
+  it('falls back to user.profile name and lastName when top-level fields are null', () => {
+    const user: UserMe = {
+      id: 'u-prereg',
+      name: '09123456789',
+      email: '09123456789@phone.inshop.local',
+      isVerifiedSeller: true,
+      sellerActivatedAt: '2026-08-01T10:00:00.000Z',
+      isAdmin: false,
+      firstName: null,
+      lastName: null,
+      profile: {
+        id: 10,
+        name: 'علی',
+        lastName: 'محمدی',
+        phoneNumber: '09123456789',
+        nationalIdNumber: '0012345678',
+        province: 'تهران',
+        city: 'تهران',
+        createdAt: '2026-08-01T10:00:00.000Z',
+        updatedAt: '2026-08-01T10:00:00.000Z',
+      },
+      sellerProfile: null,
+    };
+
+    const values = generateDefaultAccountValues(user);
+    expect(values.firstName).toBe('علی');
+    expect(values.lastName).toBe('محمدی');
+  });
+
+  it('falls back to user.name when firstName and lastName and profile are null and name is a full person name', () => {
+    const user: UserMe = {
+      id: 'u-name',
+      name: 'سارا احمدی',
+      email: 'sara@example.com',
+      isVerifiedSeller: false,
+      sellerActivatedAt: null,
+      isAdmin: false,
+      firstName: null,
+      lastName: null,
+      sellerProfile: null,
+    };
+
+    const values = generateDefaultAccountValues(user);
+    expect(values.firstName).toBe('سارا');
+    expect(values.lastName).toBe('احمدی');
+  });
 });
+
