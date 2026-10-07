@@ -9,6 +9,7 @@ interface DialogContextType {
   onClose: () => void;
   shouldRender: boolean;
   setShouldRender: (value: boolean) => void;
+  variant: 'center' | 'drawer' | 'fullscreen';
 }
 
 const DialogContext = React.createContext<DialogContextType | undefined>(undefined);
@@ -34,16 +35,17 @@ interface DialogRootProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  variant?: 'center' | 'drawer' | 'fullscreen';
 }
 
-function DialogRoot({ isOpen, onClose, children }: DialogRootProps) {
+function DialogRoot({ isOpen, onClose, children, variant = 'drawer' }: DialogRootProps) {
   const [shouldRender, setShouldRender] = React.useState(isOpen);
 
   if (isOpen && !shouldRender) {
     setShouldRender(true);
   }
 
-  const value = { isOpen, onClose, shouldRender, setShouldRender };
+  const value = { isOpen, onClose, shouldRender, setShouldRender, variant };
 
   return (
     <DialogContext value={value}>
@@ -67,7 +69,7 @@ interface DialogOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps) {
-  const { onClose, isOpen } = useDialog();
+  const { onClose, isOpen, variant } = useDialog();
   const backdropRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -86,6 +88,8 @@ function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps
     };
   }, [isOpen]);
 
+  const defaultZIndex = variant === 'fullscreen' ? 'z-fullscreen-backdrop' : 'z-modal-backdrop';
+
   return (
     <div
       ref={(node) => {
@@ -94,7 +98,7 @@ function DialogOverlay({ className, onClick, ref, ...props }: DialogOverlayProps
       }}
       onClick={onClick || onClose}
       data-testid="dialog-backdrop"
-      className={cn('fixed inset-0 z-[100] cursor-pointer bg-black/60 opacity-0', className)}
+      className={cn('fixed inset-0 cursor-pointer bg-black/60 opacity-0', defaultZIndex, className)}
       {...props}
     />
   );
@@ -109,12 +113,13 @@ interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
 function DialogContent({
   children,
   className,
-  variant = 'drawer',
+  variant: propVariant,
   dragToDismiss = true,
   ref,
   ...props
 }: DialogContentProps) {
-  const { onClose, isOpen, setShouldRender } = useDialog();
+  const { onClose, isOpen, setShouldRender, variant: contextVariant } = useDialog();
+  const variant = propVariant ?? contextVariant ?? 'drawer';
   const contentRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -205,7 +210,7 @@ function DialogContent({
       <div
         ref={setContentRef}
         className={cn(
-          'fixed bottom-[var(--app-offset-bottom)] left-0 right-0 top-[var(--app-offset-top)] z-[101] mx-auto w-full max-w-[var(--container-app)] overflow-hidden bg-surface-l3 text-right font-sans',
+          'fixed bottom-[var(--app-offset-bottom)] left-0 right-0 top-[var(--app-offset-top)] z-fullscreen mx-auto w-full max-w-[var(--container-app)] overflow-hidden bg-surface-l3 text-right font-sans',
           className
         )}
         onClick={(event) => event.stopPropagation()}
@@ -230,7 +235,7 @@ function DialogContent({
         className={cn(
           // Anchored to the visible strip's bottom edge, so the keyboard pushes the
           // drawer up instead of covering it.
-          'fixed bottom-[var(--app-offset-bottom)] left-0 right-0 z-[100] mx-auto w-full rounded-t-[28px] border-t border-container-base bg-surface-l3 pb-[calc(2.5rem+var(--safe-bottom))] text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] md:max-w-[var(--container-app)]',
+          'fixed bottom-[var(--app-offset-bottom)] left-0 right-0 z-modal mx-auto w-full rounded-t-[28px] border-t border-container-base bg-surface-l3 pb-[calc(2.5rem+var(--safe-bottom))] text-right font-sans shadow-[0_-8px_30px_rgba(0,0,0,0.12)] md:max-w-[var(--container-app)]',
           dragToDismiss && 'cursor-grab active:cursor-grabbing',
           className
         )}
@@ -244,7 +249,7 @@ function DialogContent({
   }
 
   return (
-    <div className="pointer-events-none fixed left-0 right-0 top-[var(--app-offset-top)] h-[var(--app-height)] z-[100] flex items-center justify-center pt-[calc(1rem+var(--safe-top))] pb-[calc(1rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
+    <div className="pointer-events-none fixed left-0 right-0 top-[var(--app-offset-top)] h-[var(--app-height)] z-modal flex items-center justify-center pt-[calc(1rem+var(--safe-top))] pb-[calc(1rem+var(--safe-bottom))] pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
       <div
         ref={setContentRef}
         className={cn('pointer-events-auto w-full max-w-sm rounded-3xl border border-container-base bg-surface-l3 p-6 opacity-0 shadow-xl', className)}

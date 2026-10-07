@@ -85,7 +85,7 @@ export default function SplashScreen({
     <div
       data-testid="splash-screen"
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden transition-opacity duration-400 ease-out',
+        'fixed inset-0 z-fullscreen flex items-center justify-center bg-black overflow-hidden transition-opacity duration-400 ease-out',
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       )}
     >

@@ -1,4 +1,5 @@
 import { Result } from '@/lib/utils/result';
+import { isCrawlerRequest } from '@/lib/utils/crawler';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
 import { PublicPostView } from './PublicPostView';
 
@@ -7,8 +8,11 @@ interface PublicPostPageContentProps {
 }
 
 export async function PublicPostPageContent({ postId }: PublicPostPageContentProps) {
-  const postResult = await Result.try(() => fetchPublicPostServer(postId));
-  const post = postResult.ok ? postResult.value : null;
+  const isCrawler = await isCrawlerRequest();
+  const postResult = isCrawler
+    ? await Result.try(() => fetchPublicPostServer(postId))
+    : null;
+  const post = postResult?.ok ? postResult.value : null;
 
   return <PublicPostView postId={postId} initialPost={post} />;
 }

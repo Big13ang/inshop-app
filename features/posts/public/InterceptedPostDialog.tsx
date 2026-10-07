@@ -15,7 +15,7 @@ export function InterceptedPostDialog({ children }: InterceptedPostDialogProps) 
   };
 
   return (
-    <Dialog.Root isOpen onClose={handleClose}>
+    <Dialog.Root isOpen onClose={handleClose} variant="fullscreen">
       <Dialog.Portal>
         <Dialog.Backdrop aria-hidden="true" />
         <Dialog.Content

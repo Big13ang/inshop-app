@@ -7,6 +7,7 @@ import { ProfileOverviewSkeleton } from "@/features/profile/components/ProfileSk
 import { getPublicSellerProfile } from "@/features/profile/services/profileServerService";
 import { constructMetadata } from "@/lib/utils/metadata";
 import { Result } from "@/lib/utils/result";
+import { isCrawlerRequest } from "@/lib/utils/crawler";
 
 interface ProfilePageProps {
     params: Promise<{ handle: string }>;
@@ -18,6 +19,16 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     if (!handle.startsWith("@")) return {};
 
     const username = handle.slice(1);
+    const isCrawler = await isCrawlerRequest();
+
+    // Instant metadata for normal human users without blocking navigation (CSR)
+    if (!isCrawler) {
+        return constructMetadata({
+            title: `@${username}`,
+            description: `مشاهده پروفایل و محصولات فروشگاه @${username} در اینشاپ`,
+        });
+    }
+
     const dataResult = await Result.try(() => getPublicSellerProfile(username));
     const data = dataResult.ok ? dataResult.value : null;
 
@@ -56,8 +67,15 @@ async function ProfileHandleContent({ params }: ProfilePageProps) {
         notFound();
     }
 
-    const dataResult = await Result.try(() => getPublicSellerProfile(username));
-    const initialData = dataResult.ok ? dataResult.value : null;
+    const isCrawler = await isCrawlerRequest();
+    const dataResult = isCrawler
+        ? await Result.try(() => getPublicSellerProfile(username))
+        : null;
+    const initialData = dataResult?.ok ? dataResult.value : null;
+
+    if (isCrawler && (!dataResult?.ok || !initialData?.shop)) {
+        notFound();
+    }
 
     return <PublicProfileView username={username} initialData={initialData} />;
 }

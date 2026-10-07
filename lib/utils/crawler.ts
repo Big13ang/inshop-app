@@ -12,7 +12,7 @@ const CRAWLER_USER_AGENT_REGEX =
  * receive instant CSR shells with client-side cached data.
  */
 export async function isCrawlerRequest(): Promise<boolean> {
-  const headersResult = await Result.try(headers());
+  const headersResult = await Result.try(() => headers());
   if (!headersResult.ok) {
     return false;
   }
