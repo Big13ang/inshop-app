@@ -14,7 +14,7 @@ export interface FeedSearchProps {
 
 export function FeedSearch({ children }: FeedSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const debouncedQuery = useDebounce(searchQuery, 350);
+  const debouncedQuery = useDebounce(searchQuery, 400);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
