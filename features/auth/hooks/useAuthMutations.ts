@@ -41,6 +41,9 @@ export function useVerifyPhoneNumberMutation() {
       queryClient.resetQueries({ queryKey: queryKeys.profile.me });
       queryCacheFactory.profile.invalidateMe(queryClient);
       queryCacheFactory.auth.invalidateSession(queryClient);
+      // Evict cached feed pages and cursors so subsequent feed browsing creates a fresh
+      // feed session tied to the authenticated user rather than carrying over anonymous session cursors.
+      queryClient.removeQueries({ queryKey: ['posts', 'feed'] });
       if (data?.message) {
         toast.success(data.message);
       }
@@ -62,6 +65,9 @@ export function useSignInPhoneNumberMutation() {
       queryClient.resetQueries({ queryKey: queryKeys.profile.me });
       queryCacheFactory.profile.invalidateMe(queryClient);
       queryCacheFactory.auth.invalidateSession(queryClient);
+      // Evict cached feed pages and cursors so subsequent feed browsing creates a fresh
+      // feed session tied to the authenticated user rather than carrying over anonymous session cursors.
+      queryClient.removeQueries({ queryKey: ['posts', 'feed'] });
       if (data?.message) {
         toast.success(data.message);
       }
@@ -116,6 +122,9 @@ export function useSignOutMutation() {
     onSuccess: () => {
       queryClient.setQueryData(queryKeys.profile.me, null);
       queryCacheFactory.profile.invalidateMe(queryClient);
+      // Evict cached feed pages and cursors to prevent stale authenticated session tokens
+      // from being sent in unauthenticated requests after sign-out, avoiding 404 session mismatches.
+      queryClient.removeQueries({ queryKey: ['posts', 'feed'] });
     },
     onError: () => {
       toast.error(ERROR_MESSAGES.auth.signOutFailed);

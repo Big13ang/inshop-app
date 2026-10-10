@@ -61,13 +61,37 @@ describe('feedService error handling and retry guards', () => {
       expect(isFeedSessionExpiredError(error)).toBe(true);
     });
 
+    it('detects 404 HTTP error', () => {
+      const error = new HTTPError(
+        new Response('Not Found', { status: 404 }),
+        new Request('https://api.example.com/posts/feed'),
+        {} as never
+      );
+      expect(isFeedSessionExpiredError(error)).toBe(true);
+    });
+
     it('detects FEED.SESSION_EXPIRED message', () => {
       const error = new Error('FEED.SESSION_EXPIRED');
       expect(isFeedSessionExpiredError(error)).toBe(true);
     });
 
+    it('detects FEED.SESSION_NOT_FOUND message', () => {
+      const error = new Error('FEED.SESSION_NOT_FOUND');
+      expect(isFeedSessionExpiredError(error)).toBe(true);
+    });
+
     it('detects Persian session expired message', () => {
       const error = new Error('نشست فید منقضی شده است. لطفاً فید را تازهسازی کنید.');
+      expect(isFeedSessionExpiredError(error)).toBe(true);
+    });
+
+    it('detects Persian session not found message', () => {
+      const error = new Error('نشست فید دیگر در دسترس نیست. لطفاً فید را تازه‌سازی کنید.');
+      expect(isFeedSessionExpiredError(error)).toBe(true);
+    });
+
+    it('detects English session not found message', () => {
+      const error = new Error('This feed session is no longer available. Please refresh the feed.');
       expect(isFeedSessionExpiredError(error)).toBe(true);
     });
 
