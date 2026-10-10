@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { MapPin, Phone, Share2, Settings, Store } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,6 +13,8 @@ import { usePendingRejectedPosts } from '@/features/posts/pending/services/pendi
 import { useInfinitePostsByUsername } from '@/features/posts/services/sellerPostsService';
 import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
+import { useIsDesktop } from '@/lib/hooks/useIsDesktop';
+import { ContactStoreBottomSheet, initiatePhoneCall } from './ContactStoreBottomSheet';
 
 interface ProfileBioSectionProps {
   sellerProfile?: PublicSellerProfile | SellerProfile;
@@ -22,6 +25,9 @@ export function ProfileBioSection({
   sellerProfile,
   isOwner = false,
 }: ProfileBioSectionProps) {
+  const isDesktop = useIsDesktop();
+  const [userOpenedContactModal, setUserOpenedContactModal] = useState(false);
+  const isContactModalOpen = userOpenedContactModal && isDesktop;
 
   const { data: pendingPosts = [] } = usePendingRejectedPosts({
     enabled: isOwner,
@@ -36,15 +42,24 @@ export function ProfileBioSection({
     : 0;
 
   const handleCall = () => {
+    if (isDesktop) {
+      setUserOpenedContactModal(true);
+      return;
+    }
+
     const publicProfile = sellerProfile as PublicSellerProfile | undefined;
     const legacyProfile = sellerProfile as SellerProfile | undefined;
     const phoneText = publicProfile?.shopPhoneNumber || legacyProfile?.phones?.[0]?.phoneNumber || '';
 
     if (phoneText) {
-      window.location.href = `tel:${phoneText}`;
+      initiatePhoneCall(phoneText);
     } else {
       toast.error(text.overview.callUnavailable);
     }
+  };
+
+  const handleCloseContactModal = () => {
+    setUserOpenedContactModal(false);
   };
 
   const handleShare = async () => {
@@ -137,6 +152,12 @@ export function ProfileBioSection({
           <span className="hidden sm:inline">{text.overview.shareAction}</span>
         </Button>
       </div>
+
+      <ContactStoreBottomSheet
+        isOpen={isContactModalOpen}
+        onClose={handleCloseContactModal}
+        sellerProfile={sellerProfile}
+      />
     </div>
   );
 }
