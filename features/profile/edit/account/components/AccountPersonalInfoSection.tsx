@@ -25,6 +25,7 @@ export function AccountPersonalInfoSection() {
         <FormSection.Field
           label="نام"
           htmlFor="account-first-name"
+          isRequired
           error={errors.firstName?.message}
         >
           <Input
@@ -39,6 +40,7 @@ export function AccountPersonalInfoSection() {
         <FormSection.Field
           label="نام خانوادگی"
           htmlFor="account-last-name"
+          isRequired
           error={errors.lastName?.message}
         >
           <Input

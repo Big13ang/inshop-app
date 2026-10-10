@@ -347,13 +347,21 @@ This app is RTL by default. Follow these rules:
 
 ---
 
-## Z-Index Scale
+## Z-Index Layer System
 
-| Value      | Use                               |
-|------------|-----------------------------------|
-| `z-0`      | Default stacking                  |
-| `z-10`     | Sticky headers / tab bars         |
-| `z-20`     | Floating action buttons           |
-| `z-40`     | Overlapping cards / tooltips      |
-| `z-[100]`  | Dialog / BottomSheet backdrop     |
-| `z-50`     | BottomSheet panel (via portal)    |
+Never use raw arbitrary z-index numbers. Always use the semantic layer utilities defined in `@theme` and `globals.css`:
+
+| Utility Class            | CSS Variable                 | Layer Level | Role & Usage                                            |
+|--------------------------|------------------------------|:-----------:|---------------------------------------------------------|
+| `z-base`                 | `--z-base`                   | 0           | Default document flow & base layout                     |
+| `z-badge`                | `--z-badge`                  | 10          | Badges, status pills, slider indicators                 |
+| `z-floating`             | `--z-floating`               | 20          | Floating action buttons, media action controls          |
+| `z-elevated`             | `--z-elevated`               | 30          | Overlapping cards, gallery badges                       |
+| `z-header`               | `--z-header`                 | 50          | Sticky top headers (`Header.Root`, `FeedSearch`)        |
+| `z-nav`                  | `--z-nav`                    | 50          | Fixed bottom navigation bar (`Footer.Nav`)              |
+| `z-fullscreen-backdrop`  | `--z-fullscreen-backdrop`    | 60          | Fullscreen route overlay backdrop                       |
+| `z-fullscreen`           | `--z-fullscreen`             | 70          | Fullscreen route dialog (`InterceptedPostDialog`)       |
+| `z-modal-backdrop`       | `--z-modal-backdrop`         | 100         | Drawer, BottomSheet, Context Menu & Dialog backdrop     |
+| `z-modal`                | `--z-modal`                  | 110         | Drawer, BottomSheet, Menu & Dialog content panels       |
+| `z-popover`              | `--z-popover`                | 120         | Dropdowns, select menus, tooltips                       |
+| `z-toast`                | `--z-toast`                  | 200         | Toast notifications (Sonner / alerts)                   |

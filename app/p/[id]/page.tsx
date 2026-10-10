@@ -1,16 +1,28 @@
 import type { Metadata } from 'next';
-import { Result } from '@/lib/utils/result';
+import { PublicPostPageContent } from '@/features/posts/public/PublicPostPageContent';
 import { fetchPublicPostServer } from '@/features/posts/services/publicPostServerService';
-import PublicPostView from '@/features/posts/public/PublicPostView';
+import { Result } from '@/lib/utils/result';
 import { getMediaUrl } from '@/lib/utils/media';
 import { constructMetadata } from '@/lib/utils/metadata';
 import { extractPostTitle, formatPostMetaDescription } from '@/features/posts/utils/formatDescription';
+import { isCrawlerRequest } from '@/lib/utils/crawler';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const isCrawler = await isCrawlerRequest();
+
+  // Instant response for normal human users without blocking navigation (CSR)
+  if (!isCrawler) {
+    return constructMetadata({
+      title: 'پست',
+      description: 'مشاهده مشخصات و خرید آنلاین محصولات در اینشاپ',
+      type: 'article',
+    });
+  }
+
   const { id } = await params;
   const postResult = await Result.try(() => fetchPublicPostServer(id));
   const post = postResult.ok ? postResult.value : null;
@@ -46,10 +58,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicPostPage({ params }: PageProps) {
   const { id } = await params;
-  const postResult = await Result.try(() => fetchPublicPostServer(id));
-  const post = postResult.ok ? postResult.value : null;
-
-  return <PublicPostView postId={id} initialPost={post} />;
+  return <PublicPostPageContent postId={id} />;
 }
-
 

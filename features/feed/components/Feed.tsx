@@ -14,8 +14,16 @@ export function Feed() {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
+    resetFeed,
   } = useInfiniteFeedPosts();
+
+  const handleRetry = () => {
+    if (posts.length > 0 && hasNextPage) {
+      fetchNextPage();
+    } else {
+      resetFeed();
+    }
+  };
 
   const {
     mainRef,
@@ -23,7 +31,7 @@ export function Feed() {
     isPullDownActive,
     isRefreshing,
     bind,
-  } = usePullToRefresh({ onRefresh: refetch });
+  } = usePullToRefresh({ onRefresh: resetFeed });
 
   return (
     <div className="w-full h-full flex flex-col bg-white overflow-hidden relative">
@@ -47,11 +55,10 @@ export function Feed() {
             isFetchingNextPage={isFetchingNextPage}
             hasNextPage={hasNextPage}
             fetchNextPage={fetchNextPage}
-            onRetry={refetch}
+            onRetry={handleRetry}
           />
         </main>
       </FeedSearch>
     </div>
   );
 }
-

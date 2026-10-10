@@ -1,9 +1,14 @@
 import http from 'node:http';
 import https from 'node:https';
+import { spawn } from 'node:child_process';
 
 const TARGET = process.env.DEV_PROXY_TARGET || 'https://api.dev.inshop.social';
 const PORT = Number(process.env.DEV_PROXY_PORT || 8000);
 const targetUrl = new URL(TARGET);
+const isWithNext = process.argv.includes('--with-next');
+const client = targetUrl.protocol === 'http:' ? http : https;
+
+let nextChild = null;
 
 const server = http.createServer((req, res) => {
   const origin = req.headers.origin || 'http://localhost:4000';
@@ -44,11 +49,11 @@ const server = http.createServer((req, res) => {
     forwardHeaders.cookie = `${rawCookie}; ${secureCookie}`;
   }
 
-  const proxyReq = https.request(
+  const proxyReq = client.request(
     {
       protocol: targetUrl.protocol,
       hostname: targetUrl.hostname,
-      port: targetUrl.port || 443,
+      port: targetUrl.port || (targetUrl.protocol === 'http:' ? 80 : 443),
       path: req.url,
       method: req.method,
       headers: forwardHeaders,
@@ -87,13 +92,50 @@ const server = http.createServer((req, res) => {
   proxyReq.on('error', (err) => {
     console.error(`[DevProxy] Error proxying ${req.method} ${req.url}:`, err.message);
     if (!res.headersSent) {
-      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.writeHead(502, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Credentials': 'true',
+      });
       res.end(JSON.stringify({ error: 'Proxy Gateway Error', message: err.message }));
     }
   });
 
+  req.on('error', (err) => {
+    proxyReq.destroy(err);
+  });
+
   req.pipe(proxyReq);
 });
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n======================================================`);
+    console.error(`❌ [DevProxy Error] Port ${PORT} is already in use!`);
+    console.error(`👉 Cause: Another process or container is occupying port ${PORT}.`);
+    console.error(`👉 If the local backend Docker container is running:`);
+    console.error(`   rtk docker stop inshop-back-end-app-1`);
+    console.error(`👉 If another node or proxy process is running:`);
+    console.error(`   fuser -k ${PORT}/tcp`);
+    console.error(`======================================================\n`);
+  } else {
+    console.error(`[DevProxy Error]`, err);
+  }
+  process.exit(1);
+});
+
+function cleanup() {
+  if (nextChild) {
+    nextChild.kill('SIGTERM');
+    nextChild = null;
+  }
+  server.close(() => {
+    process.exit(0);
+  });
+}
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n======================================================`);
@@ -101,12 +143,18 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🎯 Forwarding all traffic to: ${TARGET}`);
   console.log(`🍪 Cookie rewriting & Bearer token attachment active`);
   console.log(`======================================================\n`);
+
+  if (isWithNext) {
+    nextChild = spawn('npx', ['next', 'dev', '-H', '0.0.0.0', '-p', '4000'], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    nextChild.on('exit', (code, signal) => {
+      server.close(() => {
+        process.exit(code ?? (signal ? 1 : 0));
+      });
+    });
+  }
 });
 
-process.on('SIGINT', () => {
-  server.close(() => process.exit(0));
-});
-
-process.on('SIGTERM', () => {
-  server.close(() => process.exit(0));
-});

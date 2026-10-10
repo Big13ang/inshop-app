@@ -27,6 +27,21 @@
   /* Space below the visible strip: Safari's bottom toolbar plus the keyboard.
      Bottom-anchor fixed overlays with this so they rest on the keyboard. */
   --app-offset-bottom: 0px;
+
+  /* ── Z-Index Layer System ─────────────────────────────
+     Semantic layering scale. Never hardcode arbitrary z-index numbers. */
+  --z-base: 0;
+  --z-badge: 10;
+  --z-floating: 20;
+  --z-elevated: 30;
+  --z-header: 50;
+  --z-nav: 50;
+  --z-fullscreen-backdrop: 60;
+  --z-fullscreen: 70;
+  --z-modal-backdrop: 100;
+  --z-modal: 110;
+  --z-popover: 120;
+  --z-toast: 200;
 }
 
 @theme {
@@ -89,6 +104,20 @@
   --shadow-sheet: 0 8px 30px rgba(0,0,0,0.12);
   --shadow-modal: 0 20px 50px rgba(0,0,0,0.20);
   --shadow-app-shell: 0 0 40px rgba(0,0,0,0.08); /* desktop container, lit on all sides */
+
+  /* ── Z-Index Layer System ─────────────────────────── */
+  --z-base: 0;
+  --z-badge: 10;
+  --z-floating: 20;
+  --z-elevated: 30;
+  --z-header: 50;
+  --z-nav: 50;
+  --z-fullscreen-backdrop: 60;
+  --z-fullscreen: 70;
+  --z-modal-backdrop: 100;
+  --z-modal: 110;
+  --z-popover: 120;
+  --z-toast: 200;
 
   /* ── Keyframes ────────────────────────────────────── */
   --animate-shimmer: shimmer 1.6s infinite linear;
@@ -325,4 +354,42 @@ html[data-keyboard='open'] .app-shell {
   transform: scale(0.984);
   transition-duration: var(--duration-instant);
   transition-timing-function: ease-out;
+}
+
+/* ── Z-Index Layer Utilities ─────────────────────────────────────── */
+@utility z-base {
+  z-index: var(--z-base);
+}
+@utility z-badge {
+  z-index: var(--z-badge);
+}
+@utility z-floating {
+  z-index: var(--z-floating);
+}
+@utility z-elevated {
+  z-index: var(--z-elevated);
+}
+@utility z-header {
+  z-index: var(--z-header);
+}
+@utility z-nav {
+  z-index: var(--z-nav);
+}
+@utility z-fullscreen-backdrop {
+  z-index: var(--z-fullscreen-backdrop);
+}
+@utility z-fullscreen {
+  z-index: var(--z-fullscreen);
+}
+@utility z-modal-backdrop {
+  z-index: var(--z-modal-backdrop);
+}
+@utility z-modal {
+  z-index: var(--z-modal);
+}
+@utility z-popover {
+  z-index: var(--z-popover);
+}
+@utility z-toast {
+  z-index: var(--z-toast);
 }

@@ -90,4 +90,40 @@ describe('FeedSearch component', () => {
     expect(screen.queryByLabelText('پاک کردن جستجو')).not.toBeInTheDocument();
     expect(screen.getByTestId('feed-children')).toBeInTheDocument();
   });
+
+  it('enforces 400ms debounce delay before dispatching query to search results', () => {
+    jest.useFakeTimers();
+    try {
+      const { fireEvent, act } = require('@testing-library/react');
+      render(
+        <FeedSearch>
+          <div data-testid="feed-children">Feed Content</div>
+        </FeedSearch>
+      );
+
+      const input = screen.getByPlaceholderText('برای جستجو بنویسید ...') as HTMLInputElement;
+
+      // Type search term
+      act(() => {
+        fireEvent.change(input, { target: { value: 'کفش' } });
+      });
+
+      // Initially at 0ms: debounced value is still empty
+      expect(screen.getByTestId('inshop-search-result').textContent).toBe('Query: ');
+
+      // Advance by 350ms: still empty because 400ms is enforced
+      act(() => {
+        jest.advanceTimersByTime(350);
+      });
+      expect(screen.getByTestId('inshop-search-result').textContent).toBe('Query: ');
+
+      // Advance by remaining 50ms (total 400ms): now debounced value updates
+      act(() => {
+        jest.advanceTimersByTime(50);
+      });
+      expect(screen.getByTestId('inshop-search-result')).toHaveTextContent('Query: کفش');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });

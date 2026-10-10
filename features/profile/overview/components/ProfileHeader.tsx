@@ -26,7 +26,7 @@ export function ProfileHeader({
   const canAddPost = showAddPost ?? isOwner;
 
   return (
-    <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-4 w-full h-16 border-b border-primary/5 shrink-0 relative" dir="rtl">
+    <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-header flex items-center justify-between px-4 w-full h-16 border-b border-primary/5 shrink-0 relative" dir="rtl">
       {/* Right side (start of RTL): Profile Menu for owner, BackButton for visitor */}
       <div className="flex items-center justify-start min-w-10">
         {isOwner ? (
