@@ -1,6 +1,6 @@
 'use client';
 
-import { useInfiniteFeedPosts } from '../services/feedService';
+import { useInfiniteFeedPosts, isFeedSessionExpiredError } from '../services/feedService';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from './PullToRefreshIndicator';
 import { FeedContent } from './FeedContent';
@@ -11,11 +11,25 @@ export function Feed() {
     posts,
     isLoading,
     isError,
+    error,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch,
+    resetFeed,
   } = useInfiniteFeedPosts();
+
+  const handleRetry = () => {
+    // If the failure was due to an expired or mismatched feed session token,
+    // retrying fetchNextPage() would resend the exact same invalid cursor.
+    // Resetting the feed restarts query execution cleanly from page 1.
+    if (isFeedSessionExpiredError(error)) {
+      resetFeed();
+    } else if (posts.length > 0 && hasNextPage) {
+      fetchNextPage();
+    } else {
+      resetFeed();
+    }
+  };
 
   const {
     mainRef,
@@ -23,7 +37,7 @@ export function Feed() {
     isPullDownActive,
     isRefreshing,
     bind,
-  } = usePullToRefresh({ onRefresh: refetch });
+  } = usePullToRefresh({ onRefresh: resetFeed });
 
   return (
     <div className="w-full h-full flex flex-col bg-white overflow-hidden relative">
@@ -47,7 +61,7 @@ export function Feed() {
             isFetchingNextPage={isFetchingNextPage}
             hasNextPage={hasNextPage}
             fetchNextPage={fetchNextPage}
-            onRetry={refetch}
+            onRetry={handleRetry}
           />
         </main>
       </FeedSearch>

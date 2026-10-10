@@ -41,6 +41,7 @@ export default function PasswordInput() {
         <Input
           id="password-input"
           type={hide ? "password" : "text"}
+          dir="ltr"
           placeholder="••••••••"
           isError={isError}
           className="pr-11 pl-11 text-left font-sans"

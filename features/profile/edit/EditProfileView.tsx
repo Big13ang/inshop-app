@@ -27,6 +27,7 @@ import {
   type accountSchemaType,
 } from './account/accountSchema';
 import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
+import { UnverifiedSellerView } from '../unverified/UnverifiedSellerView';
 
 const FORM_ID = 'edit-profile-form';
 const ACCOUNT_FORM_ID = 'edit-account-form';
@@ -73,13 +74,6 @@ export function EditProfileView() {
     }
   }, [user, activeTab]);
 
-  useEffect(() => {
-    if (isVerifying || !user) return;
-    if (!user.isVerifiedSeller && activeTab === 'shop') {
-      router.replace(PROFILE_ROUTES.unverified);
-    }
-  }, [user, isVerifying, router, activeTab]);
-
   const createProfileMutation = useCreateProfile(() => {
     router.push(PROFILE_ROUTES.overview);
   });
@@ -92,20 +86,20 @@ export function EditProfileView() {
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
     values: generateDefaultValues(user),
-    resetOptions: { keepDirtyValues: false },
+    resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
   });
 
   const accountMethods = useForm<accountSchemaInput, unknown, accountSchemaType>({
     resolver: zodResolver(accountSchema),
     mode: 'onChange',
     values: generateDefaultAccountValues(user),
-    resetOptions: { keepDirtyValues: false },
+    resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
   });
 
   useEffect(() => {
     return () => {
-      shopMethods.reset(generateDefaultValues(user));
-      accountMethods.reset(generateDefaultAccountValues(user));
+      shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
+      accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     };
   }, [user, shopMethods, accountMethods]);
 
@@ -115,16 +109,16 @@ export function EditProfileView() {
       return;
     }
 
-    shopMethods.reset(generateDefaultValues(user));
-    accountMethods.reset(generateDefaultAccountValues(user));
+    shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
+    accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     router.push(PROFILE_ROUTES.overview);
   };
 
   const handleCancel = () => {
     if (activeTab === 'shop') {
-      shopMethods.reset(generateDefaultValues(user));
+      shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
     } else {
-      accountMethods.reset(generateDefaultAccountValues(user));
+      accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     }
 
     if (isFirstTimeSeller) {
@@ -186,17 +180,21 @@ export function EditProfileView() {
             onTabChange={setActiveTab}
           />
 
-          {/* Tab 1: Original Store Profile Form */}
+          {/* Tab 1: Store Profile (or Unverified Notice if not a seller) */}
           {activeTab === 'shop' ? (
-            <FormProvider {...shopMethods}>
-              <form id={FORM_ID} noValidate onSubmit={handleSubmit} className="space-y-6">
-                <AvatarField />
-                <ShopSection />
-                <BioSection />
-                <AddressSection />
-                <ContactSection />
-              </form>
-            </FormProvider>
+            !user?.isVerifiedSeller ? (
+              <UnverifiedSellerView />
+            ) : (
+              <FormProvider {...shopMethods}>
+                <form id={FORM_ID} noValidate onSubmit={handleSubmit} className="space-y-6">
+                  <AvatarField />
+                  <ShopSection />
+                  <BioSection />
+                  <AddressSection />
+                  <ContactSection />
+                </form>
+              </FormProvider>
+            )
           ) : (
             /* Tab 2: User Account Information Form */
             <UserAccountForm
@@ -209,11 +207,13 @@ export function EditProfileView() {
         </div>
       </main>
 
-      <EditProfileFooter
-        formId={currentFormId}
-        isSaving={isSaving}
-        onCancel={handleCancel}
-      />
+      {!(activeTab === 'shop' && !user?.isVerifiedSeller) && (
+        <EditProfileFooter
+          formId={currentFormId}
+          isSaving={isSaving}
+          onCancel={handleCancel}
+        />
+      )}
     </div>
   );
 }

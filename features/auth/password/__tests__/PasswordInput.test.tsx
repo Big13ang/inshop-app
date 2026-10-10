@@ -59,6 +59,7 @@ describe("PasswordInput - Rendering", () => {
 
         expect(passwordInput).toBeInTheDocument();
         expect(passwordInput).toHaveAttribute("type", "password");
+        expect(passwordInput).toHaveAttribute("dir", "ltr");
         expect(toggleButton).toBeInTheDocument();
         expect(getByText("رمز عبور")).toBeInTheDocument();
     });

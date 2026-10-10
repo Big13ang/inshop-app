@@ -112,4 +112,3 @@ export function usePullToRefresh({ onRefresh }: UsePullToRefreshProps) {
   };
 }
 
-export default usePullToRefresh;
