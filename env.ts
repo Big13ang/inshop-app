@@ -21,8 +21,8 @@ export const env = createEnv({
         NEXT_PUBLIC_GLITCHTIP_DSN: z.string().default("https://c39862cad26a45aaa1f72b6e9e8c50dc@errors.inshop.social/5"),
         NEXT_PUBLIC_SENTRY_RELEASE: z.string().default("production"),
         NEXT_PUBLIC_SENTRY_ENVIRONMENT: z.string().default("production"),
-        NEXT_PUBLIC_GA_ID: z.string().default(""),
-        NEXT_PUBLIC_GTM_ID: z.string().default(""),
+        NEXT_PUBLIC_GA_ID: z.string(),
+        NEXT_PUBLIC_GTM_ID: z.string(),
     },
     experimental__runtimeEnv: {
         NODE_ENV: process.env.NODE_ENV,
