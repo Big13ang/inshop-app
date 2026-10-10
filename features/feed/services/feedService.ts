@@ -63,18 +63,32 @@ export function isClientHttpError(error: unknown): boolean {
   return typeof status === 'number' && status >= 400 && status < 500;
 }
 
+/**
+ * Detects whether an error indicates that the feed session token or pagination cursor
+ * is no longer valid on the server.
+ *
+ * - 400 (FEED.SESSION_EXPIRED / INVALID_CURSOR): The 24-hour feed session snapshot expired or the cursor format was invalid.
+ * - 404 (FEED.SESSION_NOT_FOUND): The session was created under a different authentication context
+ *   (e.g., user was logged in when page 1 loaded, then logged out / session expired before page 2 was requested).
+ *
+ * Recognizing both 400 and 404 enables TanStack Query to reset the query back to initialPageParam (null)
+ * and recover cleanly from page 1 instead of remaining permanently stuck on a dead cursor.
+ */
 export function isFeedSessionExpiredError(error: unknown): boolean {
   if (error instanceof HTTPError) {
-    return error.response.status === 400;
+    return error.response.status === 400 || error.response.status === 404;
   }
   const status =
     (error as { status?: number; response?: { status?: number } })?.status ??
     (error as { response?: { status?: number } })?.response?.status;
-  if (status === 400) return true;
+  if (status === 400 || status === 404) return true;
   if (error instanceof Error) {
     return (
       error.message.includes('FEED.SESSION_EXPIRED') ||
+      error.message.includes('FEED.SESSION_NOT_FOUND') ||
       error.message.includes('منقضی') ||
+      error.message.includes('در دسترس نیست') ||
+      error.message.includes('no longer available') ||
       error.message.includes('INVALID_CURSOR')
     );
   }
