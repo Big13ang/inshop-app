@@ -33,7 +33,20 @@ export function OwnProfileView() {
     if (!me.sellerProfile) {
       return null;
     }
-    return <ProfileView profile={me.sellerProfile} isOwner={true} />;
+    const profileWithSocial = {
+      ...me.sellerProfile,
+      followerCount:
+        me.sellerProfile.followerCount ??
+        me.sellerProfile.followersCount ??
+        me.businessData?.followersCount ??
+        undefined,
+      instagram:
+        me.sellerProfile.instagram ||
+        me.sellerProfile.instagramId ||
+        me.businessData?.instagramId ||
+        undefined,
+    };
+    return <ProfileView profile={profileWithSocial} isOwner={true} />;
   }
 
   // 2. Non-seller condition:

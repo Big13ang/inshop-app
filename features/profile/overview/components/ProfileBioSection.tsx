@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MapPin, Phone, Share2, Settings, Store } from 'lucide-react';
+import { Phone, Share2, Settings, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PROFILE_ROUTES, text } from '../../constants';
@@ -15,6 +15,7 @@ import { ShopStats } from './ProfileShopStats';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 import { useIsDesktop } from '@/lib/hooks/useIsDesktop';
 import { ContactStoreBottomSheet, initiatePhoneCall } from './ContactStoreBottomSheet';
+import { ShopProfileSocialInfo } from './ShopProfileSocialInfo';
 
 interface ProfileBioSectionProps {
   sellerProfile?: PublicSellerProfile | SellerProfile;
@@ -100,13 +101,26 @@ export function ProfileBioSection({
         </p>
       </div>
 
-      {/* Location Address */}
-      {sellerProfile?.address && (!('addressShow' in sellerProfile) || sellerProfile.addressShow) ? (
-        <div className="mt-2.5 flex items-center justify-start gap-1 text-secondary text-[11px] self-start" dir="rtl">
-          <MapPin className="w-3.5 h-3.5 text-secondary/70 shrink-0" />
-          <span className="truncate">{sellerProfile?.address}</span>
-        </div>
-      ) : null}
+      {/* Shop Social Info & Address */}
+      <div className="mt-2.5 self-start" dir="rtl">
+        <ShopProfileSocialInfo
+          shopProfile={{
+            followerCount:
+              sellerProfile?.followerCount ??
+              sellerProfile?.followersCount ??
+              undefined,
+            instagram:
+              sellerProfile?.instagram ||
+              sellerProfile?.instagramId ||
+              undefined,
+            address: sellerProfile?.address ?? undefined,
+            showAddress:
+              !('addressShow' in (sellerProfile ?? {})) ||
+              (sellerProfile as SellerProfile)?.addressShow,
+          }}
+          textColorClass="text-secondary"
+        />
+      </div>
 
       {/* Pending Banner */}
       {isOwner && pendingPosts.length > 0 ? (

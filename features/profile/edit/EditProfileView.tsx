@@ -9,6 +9,7 @@ import { text, PROFILE_ROUTES } from '../constants';
 import AvatarField from './components/AvatarField';
 import ShopSection from './components/ShopSection';
 import BioSection from './components/BioSection';
+import { EditShopSocialInputs } from './components/EditShopSocialInputs';
 import AddressSection from './components/AddressSection';
 import ContactSection from './components/ContactSection';
 import { EditProfileFooter } from './components/EditProfileFooter';
@@ -96,7 +97,16 @@ export function EditProfileView() {
     resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
   });
 
+  const [followerCount, setFollowerCount] = useState<string>(
+    user?.businessData?.followersCount ?? ''
+  );
+  const [instagram, setInstagram] = useState<string>(
+    user?.businessData?.instagramId ?? ''
+  );
+
   useEffect(() => {
+    setFollowerCount(user?.businessData?.followersCount ?? '');
+    setInstagram(user?.businessData?.instagramId ?? '');
     return () => {
       shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
       accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
@@ -109,12 +119,17 @@ export function EditProfileView() {
       return;
     }
 
+    setFollowerCount(user?.businessData?.followersCount ?? '');
+    setInstagram(user?.businessData?.instagramId ?? '');
     shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
     accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     router.push(PROFILE_ROUTES.overview);
   };
 
   const handleCancel = () => {
+    setFollowerCount(user?.businessData?.followersCount ?? '');
+    setInstagram(user?.businessData?.instagramId ?? '');
+
     if (activeTab === 'shop') {
       shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
     } else {
@@ -190,6 +205,12 @@ export function EditProfileView() {
                   <AvatarField />
                   <ShopSection />
                   <BioSection />
+                  <EditShopSocialInputs
+                    followerCount={followerCount}
+                    setFollowerCount={setFollowerCount}
+                    instagram={instagram}
+                    setInstagram={setInstagram}
+                  />
                   <AddressSection />
                   <ContactSection />
                 </form>
