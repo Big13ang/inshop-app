@@ -34,6 +34,7 @@ export function createHttpClient(prefixUrl?: string) {
   const client = ky.create({
     prefix: getBaseUrl(prefixUrl),
     credentials: 'include',
+    cache: 'no-store',
     hooks: {
       beforeRequest: [setLanguageHeader],
       beforeError: [parseStandardBackendError],
