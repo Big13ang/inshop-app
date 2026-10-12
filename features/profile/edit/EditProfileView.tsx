@@ -1,151 +1,113 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Store } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import { text, PROFILE_ROUTES } from '../constants';
-import AvatarField from './components/AvatarField';
-import ShopSection from './components/ShopSection';
-import BioSection from './components/BioSection';
-import AddressSection from './components/AddressSection';
-import ContactSection from './components/ContactSection';
 import { EditProfileFooter } from './components/EditProfileFooter';
-import { FormProvider, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { profileSchema, profileSchemaType } from './editProfileSchema';
-import { useUser } from '../context/UserContext';
-import { UserMe, useUpdateUserAccount } from '../services/profileService';
+import { useUpdateUserAccount, profileService } from '../services/profileService';
 import { useCreateProfile } from '../services/profileMutationService';
 import { ProfileEditTabSwitcher, type ProfileEditTab } from './components/ProfileEditTabSwitcher';
+import { FirstTimeSellerAlert } from './components/FirstTimeSellerAlert';
+import { ShopProfileForm } from './components/ShopProfileForm';
 import { UserAccountForm } from './account/UserAccountForm';
-import {
-  accountSchema,
-  generateDefaultAccountValues,
-  type accountSchemaInput,
-  type accountSchemaType,
-} from './account/accountSchema';
 import { ProfileEditSkeleton } from '../components/ProfileSkeleton';
 import { UnverifiedSellerView } from '../unverified/UnverifiedSellerView';
+import { PROFILE_FORM_STATE, resolveProfileStateKey } from './profileFormState';
+import type { profileSchemaType } from './editProfileSchema';
+import type { accountSchemaType } from './account/accountSchema';
 
-const FORM_ID = 'edit-profile-form';
+const SHOP_FORM_ID = 'edit-profile-form';
 const ACCOUNT_FORM_ID = 'edit-account-form';
 
-const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
-  if (!user?.sellerProfile) {
-    return {
-      address: '',
-      addressShow: false,
-      bio: user?.businessData?.bio ?? user?.description ?? '',
-      shopName: '',
-      shopPhoneNumber: user?.profile?.phoneNumber ?? '',
-      username: user?.businessData?.instagramId ?? '',
-    };
-  }
-
-  const seller = user.sellerProfile;
-  return {
-    address: seller.address ?? '',
-    addressShow: seller.addressShow ?? false,
-    bio: seller.bio ?? user?.businessData?.bio ?? user?.description ?? '',
-    shopName: seller.shopName ?? '',
-    shopPhoneNumber: seller.phones?.[0]?.phoneNumber ?? user?.profile?.phoneNumber ?? '',
-    username: seller.username ?? user?.businessData?.instagramId ?? '',
-  };
-};
-
 export function EditProfileView() {
-  const { user, isVerifying } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const isFirstTimeSeller = Boolean(user?.isVerifiedSeller && !user?.sellerProfile);
-
-  const [activeTab, setActiveTab] = useState<ProfileEditTab>(() => {
-    if (user?.isVerifiedSeller && !user?.sellerProfile) {
-      return 'shop';
-    }
-    return 'account';
+  const { data: user, isPending } = profileService.useMe({
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
-  useEffect(() => {
-    if (user?.isVerifiedSeller && !user?.sellerProfile && activeTab !== 'shop') {
-      setActiveTab('shop');
-    }
-  }, [user, activeTab]);
+  const stateKey = resolveProfileStateKey(user ?? null);
+  const stateConfig = PROFILE_FORM_STATE[stateKey];
 
-  const createProfileMutation = useCreateProfile(() => {
-    router.push(PROFILE_ROUTES.overview);
-  });
+  const activeTab: ProfileEditTab =
+    searchParams.get('tab') === 'shopProfile' ? 'shopProfile' : 'userProfile';
 
-  const updateAccountMutation = useUpdateUserAccount(() => {
-    router.push(PROFILE_ROUTES.overview);
-  });
+  const createProfileMutation = useCreateProfile();
+  const updateAccountMutation = useUpdateUserAccount();
 
-  const shopMethods = useForm<profileSchemaType>({
-    resolver: zodResolver(profileSchema),
-    mode: 'onChange',
-    values: generateDefaultValues(user),
-    resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
-  });
-
-  const accountMethods = useForm<accountSchemaInput, unknown, accountSchemaType>({
-    resolver: zodResolver(accountSchema),
-    mode: 'onChange',
-    values: generateDefaultAccountValues(user),
-    resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
-  });
-
-  useEffect(() => {
-    return () => {
-      shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
-      accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
-    };
-  }, [user, shopMethods, accountMethods]);
+  const handleTabChange = (nextTab: ProfileEditTab) => {
+    router.replace(`?tab=${nextTab}`, { scroll: false });
+  };
 
   const handleBack = () => {
-    if (isFirstTimeSeller) {
+    if (stateConfig.requiresShopCompletion) {
       toast.warning('امکان خروج وجود ندارد؛ لطفاً ابتدا پروفایل فروشگاه خود را تکمیل کنید.');
       return;
     }
-
-    shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
-    accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     router.push(PROFILE_ROUTES.overview);
   };
 
   const handleCancel = () => {
-    if (activeTab === 'shop') {
-      shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
-    } else {
-      accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
-    }
-
-    if (isFirstTimeSeller) {
+    if (stateConfig.requiresShopCompletion) {
       toast.warning('امکان خروج وجود ندارد؛ لطفاً ابتدا پروفایل فروشگاه خود را تکمیل کنید.');
       return;
     }
-
     router.push(PROFILE_ROUTES.overview);
   };
 
-  const handleSubmit = shopMethods.handleSubmit((data: profileSchemaType) => {
+  const handleShopSubmit = (data: profileSchemaType) => {
     createProfileMutation.mutate(data);
-  });
+  };
 
   const handleAccountSubmit = (data: accountSchemaType) => {
     updateAccountMutation.mutate(data);
   };
 
-  if (isVerifying && !user) {
+  const FORM_STATES: Record<
+    ProfileEditTab,
+    {
+      component: React.ReactNode;
+      showFooter: boolean;
+      formId: string;
+      isSaving: boolean;
+    }
+  > = {
+    userProfile: {
+      component: (
+        <UserAccountForm
+          user={user ?? null}
+          formId={ACCOUNT_FORM_ID}
+          onSubmit={handleAccountSubmit}
+        />
+      ),
+      showFooter: true,
+      formId: ACCOUNT_FORM_ID,
+      isSaving: updateAccountMutation.isPending,
+    },
+    shopProfile: {
+      component: !stateConfig.canAccessShopForm ? (
+        <UnverifiedSellerView isEmbedded={true} />
+      ) : (
+        <ShopProfileForm
+          user={user ?? null}
+          formId={SHOP_FORM_ID}
+          onSubmit={handleShopSubmit}
+        />
+      ),
+      showFooter: stateConfig.canAccessShopForm,
+      formId: SHOP_FORM_ID,
+      isSaving: createProfileMutation.isPending,
+    },
+  };
+
+  const currentTabState = FORM_STATES[activeTab];
+
+  if (isPending && !user) {
     return <ProfileEditSkeleton />;
   }
-
-  const isSaving = activeTab === 'shop'
-    ? createProfileMutation.isPending
-    : updateAccountMutation.isPending;
-
-  const currentFormId = activeTab === 'shop' ? FORM_ID : ACCOUNT_FORM_ID;
 
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
@@ -157,64 +119,26 @@ export function EditProfileView() {
 
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
         <div className="mx-auto max-w-lg space-y-6">
-          {/* First-time Verified Seller Guidance Banner */}
-          {isFirstTimeSeller && (
-            <div
-              id="first-time-seller-alert"
-              className="flex items-start gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-4 text-xs text-foreground shadow-xs"
-              role="alert"
-            >
-              <Store className="size-5 shrink-0 text-primary mt-0.5" aria-hidden="true" />
-              <div className="flex flex-col gap-1">
-                <span className="font-bold text-sm text-primary">تکمیل پروفایل فروشگاه</span>
-                <p className="text-secondary leading-5">
-                  حساب شما به عنوان فروشنده تأیید شده است. لطفاً برای شروع فعالیت و ورود به برنامه، ابتدا اطلاعات فروشگاه خود را تکمیل و ثبت نمایید.
-                </p>
-              </div>
-            </div>
-          )}
+          {stateConfig.requiresShopCompletion && <FirstTimeSellerAlert />}
 
-          {/* Tab Switcher: Store Profile vs User Account */}
           <ProfileEditTabSwitcher
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
           />
 
-          {/* Tab 1: Store Profile (or Unverified Notice if not a seller) */}
-          {activeTab === 'shop' ? (
-            !user?.isVerifiedSeller ? (
-              <UnverifiedSellerView />
-            ) : (
-              <FormProvider {...shopMethods}>
-                <form id={FORM_ID} noValidate onSubmit={handleSubmit} className="space-y-6">
-                  <AvatarField />
-                  <ShopSection />
-                  <BioSection />
-                  <AddressSection />
-                  <ContactSection />
-                </form>
-              </FormProvider>
-            )
-          ) : (
-            /* Tab 2: User Account Information Form */
-            <UserAccountForm
-              user={user}
-              formId={ACCOUNT_FORM_ID}
-              onSubmit={handleAccountSubmit}
-              formMethods={accountMethods}
-            />
-          )}
+          <div key={activeTab}>
+            {currentTabState.component}
+          </div>
         </div>
       </main>
 
-      {!(activeTab === 'shop' && !user?.isVerifiedSeller) && (
+      {currentTabState.showFooter && (
         <EditProfileFooter
-          formId={currentFormId}
-          isSaving={isSaving}
+          formId={currentTabState.formId}
+          isSaving={currentTabState.isSaving}
           onCancel={handleCancel}
         />
       )}
     </div>
   );
 }
-

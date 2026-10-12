@@ -3,7 +3,7 @@
 import { Store, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type ProfileEditTab = 'shop' | 'account';
+export type ProfileEditTab = 'shopProfile' | 'userProfile';
 
 export interface ProfileEditTabSwitcherProps {
   activeTab: ProfileEditTab;
@@ -14,6 +14,14 @@ export function ProfileEditTabSwitcher({
   activeTab,
   onTabChange,
 }: ProfileEditTabSwitcherProps) {
+  const handleAccountClick = () => {
+    onTabChange('userProfile');
+  };
+
+  const handleShopClick = () => {
+    onTabChange('shopProfile');
+  };
+
   return (
     <div
       role="tablist"
@@ -21,16 +29,16 @@ export function ProfileEditTabSwitcher({
       className="w-full bg-container-base rounded-2xl p-1 flex items-center justify-between border border-outline/30 mb-4"
       dir="rtl"
     >
-      {/* Tab: User Account (Default) */}
+      {/* Tab: User Account */}
       <button
         type="button"
         role="tab"
-        aria-selected={activeTab === 'account'}
+        aria-selected={activeTab === 'userProfile'}
         id="profile-edit-tab-account"
-        onClick={() => onTabChange('account')}
+        onClick={handleAccountClick}
         className={cn(
           'flex-1 py-1.5 px-3 rounded-xl text-center text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer',
-          activeTab === 'account'
+          activeTab === 'userProfile'
             ? 'bg-surface-l3 text-foreground font-bold shadow-raised'
             : 'text-secondary hover:text-foreground'
         )}
@@ -43,12 +51,12 @@ export function ProfileEditTabSwitcher({
       <button
         type="button"
         role="tab"
-        aria-selected={activeTab === 'shop'}
+        aria-selected={activeTab === 'shopProfile'}
         id="profile-edit-tab-shop"
-        onClick={() => onTabChange('shop')}
+        onClick={handleShopClick}
         className={cn(
           'flex-1 py-1.5 px-3 rounded-xl text-center text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer',
-          activeTab === 'shop'
+          activeTab === 'shopProfile'
             ? 'bg-surface-l3 text-foreground font-bold shadow-raised'
             : 'text-secondary hover:text-foreground'
         )}

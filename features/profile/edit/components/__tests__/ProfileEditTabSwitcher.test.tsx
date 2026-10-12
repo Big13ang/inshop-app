@@ -3,9 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { ProfileEditTabSwitcher } from '../ProfileEditTabSwitcher';
 
 describe('ProfileEditTabSwitcher', () => {
-  it('renders account tab first and marks it as active by default when activeTab="account"', () => {
+  it('renders account tab first and marks it as active by default when activeTab="userProfile"', () => {
     const handleTabChange = jest.fn();
-    render(<ProfileEditTabSwitcher activeTab="account" onTabChange={handleTabChange} />);
+    render(<ProfileEditTabSwitcher activeTab="userProfile" onTabChange={handleTabChange} />);
 
     const accountTab = screen.getByRole('tab', { name: /حساب کاربری/i });
     const shopTab = screen.getByRole('tab', { name: /پروفایل فروشگاه/i });
@@ -17,9 +17,9 @@ describe('ProfileEditTabSwitcher', () => {
     expect(shopTab).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('marks shop tab as active when activeTab="shop"', () => {
+  it('marks shop tab as active when activeTab="shopProfile"', () => {
     const handleTabChange = jest.fn();
-    render(<ProfileEditTabSwitcher activeTab="shop" onTabChange={handleTabChange} />);
+    render(<ProfileEditTabSwitcher activeTab="shopProfile" onTabChange={handleTabChange} />);
 
     const accountTab = screen.getByRole('tab', { name: /حساب کاربری/i });
     const shopTab = screen.getByRole('tab', { name: /پروفایل فروشگاه/i });
@@ -31,22 +31,22 @@ describe('ProfileEditTabSwitcher', () => {
   it('triggers onTabChange when user clicks shop tab', async () => {
     const user = userEvent.setup();
     const handleTabChange = jest.fn();
-    render(<ProfileEditTabSwitcher activeTab="account" onTabChange={handleTabChange} />);
+    render(<ProfileEditTabSwitcher activeTab="userProfile" onTabChange={handleTabChange} />);
 
     const shopTab = screen.getByRole('tab', { name: /پروفایل فروشگاه/i });
     await user.click(shopTab);
 
-    expect(handleTabChange).toHaveBeenCalledWith('shop');
+    expect(handleTabChange).toHaveBeenCalledWith('shopProfile');
   });
 
   it('triggers onTabChange when user clicks account tab', async () => {
     const user = userEvent.setup();
     const handleTabChange = jest.fn();
-    render(<ProfileEditTabSwitcher activeTab="shop" onTabChange={handleTabChange} />);
+    render(<ProfileEditTabSwitcher activeTab="shopProfile" onTabChange={handleTabChange} />);
 
     const accountTab = screen.getByRole('tab', { name: /حساب کاربری/i });
     await user.click(accountTab);
 
-    expect(handleTabChange).toHaveBeenCalledWith('account');
+    expect(handleTabChange).toHaveBeenCalledWith('userProfile');
   });
 });

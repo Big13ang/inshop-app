@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useSuspenseQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery, useQueryClient, type QueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
@@ -274,7 +274,7 @@ export function useUpdateUserAccount(onSaved?: () => void) {
 
 export const profileService = {
   useUpdateUserAccount,
-  useMe(options?: { initialData?: UserProfile | null; initialDataUpdatedAt?: number }) {
+  useMe(options?: Partial<UseQueryOptions<UserProfile | null>>) {
     return useQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
@@ -285,7 +285,7 @@ export const profileService = {
     });
   },
 
-  useSuspenseMe(options?: { initialData?: UserProfile | null; initialDataUpdatedAt?: number }) {
+  useSuspenseMe(options?: Partial<UseQueryOptions<UserProfile | null>>) {
     return useSuspenseQuery<UserProfile | null>({
       queryKey: queryKeys.profile.me,
       queryFn: fetchMe,
