@@ -36,7 +36,7 @@ export function FeedSearch({ children }: FeedSearchProps) {
 
           <Input
             type="text"
-            placeholder="برای جستجو بنویسید ..."
+            placeholder="محصول مورد نظر خود را بنویسید..."
             className="w-full bg-zinc-100/90 hover:bg-zinc-100 text-zinc-900 text-xs rounded-xl pr-9 pl-9 py-2.5 border border-zinc-200/60 focus:bg-white focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5 placeholder:text-zinc-400 transition-all text-right"
             id="home-search-input"
             dir="rtl"
