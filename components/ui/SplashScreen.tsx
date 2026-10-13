@@ -5,8 +5,7 @@ import { cn } from '@/lib/utils';
 import { Result } from '@/lib/utils/result';
 import { storageKeys } from '@/lib/constants/storageKeys';
 
-const DEFAULT_VIDEO_URL =
-  'https://inshop-static-asset.s3.ir-thr-at1.arvanstorage.ir/inshop-splash.mp4';
+const DEFAULT_VIDEO_URL = '/videos/splash-screen/inshop-splash.mp4';
 const DEFAULT_SPLASH_DURATION_MS = 3000; // Exact duration of the MP4 video asset (3.0s)
 const EXIT_ANIMATION_DURATION_MS = 400;
 const MAX_SAFETY_TIMEOUT_MS = 10000;
@@ -33,9 +32,9 @@ function markSplashSeen(): void {
 // useSyncExternalStore wiring — no actual store subscription needed; we only
 // care about the server snapshot (false = "not seen") so both server and client
 // start from the same agreed-upon value, preventing hydration mismatches.
-const subscribeSplash = () => () => {};
+const subscribeSplash = () => () => { };
 const getSplashSnapshot = () => !checkHasSeenSplash(); // true = "should show"
-const getServerSplashSnapshot = () => false;           // server: never show
+const getServerSplashSnapshot = () => true;            // server: always render, so the first paint is the splash
 
 export function SplashScreen({
   onComplete,
@@ -44,10 +43,10 @@ export function SplashScreen({
   persistSession = true,
 }: SplashScreenProps) {
   /**
-   * `seenInSession` is false on the server (via getServerSplashSnapshot) so the
-   * server renders null. On the client React switches to getSplashSnapshot after
-   * hydration, which reads sessionStorage. This avoids the SSR↔client mismatch
-   * caused by reading sessionStorage in a useState initializer.
+   * `shouldShow` is true on the server (via getServerSplashSnapshot) so the splash
+   * is already in the SSR HTML and covers the feed on first paint. During hydration
+   * React keeps that snapshot, then switches to getSplashSnapshot, which reads
+   * sessionStorage and removes the splash if it was already seen this session.
    *
    * Hook must be called unconditionally — persistSession is factored in below.
    */
@@ -129,12 +128,7 @@ export function SplashScreen({
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       )}
     >
-      <div
-        className={cn(
-          'relative w-full h-full md:max-w-app md:h-[var(--app-height)] flex items-center justify-center bg-black overflow-hidden transition-transform duration-400 ease-out',
-          isVisible ? 'scale-100' : 'scale-105'
-        )}
-      >
+      <div className="relative w-full h-full md:max-w-app md:h-[var(--app-height)] flex items-center justify-center bg-black overflow-hidden">
         <video
           ref={videoRef}
           src={videoUrl}
