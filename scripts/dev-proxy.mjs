@@ -126,7 +126,11 @@ server.on('error', (err) => {
 
 function cleanup() {
   if (nextChild) {
-    nextChild.kill('SIGTERM');
+    if (process.platform === 'win32' && nextChild.pid) {
+      spawn('taskkill', ['/pid', String(nextChild.pid), '/T', '/F'], { stdio: 'ignore' });
+    } else {
+      nextChild.kill('SIGTERM');
+    }
     nextChild = null;
   }
   server.close(() => {
@@ -145,9 +149,14 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`======================================================\n`);
 
   if (isWithNext) {
-    nextChild = spawn('npx', ['next', 'dev', '-H', '0.0.0.0', '-p', '4000'], {
+    nextChild = spawn('npx next dev -H 0.0.0.0 -p 4000', {
       stdio: 'inherit',
       env: process.env,
+      shell: true,
+    });
+
+    nextChild.on('error', (err) => {
+      console.error('[DevProxy] Error starting Next.js dev server:', err);
     });
 
     nextChild.on('exit', (code, signal) => {
