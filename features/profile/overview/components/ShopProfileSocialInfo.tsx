@@ -1,5 +1,6 @@
 import { Users, MapPin } from 'lucide-react';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
+import { formatFollowerCount } from '../formatFollowerCount';
 
 export interface ShopSocialProfile {
   followerCount?: number | string;
@@ -40,9 +41,7 @@ export function ShopProfileSocialInfo({
           <Users className={`w-4 h-4 shrink-0 ${textColorClass}`} />
           <span className={`text-xs ${textColorClass} font-medium`}>
             تعداد دنبال‌کننده:{' '}
-            {typeof shopProfile.followerCount === 'number'
-              ? shopProfile.followerCount.toLocaleString('fa-IR')
-              : shopProfile.followerCount}
+            {formatFollowerCount(shopProfile.followerCount ?? '')}
           </span>
         </div>
       )}

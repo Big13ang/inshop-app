@@ -42,6 +42,17 @@ export const profileSchema = z.object({
         .min(10, 'آدرس باید حداقل ۱۰ کاراکتر باشد')
         .max(80, 'آدرس نباید بیشتر از ۸۰ کاراکتر باشد'),
     addressShow: z.boolean(),
+    followerCount: z
+        .string()
+        .transform((val) => toEnglishDigits(val.trim()))
+        .pipe(z.string().regex(/^\d*$/, 'تعداد دنبال‌کننده باید فقط عدد باشد'))
+        .optional(),
+    instagram: z
+        .string()
+        .refine((val) => val === '' || val.length >= 3, 'آیدی اینستاگرام باید حداقل ۳ کاراکتر باشد')
+        .refine((val) => val.length <= 30, 'آیدی اینستاگرام نباید بیشتر از ۳۰ کاراکتر باشد')
+        .refine((val) => val === '' || USERNAME_REGEX.test(val), 'آیدی اینستاگرام فرمت معتبر ندارد')
+        .optional(),
     bio: z.string().max(150, 'بایو نباید بیشتر از ۱۵۰ کاراکتر باشد').optional(),
 });
 

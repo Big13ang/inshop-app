@@ -38,12 +38,10 @@ export function OwnProfileView() {
       followerCount:
         me.sellerProfile.followerCount ??
         me.sellerProfile.followersCount ??
-        me.businessData?.followersCount ??
         undefined,
       instagram:
         me.sellerProfile.instagram ||
         me.sellerProfile.instagramId ||
-        me.businessData?.instagramId ||
         undefined,
     };
     return <ProfileView profile={profileWithSocial} isOwner={true} />;

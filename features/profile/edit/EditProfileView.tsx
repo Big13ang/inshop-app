@@ -42,6 +42,8 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
       shopName: '',
       shopPhoneNumber: user?.profile?.phoneNumber ?? '',
       username: user?.businessData?.instagramId ?? '',
+      followerCount: '',
+      instagram: '',
     };
   }
 
@@ -53,6 +55,8 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
     shopName: seller.shopName ?? '',
     shopPhoneNumber: seller.phones?.[0]?.phoneNumber ?? user?.profile?.phoneNumber ?? '',
     username: seller.username ?? user?.businessData?.instagramId ?? '',
+    followerCount: '',
+    instagram: '',
   };
 };
 
@@ -97,16 +101,7 @@ export function EditProfileView() {
     resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
   });
 
-  const [followerCount, setFollowerCount] = useState<string>(
-    user?.businessData?.followersCount ?? ''
-  );
-  const [instagram, setInstagram] = useState<string>(
-    user?.businessData?.instagramId ?? ''
-  );
-
   useEffect(() => {
-    setFollowerCount(user?.businessData?.followersCount ?? '');
-    setInstagram(user?.businessData?.instagramId ?? '');
     return () => {
       shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
       accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
@@ -119,17 +114,12 @@ export function EditProfileView() {
       return;
     }
 
-    setFollowerCount(user?.businessData?.followersCount ?? '');
-    setInstagram(user?.businessData?.instagramId ?? '');
     shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
     accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     router.push(PROFILE_ROUTES.overview);
   };
 
   const handleCancel = () => {
-    setFollowerCount(user?.businessData?.followersCount ?? '');
-    setInstagram(user?.businessData?.instagramId ?? '');
-
     if (activeTab === 'shop') {
       shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
     } else {
@@ -205,12 +195,7 @@ export function EditProfileView() {
                   <AvatarField />
                   <ShopSection />
                   <BioSection />
-                  <EditShopSocialInputs
-                    followerCount={followerCount}
-                    setFollowerCount={setFollowerCount}
-                    instagram={instagram}
-                    setInstagram={setInstagram}
-                  />
+                  <EditShopSocialInputs />
                   <AddressSection />
                   <ContactSection />
                 </form>

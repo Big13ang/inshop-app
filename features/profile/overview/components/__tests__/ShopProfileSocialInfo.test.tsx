@@ -12,19 +12,19 @@ describe('ShopProfileSocialInfo', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders follower count formatted with Persian numerals when given a number', () => {
+  it('renders follower count in compact form when given a number', () => {
     const profile: ShopSocialProfile = {
       followerCount: 12500,
     };
     render(<ShopProfileSocialInfo shopProfile={profile} />);
 
     expect(screen.getByText(/تعداد دنبال‌کننده:/)).toBeInTheDocument();
-    expect(screen.getByText(/۱۲٬۵۰۰/)).toBeInTheDocument();
+    expect(screen.getByText(/12.5K/)).toBeInTheDocument();
   });
 
-  it('renders follower count as-is when given a formatted string', () => {
+  it('renders follower count in compact form when given a numeric string', () => {
     const profile: ShopSocialProfile = {
-      followerCount: '24.5K',
+      followerCount: '24500',
     };
     render(<ShopProfileSocialInfo shopProfile={profile} />);
 
