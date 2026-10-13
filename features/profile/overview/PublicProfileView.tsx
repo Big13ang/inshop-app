@@ -13,25 +13,26 @@ interface PublicProfileViewProps {
 }
 
 export function PublicProfileView({ username, initialData }: PublicProfileViewProps) {
+  const { user: me } = useUser();
+
+  const mySellerProfile = me?.sellerProfile;
+  const ownProfile = mySellerProfile?.username.toLowerCase() === username.toLowerCase()
+    ? mySellerProfile
+    : null;
+  const isOwner = ownProfile !== null;
+
   const { data: profileData, isLoading } = profileService.useUserProfile(username, {
-    enabled: Boolean(username),
+    enabled: Boolean(username) && !isOwner,
     initialData: initialData ?? undefined,
   });
 
-  const { user: me } = useUser();
-
-  const isOwner = Boolean(
-    me?.sellerProfile?.username &&
-    me.sellerProfile.username.toLowerCase() === username.toLowerCase()
-  );
-
   const activeData = profileData ?? initialData;
+  const shop = ownProfile ?? activeData?.shop;
 
-  if (isLoading && !activeData) return <ProfileOverviewSkeleton />;
-  if (!isLoading && !activeData?.shop) notFound();
-  if (!activeData?.shop) return <ProfileOverviewSkeleton />;
+  if (!shop && isLoading) return <ProfileOverviewSkeleton />;
+  if (!shop && !isLoading) notFound();
+  if (!shop) return <ProfileOverviewSkeleton />;
 
-  const shop = activeData.shop;
   const rawShopName = shop.shopName?.trim();
   const pageTitle = rawShopName
     ? `${rawShopName} (@${shop.username}) | اینشاپ`
