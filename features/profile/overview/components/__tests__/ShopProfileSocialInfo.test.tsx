@@ -1,120 +1,82 @@
 import { render, screen } from '@testing-library/react';
-import {
-  ShopProfileSocialInfo,
-  type ShopSocialProfile,
-} from '../ShopProfileSocialInfo';
+import type { SellerProfile } from '../../../services/profileService';
+import { ShopProfileSocialInfo } from '../ShopProfileSocialInfo';
+
+function makeProfile(overrides: Partial<SellerProfile> = {}): SellerProfile {
+  return { id: '1', userId: 'u1', username: 'shop', shopName: 'Shop', ...overrides };
+}
 
 describe('ShopProfileSocialInfo', () => {
-  it('renders nothing when followerCount, instagram, and address are not provided', () => {
-    const { container } = render(
-      <ShopProfileSocialInfo shopProfile={{}} />
-    );
-    expect(container.firstChild).toBeNull();
+  it('renders "-" for follower count and Instagram when they are not set', () => {
+    render(<ShopProfileSocialInfo profile={makeProfile()} />);
+
+    expect(screen.getByText('تعداد دنبال‌کننده: -')).toBeInTheDocument();
+    expect(screen.getByText('-')).toBeInTheDocument();
   });
 
-  it('renders follower count in compact form when given a number', () => {
-    const profile: ShopSocialProfile = {
-      followerCount: 12500,
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
+  it.each([null, '', '0'])('renders "-" for follower count %p', (value) => {
+    render(<ShopProfileSocialInfo profile={makeProfile({ instagramFollowersCount: value })} />);
 
-    expect(screen.getByText(/تعداد دنبال‌کننده:/)).toBeInTheDocument();
-    expect(screen.getByText(/12.5K/)).toBeInTheDocument();
+    expect(screen.getByText('تعداد دنبال‌کننده: -')).toBeInTheDocument();
   });
 
-  it('renders follower count in compact form when given a numeric string', () => {
-    const profile: ShopSocialProfile = {
-      followerCount: '24500',
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
+  it('renders follower count in compact form', () => {
+    render(<ShopProfileSocialInfo profile={makeProfile({ instagramFollowersCount: '24500' })} />);
 
-    expect(screen.getByText(/تعداد دنبال‌کننده:/)).toBeInTheDocument();
-    expect(screen.getByText(/24.5K/)).toBeInTheDocument();
+    expect(screen.getByText('تعداد دنبال‌کننده: 24.5K')).toBeInTheDocument();
   });
 
-  it('renders Instagram ID as plain text with @ prefix and not as a hyperlink', () => {
-    const profile: ShopSocialProfile = {
-      instagram: 'my_awesome_shop',
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
+  it('renders Instagram username as plain text without @ and not as a hyperlink', () => {
+    render(<ShopProfileSocialInfo profile={makeProfile({ instagramUsername: 'my_awesome_shop' })} />);
 
-    const instagramText = screen.getByText('@my_awesome_shop');
-    expect(instagramText).toBeInTheDocument();
+    const instagramText = screen.getByText('my_awesome_shop');
     expect(instagramText.closest('a')).toBeNull();
   });
 
-  it('strips extra leading @ when rendering Instagram ID', () => {
-    const profile: ShopSocialProfile = {
-      instagram: '@my_awesome_shop',
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
+  it('renders address when it is shown', () => {
+    render(<ShopProfileSocialInfo profile={makeProfile({ address: 'تهران، خیابان آزادی', addressShow: true })} />);
 
-    expect(screen.getByText('@my_awesome_shop')).toBeInTheDocument();
+    expect(screen.getByText('تهران، خیابان آزادی')).toBeInTheDocument();
   });
 
-  it('renders handleId as Instagram ID fallback when instagram is not provided', () => {
-    const profile: ShopSocialProfile = {
-      handleId: 'fallback_shop',
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
-
-    expect(screen.getByText('@fallback_shop')).toBeInTheDocument();
-  });
-
-  it('renders address when address is present and showAddress is not false', () => {
-    const profile: ShopSocialProfile = {
-      address: 'تهران، خیابان آزادی، پلاک ۱۰',
-      showAddress: true,
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
-
-    expect(screen.getByText('تهران، خیابان آزادی، پلاک ۱۰')).toBeInTheDocument();
-  });
-
-  it('hides address when showAddress is false', () => {
-    const profile: ShopSocialProfile = {
-      followerCount: 500,
-      instagram: 'some_shop',
-      address: 'تهران، خیابان آزادی',
-      showAddress: false,
-    };
-    render(<ShopProfileSocialInfo shopProfile={profile} />);
+  it('hides address when addressShow is false', () => {
+    render(<ShopProfileSocialInfo profile={makeProfile({ address: 'تهران، خیابان آزادی', addressShow: false })} />);
 
     expect(screen.queryByText('تهران، خیابان آزادی')).not.toBeInTheDocument();
-    expect(screen.getByText(/تعداد دنبال‌کننده:/)).toBeInTheDocument();
-    expect(screen.getByText('@some_shop')).toBeInTheDocument();
   });
 
-  it('renders follower count and Instagram above address in proper order', () => {
-    const profile: ShopSocialProfile = {
-      followerCount: '1500',
-      instagram: 'order_test_shop',
-      address: 'تهران، سعادت‌آباد',
-      showAddress: true,
-    };
-    const { container } = render(<ShopProfileSocialInfo shopProfile={profile} />);
+  it('renders "-" for Instagram data on a public profile', () => {
+    render(<ShopProfileSocialInfo profile={{ username: 'shop', shopName: 'Shop' }} />);
 
-    const items = container.querySelectorAll('.space-y-2\\.5 > div');
-    expect(items.length).toBe(3);
-
-    // Item 1: follower count
-    expect(items[0]).toHaveTextContent('تعداد دنبال‌کننده:');
-    // Item 2: instagram
-    expect(items[1]).toHaveTextContent('@order_test_shop');
-    // Item 3: address
-    expect(items[2]).toHaveTextContent('تهران، سعادت‌آباد');
+    expect(screen.getByText('تعداد دنبال‌کننده: -')).toBeInTheDocument();
+    expect(screen.getByText('-')).toBeInTheDocument();
   });
 
-  it('applies custom textColorClass', () => {
-    const profile: ShopSocialProfile = {
-      followerCount: '100',
-      instagram: 'color_test',
-    };
-    const { container } = render(
-      <ShopProfileSocialInfo shopProfile={profile} textColorClass="text-zinc-500" />
+  it('renders address from a public profile (no addressShow field)', () => {
+    render(
+      <ShopProfileSocialInfo
+        profile={{ username: 'shop', shopName: 'Shop', address: 'تهران، سعادت‌آباد' }}
+      />
     );
 
-    const followerRow = container.querySelector('.text-zinc-500');
-    expect(followerRow).toBeInTheDocument();
+    expect(screen.getByText('تهران، سعادت‌آباد')).toBeInTheDocument();
+  });
+
+  it('renders Instagram, then follower count, above address', () => {
+    const { container } = render(
+      <ShopProfileSocialInfo
+        profile={makeProfile({
+          instagramFollowersCount: '1500',
+          instagramUsername: 'order_test_shop',
+          address: 'تهران، سعادت‌آباد',
+        })}
+      />
+    );
+
+    const items = container.querySelectorAll('.space-y-2\\.5 > div');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent('order_test_shop');
+    expect(items[1]).toHaveTextContent('تعداد دنبال‌کننده: 1.5K');
+    expect(items[2]).toHaveTextContent('تهران، سعادت‌آباد');
   });
 });

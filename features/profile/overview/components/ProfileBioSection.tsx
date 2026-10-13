@@ -103,23 +103,7 @@ export function ProfileBioSection({
 
       {/* Shop Social Info & Address */}
       <div className="mt-2.5 self-start" dir="rtl">
-        <ShopProfileSocialInfo
-          shopProfile={{
-            followerCount:
-              sellerProfile?.followerCount ??
-              sellerProfile?.followersCount ??
-              undefined,
-            instagram:
-              sellerProfile?.instagram ||
-              sellerProfile?.instagramId ||
-              undefined,
-            address: sellerProfile?.address ?? undefined,
-            showAddress:
-              !('addressShow' in (sellerProfile ?? {})) ||
-              (sellerProfile as SellerProfile)?.addressShow,
-          }}
-          textColorClass="text-secondary"
-        />
+        {sellerProfile && <ShopProfileSocialInfo profile={sellerProfile} />}
       </div>
 
       {/* Pending Banner */}

@@ -2,7 +2,7 @@ import { formatFollowerCount } from '../formatFollowerCount';
 
 describe('formatFollowerCount', () => {
   it.each([
-    [0, '0'],
+    [1, '1'],
     [100, '100'],
     [999, '999'],
   ])('keeps numbers under 1000 as they are (%s)', (input, expected) => {
@@ -39,7 +39,7 @@ describe('formatFollowerCount', () => {
     expect(formatFollowerCount('250')).toBe('250');
   });
 
-  it.each(['', 'abc', -5, NaN])('returns empty string for invalid input (%s)', (input) => {
+  it.each([null, undefined, '', '0', 0, 'abc', -5, NaN])('returns empty string when there is nothing to show (%s)', (input) => {
     expect(formatFollowerCount(input)).toBe('');
   });
 });

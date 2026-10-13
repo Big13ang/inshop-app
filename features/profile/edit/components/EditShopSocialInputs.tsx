@@ -15,7 +15,7 @@ export function EditShopSocialInputs() {
     formState: { errors },
   } = useFormContext<profileSchemaType>();
 
-  const followerField = register('followerCount');
+  const followerField = register('instagramFollowersCount');
 
   const handleFollowerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.target.value = toEnglishDigits(e.target.value).replace(/\D/g, '');
@@ -23,7 +23,7 @@ export function EditShopSocialInputs() {
   };
 
   const handleInstagramChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue('instagram', e.target.value.replace(/^@/, ''), {
+    setValue('instagramUsername', e.target.value.replace(/^@/, ''), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -38,7 +38,7 @@ export function EditShopSocialInputs() {
       <FormSection.Field
         label={text.edit.followerCountLabel}
         htmlFor="edit-shop-follower-count"
-        error={errors.followerCount?.message as string | undefined}
+        error={errors.instagramFollowersCount?.message as string | undefined}
       >
         <Input
           id="edit-shop-follower-count"
@@ -54,7 +54,7 @@ export function EditShopSocialInputs() {
       <FormSection.Field
         label={text.edit.instagramLabel}
         htmlFor="edit-shop-instagram"
-        error={errors.instagram?.message as string | undefined}
+        error={errors.instagramUsername?.message as string | undefined}
       >
         <div className="relative flex items-center group" dir="ltr">
           <span className="pointer-events-none absolute left-3 text-xs text-secondary/70 transition-colors duration-300 group-focus-within:text-zinc-950 select-none">
@@ -66,7 +66,7 @@ export function EditShopSocialInputs() {
             inputSize="sm"
             placeholder={text.edit.instagramPlaceholder}
             className="pl-7 font-mono tracking-wider"
-            {...register('instagram')}
+            {...register('instagramUsername')}
             onChange={handleInstagramChange}
           />
         </div>

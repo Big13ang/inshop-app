@@ -42,8 +42,8 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
       shopName: '',
       shopPhoneNumber: user?.profile?.phoneNumber ?? '',
       username: user?.businessData?.instagramId ?? '',
-      followerCount: '',
-      instagram: '',
+      instagramFollowersCount: '',
+      instagramUsername: '',
     };
   }
 
@@ -55,8 +55,8 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
     shopName: seller.shopName ?? '',
     shopPhoneNumber: seller.phones?.[0]?.phoneNumber ?? user?.profile?.phoneNumber ?? '',
     username: seller.username ?? user?.businessData?.instagramId ?? '',
-    followerCount: '',
-    instagram: '',
+    instagramFollowersCount: seller.instagramFollowersCount ?? '',
+    instagramUsername: seller.instagramUsername ?? '',
   };
 };
 

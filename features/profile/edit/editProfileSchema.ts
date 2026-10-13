@@ -42,12 +42,12 @@ export const profileSchema = z.object({
         .min(10, 'آدرس باید حداقل ۱۰ کاراکتر باشد')
         .max(80, 'آدرس نباید بیشتر از ۸۰ کاراکتر باشد'),
     addressShow: z.boolean(),
-    followerCount: z
+    instagramFollowersCount: z
         .string()
         .transform((val) => toEnglishDigits(val.trim()))
         .pipe(z.string().regex(/^\d*$/, 'تعداد دنبال‌کننده باید فقط عدد باشد'))
         .optional(),
-    instagram: z
+    instagramUsername: z
         .string()
         .refine((val) => val === '' || val.length >= 3, 'آیدی اینستاگرام باید حداقل ۳ کاراکتر باشد')
         .refine((val) => val.length <= 30, 'آیدی اینستاگرام نباید بیشتر از ۳۰ کاراکتر باشد')

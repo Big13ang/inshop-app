@@ -4,10 +4,10 @@ const UNITS = [
   { value: 1_000, suffix: 'K' },
 ];
 
-/** Instagram-style count: 999 -> "999", 1500 -> "1.5K", 1200000 -> "1.2M". Returns '' if invalid. */
-export function formatFollowerCount(count: number | string): string {
+/** Instagram-style count: 999 -> "999", 1500 -> "1.5K", 1200000 -> "1.2M". Returns '' when there is nothing to show. */
+export function formatFollowerCount(count?: number | string | null): string {
   const n = Number(count);
-  if (count === '' || !Number.isFinite(n) || n < 0) return '';
+  if (!count || !Number.isFinite(n) || n <= 0) return '';
 
   const unit = UNITS.find((u) => n >= u.value);
   if (!unit) return String(Math.floor(n));

@@ -86,6 +86,8 @@ export interface SellerProfile {
   addressProvince?: string | null;
   addressCity?: string | null;
   addressShow?: boolean;
+  instagramUsername?: string | null;
+  instagramFollowersCount?: string | null;
   phones?: SellerProfilePhone[];
   createdAt?: string;
   updatedAt?: string;

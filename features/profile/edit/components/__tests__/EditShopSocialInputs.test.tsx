@@ -9,7 +9,7 @@ function FormWrapper({ followerCount = '', instagram = '' }) {
   const methods = useForm<profileSchemaType>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
-    defaultValues: { followerCount, instagram },
+    defaultValues: { instagramFollowersCount: followerCount, instagramUsername: instagram },
   });
 
   return (
