@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Centralized registry for all client-side storage keys.
  *
  * localStorage — persisted across sessions, device-scoped.
@@ -8,6 +8,12 @@ export const storageKeys = {
   localStorage: {
     posts: {
       addPostOnboardingSeen: 'inshop:add-post-onboarding-seen',
+    },
+  },
+
+  sessionStorage: {
+    app: {
+      splashSeen: 'inshop:splash-seen',
     },
   },
 

@@ -17,6 +17,13 @@ export const Result = {
       return Result.err(e as E);
     }
   },
+  trySync<T, E = Error>(task: () => T): Result<T, E> {
+    try {
+      return Result.ok(task());
+    } catch (e) {
+      return Result.err(e as E);
+    }
+  },
   match<T, E, R>(result: Result<T, E>, cases: { ok: (value: T) => R; err: (error: E) => R }): R {
     return result.ok ? cases.ok(result.value) : cases.err(result.error);
   },

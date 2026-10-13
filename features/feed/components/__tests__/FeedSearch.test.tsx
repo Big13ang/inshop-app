@@ -16,7 +16,7 @@ describe('FeedSearch component', () => {
       </FeedSearch>
     );
 
-    const input = screen.getByPlaceholderText('برای جستجو بنویسید ...');
+    const input = screen.getByPlaceholderText('محصول مورد نظر خود را بنویسید...');
     expect(input).toBeInTheDocument();
     expect(screen.getByTestId('feed-children')).toBeInTheDocument();
     expect(screen.queryByTestId('inshop-search-result')).not.toBeInTheDocument();
@@ -31,7 +31,7 @@ describe('FeedSearch component', () => {
       </FeedSearch>
     );
 
-    const input = screen.getByPlaceholderText('برای جستجو بنویسید ...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('محصول مورد نظر خود را بنویسید...') as HTMLInputElement;
 
     await user.type(input, 'کفش ورزشی');
 
@@ -46,7 +46,7 @@ describe('FeedSearch component', () => {
       </FeedSearch>
     );
 
-    const input = screen.getByPlaceholderText('برای جستجو بنویسید ...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('محصول مورد نظر خود را بنویسید...') as HTMLInputElement;
 
     await user.type(input, 'کفش ');
 
@@ -61,7 +61,7 @@ describe('FeedSearch component', () => {
       </FeedSearch>
     );
 
-    const input = screen.getByPlaceholderText('برای جستجو بنویسید ...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('محصول مورد نظر خود را بنویسید...') as HTMLInputElement;
 
     await user.type(input, ' ');
 
@@ -76,7 +76,7 @@ describe('FeedSearch component', () => {
       </FeedSearch>
     );
 
-    const input = screen.getByPlaceholderText('برای جستجو بنویسید ...') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('محصول مورد نظر خود را بنویسید...') as HTMLInputElement;
 
     await user.type(input, 'شلوار لی');
     expect(input.value).toBe('شلوار لی');
@@ -101,7 +101,7 @@ describe('FeedSearch component', () => {
         </FeedSearch>
       );
 
-      const input = screen.getByPlaceholderText('برای جستجو بنویسید ...') as HTMLInputElement;
+      const input = screen.getByPlaceholderText('محصول مورد نظر خود را بنویسید...') as HTMLInputElement;
 
       // Type search term
       act(() => {
