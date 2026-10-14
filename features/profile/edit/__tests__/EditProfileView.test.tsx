@@ -4,10 +4,12 @@ import type { UserMe } from '../../services/profileService';
 
 const mockUseUser = jest.fn();
 const mockPush = jest.fn();
+const mockUseMe = jest.fn();
+let mockBfcacheId = 'visit-1';
 const mockToastWarning = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, bfcacheId: mockBfcacheId }),
 }));
 
 jest.mock('sonner', () => ({
@@ -25,6 +27,7 @@ jest.mock('../../services/profileMutationService', () => ({
 
 jest.mock('../../services/profileService', () => ({
   useUpdateUserAccount: () => ({ mutate: jest.fn(), isPending: false }),
+  profileService: { useMe: () => mockUseMe() },
 }));
 
 jest.mock('../hooks/useUsernameAvailability', () => ({
@@ -65,6 +68,8 @@ function buildFirstTimeSeller(): UserMe {
 describe('EditProfileView', () => {
   beforeEach(() => {
     mockPush.mockClear();
+    mockUseMe.mockClear();
+    mockBfcacheId = 'visit-1';
     mockToastWarning.mockClear();
   });
 
@@ -100,6 +105,26 @@ describe('EditProfileView', () => {
 
     fireEvent.change(screen.getByLabelText(/نام فروشگاه/), { target: { value: 'Typing…' } });
     fireEvent.click(screen.getByRole('button', { name: 'انصراف' }));
+
+    expect((screen.getByLabelText(/نام فروشگاه/) as HTMLInputElement).value).toBe('Old Shop');
+  });
+
+  it('subscribes to /me so entering the page refetches it', () => {
+    setUser(buildUser('Old Shop'));
+    render(<EditProfileView />);
+
+    expect(mockUseMe).toHaveBeenCalled();
+  });
+
+  it('drops unsaved edits when the user navigates to the page again', () => {
+    setUser(buildUser('Old Shop'));
+    const { rerender } = render(<EditProfileView />);
+    openShopTab();
+    fireEvent.change(screen.getByLabelText(/نام فروشگاه/), { target: { value: 'Typing…' } });
+
+    mockBfcacheId = 'visit-2';
+    rerender(<EditProfileView />);
+    openShopTab();
 
     expect((screen.getByLabelText(/نام فروشگاه/) as HTMLInputElement).value).toBe('Old Shop');
   });
