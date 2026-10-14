@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import "./globals.css";
+import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
 import IosViewportFixer from "@/components/utils/IosViewportFixer";

@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
   experimental: {
     useTypeScriptCli: true,
     turbopackRustReactCompiler: true,
+    // Required because app/(main) and app/(campaign) are separate root layouts.
+    globalNotFound: true,
   },
   allowedDevOrigins: getLocalIPs(),
   images: {
