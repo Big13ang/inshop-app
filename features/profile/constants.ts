@@ -85,6 +85,12 @@ export const text = {
     bioPlaceholder: 'درباره خدمات، محصولات و زمینه کاری فروشگاه بنویسید...',
     bioCounter: (current: number, max: number) => `${current} از ${max} کاراکتر`,
 
+    socialSectionTitle: 'اینستاگرام فروشگاه',
+    followerCountLabel: 'تعداد دنبال‌کننده',
+    followerCountPlaceholder: 'مثال: 12000',
+    instagramLabel: 'آیدی اینستاگرام',
+    instagramPlaceholder: 'shop_id',
+
     addressSectionTitle: 'آدرس',
     addressLabel: 'نشانی دقیق',
     addressPlaceholder: 'مثال: تهران، خیابان پاسداران، پلاک ۱۲',
