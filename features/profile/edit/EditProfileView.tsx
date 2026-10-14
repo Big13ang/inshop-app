@@ -17,7 +17,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { profileSchema, profileSchemaType } from './editProfileSchema';
 import { useUser } from '../context/UserContext';
-import { UserMe, useUpdateUserAccount } from '../services/profileService';
+import { profileService, UserMe, useUpdateUserAccount } from '../services/profileService';
 import { useCreateProfile } from '../services/profileMutationService';
 import { ProfileEditTabSwitcher, type ProfileEditTab } from './components/ProfileEditTabSwitcher';
 import { UserAccountForm } from './account/UserAccountForm';
@@ -62,12 +62,18 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
 
 export function EditProfileView() {
   const { user, isVerifying } = useUser();
+  const { bfcacheId } = useRouter();
+
+  // Subscribing here refetches /me each time this page is entered or revealed again.
+  profileService.useMe();
+
   if (isVerifying && !user) {
     return <ProfileEditSkeleton />;
   }
 
-  // Remount the forms with fresh values whenever /me changes.
-  return <EditProfileForms key={JSON.stringify(user)} />;
+  // Next keeps visited pages alive (cacheComponents), so remount the forms on every
+  // fresh navigation to this page and whenever /me changes, dropping unsaved drafts.
+  return <EditProfileForms key={`${bfcacheId}:${JSON.stringify(user)}`} />;
 }
 
 function EditProfileForms() {
