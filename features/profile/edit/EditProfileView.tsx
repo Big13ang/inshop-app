@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Store } from 'lucide-react';
 import { toast } from 'sonner';
@@ -62,22 +62,22 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
 
 export function EditProfileView() {
   const { user, isVerifying } = useUser();
+  if (isVerifying && !user) {
+    return <ProfileEditSkeleton />;
+  }
+
+  // Remount the forms with fresh values whenever /me changes.
+  return <EditProfileForms key={JSON.stringify(user)} />;
+}
+
+function EditProfileForms() {
+  const { user } = useUser();
   const router = useRouter();
 
   const isFirstTimeSeller = Boolean(user?.isVerifiedSeller && !user?.sellerProfile);
 
-  const [activeTab, setActiveTab] = useState<ProfileEditTab>(() => {
-    if (user?.isVerifiedSeller && !user?.sellerProfile) {
-      return 'shop';
-    }
-    return 'account';
-  });
-
-  useEffect(() => {
-    if (user?.isVerifiedSeller && !user?.sellerProfile && activeTab !== 'shop') {
-      setActiveTab('shop');
-    }
-  }, [user, activeTab]);
+  const [selectedTab, setSelectedTab] = useState<ProfileEditTab>('account');
+  const activeTab: ProfileEditTab = isFirstTimeSeller ? 'shop' : selectedTab;
 
   const createProfileMutation = useCreateProfile(() => {
     router.push(PROFILE_ROUTES.overview);
@@ -90,23 +90,14 @@ export function EditProfileView() {
   const shopMethods = useForm<profileSchemaType>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
-    values: generateDefaultValues(user),
-    resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
+    defaultValues: generateDefaultValues(user),
   });
 
   const accountMethods = useForm<accountSchemaInput, unknown, accountSchemaType>({
     resolver: zodResolver(accountSchema),
     mode: 'onChange',
-    values: generateDefaultAccountValues(user),
-    resetOptions: { keepDirtyValues: false, keepFieldsRef: true },
+    defaultValues: generateDefaultAccountValues(user),
   });
-
-  useEffect(() => {
-    return () => {
-      shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
-      accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
-    };
-  }, [user, shopMethods, accountMethods]);
 
   const handleBack = () => {
     if (isFirstTimeSeller) {
@@ -114,18 +105,10 @@ export function EditProfileView() {
       return;
     }
 
-    shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
-    accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
     router.push(PROFILE_ROUTES.overview);
   };
 
   const handleCancel = () => {
-    if (activeTab === 'shop') {
-      shopMethods.reset(generateDefaultValues(user), { keepFieldsRef: true });
-    } else {
-      accountMethods.reset(generateDefaultAccountValues(user), { keepFieldsRef: true });
-    }
-
     if (isFirstTimeSeller) {
       toast.warning('امکان خروج وجود ندارد؛ لطفاً ابتدا پروفایل فروشگاه خود را تکمیل کنید.');
       return;
@@ -141,10 +124,6 @@ export function EditProfileView() {
   const handleAccountSubmit = (data: accountSchemaType) => {
     updateAccountMutation.mutate(data);
   };
-
-  if (isVerifying && !user) {
-    return <ProfileEditSkeleton />;
-  }
 
   const isSaving = activeTab === 'shop'
     ? createProfileMutation.isPending
@@ -182,7 +161,7 @@ export function EditProfileView() {
           {/* Tab Switcher: Store Profile vs User Account */}
           <ProfileEditTabSwitcher
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={setSelectedTab}
           />
 
           {/* Tab 1: Store Profile (or Unverified Notice if not a seller) */}
