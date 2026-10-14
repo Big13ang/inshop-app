@@ -10,6 +10,8 @@ import { GridTile } from '@/features/feed/components/GridTile';
 import { useInfiniteScrollSentinel } from '@/features/feed/hooks/useInfiniteScrollSentinel';
 import { cleanSearchQuery } from '../utils/searchSanitizer';
 import { cn } from '@/lib/utils';
+import { searchAnalytics } from '../analytics/searchAnalytics';
+import { TrackOnView } from '@/lib/analytics/TrackOnView';
 
 function SearchHint() {
   return (
@@ -47,6 +49,11 @@ export function InShopSearchResult({
   const matchedPosts = posts ?? data?.pages.flatMap((page) => page.posts) ?? [];
   const hasResults = relevantProfiles.length > 0 || matchedPosts.length > 0;
   const isCustomData = Boolean(profiles || posts);
+  const resultsCount = relevantProfiles.length + matchedPosts.length;
+
+  const handleResultsVisible = () => {
+    searchAnalytics.viewResults(cleanQuery, resultsCount);
+  };
 
   if (!hasResults) {
     if (cleanQuery.length < 3) {
@@ -61,6 +68,7 @@ export function InShopSearchResult({
 
     return (
       <div className="w-full animate-fade-in">
+        <TrackOnView key={cleanQuery} onView={handleResultsVisible} />
         <SearchEmptyState
           query={cleanQuery}
           title={emptyStateTitle}
@@ -76,6 +84,8 @@ export function InShopSearchResult({
       id="inshop-search-result-system"
       dir="rtl"
     >
+      <TrackOnView key={cleanQuery} onView={handleResultsVisible} />
+
       {/* Top 4 Most Relevant Profiles */}
       {relevantProfiles.length > 0 && (
         <>
@@ -90,8 +100,8 @@ export function InShopSearchResult({
       {matchedPosts.length > 0 && (
         <>
           <div className="grid grid-cols-3 gap-0.5 w-full bg-white mt-1" id="inshop-products-grid">
-            {matchedPosts.map((post) => (
-              <GridTile key={post.id} post={post} />
+            {matchedPosts.map((post, index) => (
+              <GridTile key={post.id} post={post} listName="search_results" index={index} />
             ))}
           </div>
 

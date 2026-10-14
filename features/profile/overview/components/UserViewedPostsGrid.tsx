@@ -78,10 +78,12 @@ export function UserViewedPostsGrid() {
   return (
     <div className="w-full border-t border-primary/5">
       <div className="grid grid-cols-3 gap-0.5 w-full">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <ProfileGridItem
             key={post.id}
             post={post}
+            listName="viewed_posts"
+            index={index}
           />
         ))}
       </div>

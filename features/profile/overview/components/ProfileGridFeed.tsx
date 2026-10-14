@@ -43,10 +43,12 @@ export function ProfileGridFeed({
   return (
     <div className="w-full">
       <div className="grid grid-cols-3 gap-0.5">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <ProfileGridItem
             key={post.id}
             post={post}
+            listName="shop_grid"
+            index={index}
           />
         ))}
       </div>
