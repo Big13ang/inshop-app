@@ -2,7 +2,7 @@
 
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { NetworkOnly, Serwist, StaleWhileRevalidate } from "serwist";
+import { NetworkFirst, NetworkOnly, Serwist } from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -17,31 +17,19 @@ const apiHostnames = new Set([
   "api.dev.inshop.social",
   "dev-api.inshop.social",
 ]);
-async function clearLegacyApiResponses(): Promise<void> {
+
+// Wipes every runtime cache (pages, RSC payloads, images, fonts, API leftovers)
+// left behind by previous service worker versions. Only Serwist's precache is
+// kept, because the installing worker has just populated it with the current
+// build's assets.
+async function clearAllRuntimeCaches(): Promise<void> {
   const cacheNames = await caches.keys();
-  const oldDataCaches = cacheNames.filter((name) =>
-    ["apis", "cross-origin", "others"].includes(name),
-  );
-
-  await Promise.all(
-    oldDataCaches.map(async (name) => {
-      const cache = await caches.open(name);
-      const requests = await cache.keys();
-      const staleDataRequests = requests.filter((request) => {
-        const url = new URL(request.url);
-        return (
-          apiHostnames.has(url.hostname) ||
-          (url.origin === self.location.origin && (url.pathname === "/api" || url.pathname.startsWith("/api/")))
-        );
-      });
-
-      await Promise.all(staleDataRequests.map((request) => cache.delete(request)));
-    }),
-  );
+  const staleCaches = cacheNames.filter((name) => !name.includes("precache"));
+  await Promise.all(staleCaches.map((name) => caches.delete(name)));
 }
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(clearLegacyApiResponses());
+  event.waitUntil(clearAllRuntimeCaches());
 });
 
 const serwist = new Serwist({
@@ -61,8 +49,12 @@ const serwist = new Serwist({
         sameOrigin &&
         !pathname.startsWith("/api/") &&
         (request.destination === "document" || request.headers.get("RSC") === "1"),
-      handler: new StaleWhileRevalidate({
+      // Network first: a stale cached page would reference _next/static chunks
+      // that no longer exist after a deploy and break the app. The cache is
+      // only a fallback when the network is slow or offline.
+      handler: new NetworkFirst({
         cacheName: "app-pages",
+        networkTimeoutSeconds: 3,
         plugins: [
           {
             // Respect private/no-store responses so authenticated page data
