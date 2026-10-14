@@ -17,6 +17,7 @@ import {
   useRequestPasswordResetPhoneNumberMutation,
   useResetPasswordPhoneNumberMutation,
 } from '@/features/auth/hooks/useAuthMutations';
+import { authAnalytics } from '@/features/auth/analytics/authAnalytics';
 
 export interface SignInFormProps {
   defaultValues?: Partial<SignInFormData>;
@@ -88,6 +89,7 @@ export default function SignInForm({ defaultValues }: SignInFormProps = {}) {
           { phoneNumber, otp, newPassword: password },
           {
             onSuccess: () => {
+              authAnalytics.signUp('phone_otp');
               signInMutation.mutate({ phoneNumber, password, rememberMe: true }, { onSuccess: navigateToDestination });
             },
           }

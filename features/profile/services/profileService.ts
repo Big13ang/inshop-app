@@ -4,6 +4,7 @@ import { authHttp, http, Result, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { debugAuth } from '@/lib/utils/authDebug';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import { analytics, type AnalyticsUser } from '@/lib/analytics/analytics';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { getCachedFeedPosts } from '@/features/feed/services/feedService';
 import type { PublicPost } from '@/features/posts/services/publicPostService';
@@ -194,6 +195,10 @@ export function getProfileRetryDelay(attemptIndex: number): number {
   return Math.min(1000 * 2 ** attemptIndex, 10000);
 }
 
+function toAnalyticsUser(user: UserMe): AnalyticsUser {
+  return { id: user.id, isSeller: user.sellerProfile != null };
+}
+
 export async function fetchMe(): Promise<UserProfile | null> {
   const result = await Result.try(authHttp.get<ApiResponse<UserProfile>>('/me'));
 
@@ -206,6 +211,7 @@ export async function fetchMe(): Promise<UserProfile | null> {
 
     if (isUnauthorized) {
       console.info("[Auth] /me returned 401 Unauthorized - user session is unauthenticated.");
+      analytics.identify(null);
       return null;
     }
 
@@ -214,6 +220,7 @@ export async function fetchMe(): Promise<UserProfile | null> {
   }
 
   console.log(`[Auth] /me query verified user session: ${result.value.data?.email || result.value.data?.id}`);
+  analytics.identify(toAnalyticsUser(result.value.data));
   return result.value.data;
 }
 

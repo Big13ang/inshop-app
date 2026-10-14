@@ -16,6 +16,7 @@ import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 import { useIsDesktop } from '@/lib/hooks/useIsDesktop';
 import { ContactStoreBottomSheet, initiatePhoneCall } from './ContactStoreBottomSheet';
 import { ShopProfileSocialInfo } from './ShopProfileSocialInfo';
+import { shopAnalytics } from '../../analytics/shopAnalytics';
 
 interface ProfileBioSectionProps {
   sellerProfile?: PublicSellerProfile | SellerProfile;
@@ -53,6 +54,10 @@ export function ProfileBioSection({
     const phoneText = publicProfile?.shopPhoneNumber || legacyProfile?.phones?.[0]?.phoneNumber || '';
 
     if (phoneText) {
+      shopAnalytics.contactSeller(
+        { username: sellerProfile?.username ?? '', shopName: sellerProfile?.shopName },
+        'phone_call'
+      );
       initiatePhoneCall(phoneText);
     } else {
       toast.error(text.overview.callUnavailable);

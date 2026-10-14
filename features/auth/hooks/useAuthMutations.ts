@@ -15,6 +15,7 @@ import {
   RequestPasswordResetPhoneNumberPayload,
   ResetPasswordPhoneNumberPayload,
 } from '@/features/auth/services/authService';
+import { analytics } from '@/lib/analytics/analytics';
 
 export function useSendPhoneNumberOTPMutation() {
   return useMutation({
@@ -120,6 +121,7 @@ export function useSignOutMutation() {
   return useMutation({
     mutationFn: signOut,
     onSuccess: () => {
+      analytics.identify(null);
       queryClient.setQueryData(queryKeys.profile.me, null);
       queryCacheFactory.profile.invalidateMe(queryClient);
       // Evict cached feed pages and cursors to prevent stale authenticated session tokens

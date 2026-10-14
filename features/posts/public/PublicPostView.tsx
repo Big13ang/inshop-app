@@ -14,6 +14,8 @@ import {
   RECOMMENDATION_EVENT_TYPE,
 } from '@/features/posts/services/viewedPostsService';
 import { PublicPostMenuDrawer } from './components/PublicPostMenuDrawer';
+import { postAnalytics } from '@/features/posts/analytics/postAnalytics';
+import { TrackOnView } from '@/lib/analytics/TrackOnView';
 
 interface Props {
   postId: string;
@@ -126,6 +128,14 @@ export function PublicPostView({ postId, initialPost }: Props) {
       ? `${shopName} | اینشاپ`
       : 'پست | اینشاپ';
 
+  const handlePostVisible = () => {
+    postAnalytics.viewItem({
+      postId: post.id,
+      shopUsername: owner?.username,
+      shopName: owner?.shopName,
+    });
+  };
+
   const basePostData: BasePostData = {
     id: post.id,
     description: post.description,
@@ -154,6 +164,7 @@ export function PublicPostView({ postId, initialPost }: Props) {
       </Header.Root>
 
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
+        <TrackOnView key={post.id} onView={handlePostVisible} />
         <div className="flex flex-col">
           <Post.Provider post={basePostData}>
             <Post.Root>
