@@ -9,6 +9,7 @@ import { text, PROFILE_ROUTES } from '../constants';
 import AvatarField from './components/AvatarField';
 import ShopSection from './components/ShopSection';
 import BioSection from './components/BioSection';
+import { EditShopSocialInputs } from './components/EditShopSocialInputs';
 import AddressSection from './components/AddressSection';
 import ContactSection from './components/ContactSection';
 import { EditProfileFooter } from './components/EditProfileFooter';
@@ -41,6 +42,8 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
       shopName: '',
       shopPhoneNumber: user?.profile?.phoneNumber ?? '',
       username: user?.businessData?.instagramId ?? '',
+      instagramFollowersCount: '',
+      instagramUsername: '',
     };
   }
 
@@ -52,6 +55,8 @@ const generateDefaultValues = (user: UserMe | null): profileSchemaType => {
     shopName: seller.shopName ?? '',
     shopPhoneNumber: seller.phones?.[0]?.phoneNumber ?? user?.profile?.phoneNumber ?? '',
     username: seller.username ?? user?.businessData?.instagramId ?? '',
+    instagramFollowersCount: seller.instagramFollowersCount ?? '',
+    instagramUsername: seller.instagramUsername ?? '',
   };
 };
 
@@ -190,6 +195,7 @@ export function EditProfileView() {
                   <AvatarField />
                   <ShopSection />
                   <BioSection />
+                  <EditShopSocialInputs />
                   <AddressSection />
                   <ContactSection />
                 </form>
