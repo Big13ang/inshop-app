@@ -99,21 +99,14 @@ function EditProfileForms() {
     defaultValues: generateDefaultAccountValues(user),
   });
 
-  const handleBack = () => {
+  const handleExit = () => {
     if (isFirstTimeSeller) {
       toast.warning('امکان خروج وجود ندارد؛ لطفاً ابتدا پروفایل فروشگاه خود را تکمیل کنید.');
       return;
     }
 
-    router.push(PROFILE_ROUTES.overview);
-  };
-
-  const handleCancel = () => {
-    if (isFirstTimeSeller) {
-      toast.warning('امکان خروج وجود ندارد؛ لطفاً ابتدا پروفایل فروشگاه خود را تکمیل کنید.');
-      return;
-    }
-
+    shopMethods.reset(generateDefaultValues(user));
+    accountMethods.reset(generateDefaultAccountValues(user));
     router.push(PROFILE_ROUTES.overview);
   };
 
@@ -134,7 +127,7 @@ function EditProfileForms() {
   return (
     <div className="relative flex h-full w-full flex-1 flex-col overflow-hidden bg-background" dir="rtl">
       <Header.Root>
-        <Header.Back id="edit-profile-back-btn" onClick={handleBack} />
+        <Header.Back id="edit-profile-back-btn" onClick={handleExit} />
         <Header.Title>{text.edit.headerTitle}</Header.Title>
         <Header.Right />
       </Header.Root>
@@ -196,7 +189,7 @@ function EditProfileForms() {
         <EditProfileFooter
           formId={currentFormId}
           isSaving={isSaving}
-          onCancel={handleCancel}
+          onCancel={handleExit}
         />
       )}
     </div>

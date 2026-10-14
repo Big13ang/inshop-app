@@ -3,9 +3,15 @@ import { EditProfileView } from '../EditProfileView';
 import type { UserMe } from '../../services/profileService';
 
 const mockUseUser = jest.fn();
+const mockPush = jest.fn();
+const mockToastWarning = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: mockPush }),
+}));
+
+jest.mock('sonner', () => ({
+  toast: { warning: (message: string) => mockToastWarning(message) },
 }));
 
 jest.mock('../../context/UserContext', () => ({
@@ -52,7 +58,26 @@ function openShopTab() {
   fireEvent.click(screen.getAllByRole('tab')[1]);
 }
 
+function buildFirstTimeSeller(): UserMe {
+  return { ...buildUser(''), sellerProfile: null };
+}
+
 describe('EditProfileView', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+    mockToastWarning.mockClear();
+  });
+
+  it('warns a first-time seller to complete their shop profile when they press cancel', () => {
+    setUser(buildFirstTimeSeller());
+    render(<EditProfileView />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'انصراف' }));
+
+    expect(mockToastWarning).toHaveBeenCalledWith(expect.stringContaining('ابتدا پروفایل فروشگاه خود را تکمیل کنید'));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
   it('shows the refetched /me data in the shop form after a save', () => {
     setUser(buildUser('Old Shop'));
     const { rerender } = render(<EditProfileView />);
@@ -66,6 +91,17 @@ describe('EditProfileView', () => {
     openShopTab();
 
     expect((screen.getByLabelText(/نام فروشگاه/) as HTMLInputElement).value).toBe('New Shop');
+  });
+
+  it('discards unsaved edits when the user presses cancel', () => {
+    setUser(buildUser('Old Shop'));
+    render(<EditProfileView />);
+    openShopTab();
+
+    fireEvent.change(screen.getByLabelText(/نام فروشگاه/), { target: { value: 'Typing…' } });
+    fireEvent.click(screen.getByRole('button', { name: 'انصراف' }));
+
+    expect((screen.getByLabelText(/نام فروشگاه/) as HTMLInputElement).value).toBe('Old Shop');
   });
 
   it('keeps unsaved edits when /me refetches with the same data', () => {
