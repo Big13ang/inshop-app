@@ -1,13 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
+import { http, type ApiResponse } from '@/lib/utils';
 import { queryCacheFactory } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import { postAnalytics } from '@/features/posts/analytics/postAnalytics';
 
 export interface SubmitPostPayload {
   uploadSessionId: string;
   description: string;
   mediaIds: string[];
+}
+
+export interface PublishPostResponse {
+  postId: string;
 }
 
 export interface DeleteUploadSessionPhotoParams {
@@ -29,13 +34,15 @@ export function useSubmitPost(onSuccess?: () => void) {
 
   return useMutation({
     mutationFn: async (payload: SubmitPostPayload) => {
-      await http.post(
+      const res = await http.post<ApiResponse<PublishPostResponse>>(
         '/upload-sessions/publish',
         payload
       );
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryCacheFactory.posts.invalidateSeller(queryClient);
+      postAnalytics.submitProduct(data.postId);
       onSuccess?.();
     },
     onError: () => {

@@ -6,6 +6,8 @@ import { profileService } from '../services/profileService';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { useUser } from '../context/UserContext';
 import { ProfileOverviewSkeleton } from '../components/ProfileSkeleton';
+import { shopAnalytics } from '../analytics/shopAnalytics';
+import { TrackOnView } from '@/lib/analytics/TrackOnView';
 
 interface PublicProfileViewProps {
   username: string;
@@ -38,9 +40,14 @@ export function PublicProfileView({ username, initialData }: PublicProfileViewPr
     ? `${rawShopName} (@${shop.username}) | اینشاپ`
     : `@${shop.username} | اینشاپ`;
 
+  const handleShopVisible = () => {
+    shopAnalytics.viewShop({ username: shop.username, shopName: shop.shopName }, isOwner);
+  };
+
   return (
     <>
       <title>{pageTitle}</title>
+      <TrackOnView key={shop.username} onView={handleShopVisible} />
       <ProfileView profile={shop} isOwner={isOwner} />
     </>
   );

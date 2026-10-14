@@ -67,8 +67,8 @@ export function FeedContent({
   return (
     <>
       <div className="grid grid-cols-3 gap-0.5 w-full bg-white" id="home-3x5-grid">
-        {posts.map((post) => (
-          <GridTile key={post.id} post={post} />
+        {posts.map((post, index) => (
+          <GridTile key={post.id} post={post} listName="home_feed" index={index} />
         ))}
       </div>
 

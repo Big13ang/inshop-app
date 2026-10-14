@@ -8,16 +8,31 @@ import type { BackendFeedPost } from '@/features/feed/services/feedService';
 import type { PostResponseDto } from '@/features/search/types';
 import { getThumbnailUrl } from '@/lib/utils/media';
 import { cn } from '@/lib/utils';
+import { postAnalytics, type AnalyticsPostItem, type PostListName } from '@/features/posts/analytics/postAnalytics';
+import { useTrackOnView } from '@/lib/analytics/TrackOnView';
 
 interface Props {
   post: SellerPost | BackendFeedPost | PostResponseDto;
+  listName: PostListName;
+  index: number;
 }
 
-export function ProfileGridItem({ post }: Props) {
+export function ProfileGridItem({ post, listName, index }: Props) {
   const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 
   const images = getImages(post);
   const image = images[0];
+  const analyticsItem = toAnalyticsItem(post);
+
+  const handleCardVisible = () => {
+    postAnalytics.itemImpression(listName, analyticsItem, index);
+  };
+
+  const handleCardClick = () => {
+    postAnalytics.selectItem(listName, analyticsItem, index);
+  };
+
+  const cardRef = useTrackOnView<HTMLAnchorElement>(handleCardVisible);
 
   const handleImageLoad = () => {
     setImageStatus('loaded');
@@ -63,10 +78,26 @@ export function ProfileGridItem({ post }: Props) {
     'aspect-square overflow-hidden bg-surface relative block cursor-pointer outline-none focus:ring-1 focus:ring-zinc-800';
 
   return (
-    <Link href={`/p/${post.id}`} className={className} prefetch={false}>
+    <Link
+      ref={cardRef}
+      href={`/p/${post.id}`}
+      className={className}
+      prefetch={false}
+      onClick={handleCardClick}
+    >
       {content}
     </Link>
   );
+}
+
+function toAnalyticsItem(post: SellerPost | BackendFeedPost | PostResponseDto): AnalyticsPostItem {
+  if ('owner' in post && post.owner) {
+    return { postId: post.id, shopUsername: post.owner.username, shopName: post.owner.shopName };
+  }
+  if ('username' in post) {
+    return { postId: post.id, shopUsername: post.username, shopName: post.shopName };
+  }
+  return { postId: post.id };
 }
 
 function getImages(post: SellerPost | BackendFeedPost | PostResponseDto) {

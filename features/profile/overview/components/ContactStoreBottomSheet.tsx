@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toEnglishDigits, toPersianDigits } from '@/components/ui/PersianDatePicker/persianDateUtils';
 import { copyToClipboard } from '@/lib/utils/copyToClipboard';
 import { text } from '../../constants';
+import { shopAnalytics, type ContactSellerMethod } from '../../analytics/shopAnalytics';
 import type { PublicSellerProfile, SellerProfile } from '../../services/profileService';
 
 export interface StoreContactPhone {
@@ -114,10 +115,11 @@ export function initiatePhoneCall(phoneNumber: string): void {
 interface ContactPhoneRowProps {
   phone: StoreContactPhone;
   onCopy: (phoneNumber: string) => void;
+  onCall: () => void;
   isCopied: boolean;
 }
 
-function ContactPhoneRow({ phone, onCopy, isCopied }: ContactPhoneRowProps) {
+function ContactPhoneRow({ phone, onCopy, onCall, isCopied }: ContactPhoneRowProps) {
   const handleCopyClick = () => {
     onCopy(phone.phoneNumber);
   };
@@ -171,6 +173,7 @@ function ContactPhoneRow({ phone, onCopy, isCopied }: ContactPhoneRowProps) {
         <a
           href={`tel:${phone.phoneNumber}`}
           className="inline-flex shrink-0"
+          onClick={onCall}
           data-testid="call-store-phone-link"
           title={text.overview.contactCallAction}
           aria-label={`${text.overview.contactCallAction} ${phone.phoneNumber}`}
@@ -239,9 +242,22 @@ export function ContactStoreBottomSheet({
   const phone = getStoreContactPhone(sellerProfile);
   const shopName = sellerProfile?.shopName || text.overview.fallbackShopName;
 
+  const trackContact = (method: ContactSellerMethod) => {
+    if (!sellerProfile) return;
+    shopAnalytics.contactSeller(
+      { username: sellerProfile.username, shopName: sellerProfile.shopName },
+      method
+    );
+  };
+
+  const handleCall = () => {
+    trackContact('phone_call');
+  };
+
   const handleCopy = async (phoneNumber: string) => {
     await copyToClipboard(phoneNumber, {
       onSuccess: () => {
+        trackContact('copy_phone');
         setCopiedNumber(phoneNumber);
         toast.success(text.overview.contactCopied);
         setTimeout(() => setCopiedNumber(null), 2000);
@@ -296,6 +312,7 @@ export function ContactStoreBottomSheet({
                 <ContactPhoneRow
                   phone={phone}
                   onCopy={handleCopy}
+                  onCall={handleCall}
                   isCopied={copiedNumber === phone.phoneNumber}
                 />
               </div>
