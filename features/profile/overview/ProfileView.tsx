@@ -21,7 +21,7 @@ export function ProfileView({ profile, isOwner = false }: ProfileViewProps) {
       <main className="hide-scrollbar flex-1 overflow-y-auto bg-background pb-20">
         <div className="flex flex-col w-full">
           <ProfileBioSection sellerProfile={profile} isOwner={isOwner} />
-          <ProfileGridFeed username={profile.username} />
+          <ProfileGridFeed username={profile.username} isOwner={isOwner} />
         </div>
       </main>
 

@@ -7,10 +7,12 @@ import { ProfileGridItem } from './ProfileGridItem';
 
 interface ProfileGridFeedProps {
   username?: string;
+  isOwner?: boolean;
 }
 
 export function ProfileGridFeed({
   username,
+  isOwner = false,
 }: ProfileGridFeedProps) {
   const {
     data: infiniteData,
@@ -35,7 +37,7 @@ export function ProfileGridFeed({
   });
 
   if (posts.length === 0) {
-    return <ProfileEmptyState />;
+    return <ProfileEmptyState isOwner={isOwner} />;
   }
 
   return (
