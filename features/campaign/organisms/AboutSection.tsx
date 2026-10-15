@@ -4,7 +4,7 @@ export const AboutSection = () => {
   return (
     <section id="about" className="py-24 bg-stone-900 text-white overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-rose-500 rounded-full blur-[150px]" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[radial-gradient(circle,var(--color-rose-500),transparent_70%)] rounded-full" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
