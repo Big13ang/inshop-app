@@ -15,6 +15,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Expose Next.js environment variables during build
+# Unique per deploy (git SHA); see deploymentId in next.config.ts
+ARG NEXT_DEPLOYMENT_ID
+ENV NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID
+
 ARG APP_ENV="production"
 ENV APP_ENV=$APP_ENV
 

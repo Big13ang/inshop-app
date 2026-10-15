@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './campaign.css';
 import { Toaster } from '@/components/ui/sonner';
 import Analytics from '@/components/utils/Analytics';
+import { StaleAssetRecovery } from '@/components/utils/StaleAssetRecovery';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -28,6 +29,9 @@ export const metadata: Metadata = {
 export default function CampaignLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fa" dir="rtl">
+      <head>
+        <StaleAssetRecovery />
+      </head>
       <body>
         <Toaster position="top-center" dir="rtl" />
         {children}

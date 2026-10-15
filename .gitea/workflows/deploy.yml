@@ -290,6 +290,9 @@ jobs:
           BUILD_ARGS+=(--build-arg "NEXT_PUBLIC_API_URL=${EXPECTED_API_URL}")
           echo "  -> NEXT_PUBLIC_API_URL=${EXPECTED_API_URL}"
 
+          # Version-skew protection: one ID per commit, shared by every instance
+          BUILD_ARGS+=(--build-arg "NEXT_DEPLOYMENT_ID=${{ github.sha }}")
+
           # Enable BuildKit inline cache for downstream cache reuse
           BUILD_ARGS+=(--build-arg BUILDKIT_INLINE_CACHE=1)
 

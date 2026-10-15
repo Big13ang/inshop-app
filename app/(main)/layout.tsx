@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import Providers from "./providers";
 import IosViewportFixer from "@/components/utils/IosViewportFixer";
 import Analytics from "@/components/utils/Analytics";
+import { StaleAssetRecovery } from "@/components/utils/StaleAssetRecovery";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -80,6 +81,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <StaleAssetRecovery />
         {/* enamad validation */}
         <meta name="enamad" content="26426690" />
         {/* Bing Webmaster verification */}
