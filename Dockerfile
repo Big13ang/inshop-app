@@ -61,7 +61,7 @@ ARG SENTRY_ENVIRONMENT
 ENV SENTRY_ENVIRONMENT=$SENTRY_ENVIRONMENT
 
 # Build Next.js
-RUN --mount=type=cache,target=/app/.next/cache npm run build
+RUN --mount=type=cache,id=next-cache-v2,target=/app/.next/cache,sharing=locked npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
