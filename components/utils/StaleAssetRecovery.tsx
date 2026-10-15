@@ -35,5 +35,6 @@ const RECOVERY_SCRIPT = `(function(){
 })();`;
 
 export function StaleAssetRecovery() {
+  // biome-ignore lint/security/noDangerouslySetInnerHtml: fixed, build-time constant script (no user input) that must run before any bundle loads
   return <script dangerouslySetInnerHTML={{ __html: RECOVERY_SCRIPT }} />;
 }
