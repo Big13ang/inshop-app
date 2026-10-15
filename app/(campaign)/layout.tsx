@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './campaign.css';
-import { Toaster } from '@/features/campaign/ui/sonner';
+import { Toaster } from '@/components/ui/sonner';
 import Analytics from '@/components/utils/Analytics';
 
 export const viewport: Viewport = {
