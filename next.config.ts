@@ -19,6 +19,9 @@ const getLocalIPs = () => {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Tags assets with ?dpl=<id> and forces a full reload when a client from an older
+  // deploy navigates to a newer server. Unset locally, where it is a no-op.
+  deploymentId: process.env.NEXT_DEPLOYMENT_ID || undefined,
   productionBrowserSourceMaps: true,
   cacheComponents: true,
   reactCompiler: true,

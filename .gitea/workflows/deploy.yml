@@ -290,6 +290,9 @@ jobs:
           BUILD_ARGS+=(--build-arg "NEXT_PUBLIC_API_URL=${EXPECTED_API_URL}")
           echo "  -> NEXT_PUBLIC_API_URL=${EXPECTED_API_URL}"
 
+          # Version-skew protection: one ID per commit, shared by every instance
+          BUILD_ARGS+=(--build-arg "NEXT_DEPLOYMENT_ID=${{ github.sha }}")
+
           # Enable BuildKit inline cache for downstream cache reuse
           BUILD_ARGS+=(--build-arg BUILDKIT_INLINE_CACHE=1)
 
@@ -379,6 +382,21 @@ jobs:
           echo "Active running tasks: ${running_count}"
           test "${running_count}" -gt 0
           echo "Dev frontend successfully deployed!"
+
+      - name: Clear stale pages from the dev nginx cache
+        # Pages cached before this deploy reference /_next/static chunks the new
+        # build no longer has. Best effort: pages already expire after ~10s, so a
+        # failure here must never fail the deploy.
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          nginx_cid="$(docker ps -q -f name=platform_nginx | head -n 1)"
+          if [ -z "${nginx_cid}" ]; then
+            echo "::warning::platform_nginx is not on this node; skipping cache clear."
+            exit 0
+          fi
+          docker exec "${nginx_cid}" find /var/cache/nginx/nextjs_cache -type f -delete
+          echo "Cleared dev nginx page cache."
 
   # ---------------------------------------------------------------------------
   # 3. Deploy to Production (application_frontend)

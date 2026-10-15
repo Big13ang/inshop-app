@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { InstagramIcon } from '@/components/icons/InstagramIcon';
 import { Button } from '@/features/campaign/ui/button';
@@ -11,21 +11,14 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ onRegisterClick }: HeroSectionProps) => {
-  const { scrollYProgress } = useScroll();
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
-
   return (
     <section id="hero-section" className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden px-6">
       <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_top_right,var(--color-rose-100),transparent_70%)] -z-10 rounded-bl-[10rem] opacity-50" />
-      <div className="absolute -top-24 -left-24 w-[30rem] h-[30rem] bg-rose-200/30 blur-[120px] rounded-full -z-10 animate-pulse" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-rose-50/50 blur-[100px] rounded-full -z-10" />
+      <div className="absolute -top-24 -left-24 w-[30rem] h-[30rem] bg-[radial-gradient(circle,var(--color-rose-200),transparent_70%)] opacity-40 rounded-full -z-10" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[radial-gradient(circle,var(--color-rose-50),transparent_70%)] rounded-full -z-10" />
 
       <div className="hero-container max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 lg:gap-24">
-        <motion.div
-          style={{ opacity, scale }}
-          className="flex-1 text-right"
-        >
+        <div className="flex-1 text-right">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -59,7 +52,7 @@ export const HeroSection = ({ onRegisterClick }: HeroSectionProps) => {
             </Button>
           </div>
 
-        </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, scale: 0.8, rotate: 5 }}

@@ -15,6 +15,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Expose Next.js environment variables during build
+# Unique per deploy (git SHA); see deploymentId in next.config.ts
+ARG NEXT_DEPLOYMENT_ID
+ENV NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID
+
 ARG APP_ENV="production"
 ENV APP_ENV=$APP_ENV
 
@@ -61,7 +65,7 @@ ARG SENTRY_ENVIRONMENT
 ENV SENTRY_ENVIRONMENT=$SENTRY_ENVIRONMENT
 
 # Build Next.js
-RUN --mount=type=cache,target=/app/.next/cache npm run build
+RUN --mount=type=cache,id=next-cache-v2,target=/app/.next/cache,sharing=locked npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
