@@ -13,7 +13,7 @@ import { FloatingCTA } from '@/features/campaign/atoms/FloatingCTA';
 import { CAMPAIGN_ROUTES } from '@/features/campaign/constants/links';
 
 const navigateToRegistration = () => {
-  window.location.assign(CAMPAIGN_ROUTES.preRegister);
+  window.location.assign(CAMPAIGN_ROUTES.apply);
 };
 
 export function CampaignLanding() {

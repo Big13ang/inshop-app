@@ -5,6 +5,6 @@ export const metadata: Metadata = {
   title: 'پیش‌ثبت‌نام فروشگاه | inShop',
 };
 
-export default function SellPreRegisterPage() {
+export default function SellerApplyPage() {
   return <CampaignPreRegister />;
 }
