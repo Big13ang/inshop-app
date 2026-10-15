@@ -1,5 +1,5 @@
 import { CampaignLanding } from '@/features/campaign/CampaignLanding';
 
-export default function SellPage() {
+export default function SellerPage() {
   return <CampaignLanding />;
 }
