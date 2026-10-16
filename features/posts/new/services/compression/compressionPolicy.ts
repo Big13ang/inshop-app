@@ -3,22 +3,16 @@ import { Result } from '@/lib/utils/result';
 // Mirrors inshop-back-end/src/upload-session/image-processing.service.ts so the
 // backend's first compression attempt accepts what the client produces.
 export const DIMENSIONS = [1920, 1440, 1200, 1080] as const;
-export const QUALITIES = [80, 65, 50, 35, 20] as const;
-export const MAX_TARGET_SIZE_BYTES = 100 * 1024;
 export const MAX_INPUT_PIXELS = 40_000_000;
 // Backend validateResolution requires both sides >= MIN_SIDE.
 export const MIN_SIDE = 1080;
+// The backend always re-encodes what it receives. Encoding here at a low quality
+// means two lossy passes, which visibly softens the photo. q95 keeps the client
+// pass close to lossless (measured within ~0.2 dB of the backend-only result),
+// so the backend's single pass decides the final quality.
+export const CLIENT_WEBP_QUALITY = 95;
 
 export type TargetSize = { width: number; height: number };
-
-export type EncodedImage = { buffer: ArrayBuffer; quality: number };
-
-export type QualitySearchResult = {
-    /** Highest-quality encode that fits the target, or null. */
-    fit: EncodedImage | null;
-    /** Smallest encode seen during the search (for fallback). */
-    smallest: EncodedImage | null;
-};
 
 export function getTargetSize(width: number, height: number, dimension: number): TargetSize {
     const longSide = Math.max(width, height);
@@ -54,71 +48,26 @@ export function getCandidateTargets(width: number, height: number): TargetSize[]
     return targets;
 }
 
-/**
- * Binary search over the discrete QUALITIES (descending) for the highest
- * quality whose output is <= maxBytes. Size is monotonic in quality, so this
- * picks the same quality as a linear scan with at most 3 encodes.
- */
-export async function searchBestQuality(
-    encode: (quality: number) => Promise<ArrayBuffer>,
-    maxBytes: number = MAX_TARGET_SIZE_BYTES,
-): Promise<QualitySearchResult> {
-    let low = 0;
-    let high = QUALITIES.length - 1;
-    let fit: EncodedImage | null = null;
-    let smallest: EncodedImage | null = null;
-
-    while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        const quality = QUALITIES[mid];
-        const buffer = await encode(quality);
-
-        if (!smallest || buffer.byteLength < smallest.buffer.byteLength) {
-            smallest = { buffer, quality };
-        }
-
-        if (buffer.byteLength <= maxBytes) {
-            fit = { buffer, quality };
-            high = mid - 1;
-        } else {
-            low = mid + 1;
-        }
-    }
-
-    return { fit, smallest };
-}
-
 export type PixelCodec<Image extends TargetSize> = {
     resize: (source: Image, width: number, height: number) => Promise<Image>;
     encode: (image: Image, quality: number) => Promise<ArrayBuffer>;
 };
 
 /**
- * Walks the size ladder from largest to smallest and returns the first encode
- * that fits maxBytes; if none fits, the smallest encode seen. Whether that is
- * smaller than the original file is the caller's decision.
+ * Resizes to the largest backend-accepted size and encodes once at
+ * CLIENT_WEBP_QUALITY. No size cap: the backend decides the final size.
  */
 export async function compressPixels<Image extends TargetSize>(
     source: Image,
     codec: PixelCodec<Image>,
-    maxBytes: number = MAX_TARGET_SIZE_BYTES,
 ): Promise<Result<ArrayBuffer, string>> {
-    let smallest: ArrayBuffer | null = null;
+    const [target] = getCandidateTargets(source.width, source.height);
+    if (!target) return Result.err('no target size');
 
-    for (const target of getCandidateTargets(source.width, source.height)) {
-        const resized =
-            target.width === source.width && target.height === source.height
-                ? source
-                : await codec.resize(source, target.width, target.height);
+    const resized =
+        target.width === source.width && target.height === source.height
+            ? source
+            : await codec.resize(source, target.width, target.height);
 
-        const search = await searchBestQuality((quality) => codec.encode(resized, quality), maxBytes);
-        if (search.fit) return Result.ok(search.fit.buffer);
-
-        const candidate = search.smallest?.buffer;
-        if (candidate && (!smallest || candidate.byteLength < smallest.byteLength)) {
-            smallest = candidate;
-        }
-    }
-
-    return smallest ? Result.ok(smallest) : Result.err('no encode produced');
+    return Result.ok(await codec.encode(resized, CLIENT_WEBP_QUALITY));
 }
