@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Clock, RotateCcw } from 'lucide-react';
+import { Clock, Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { MediaItem, MediaStatus } from '../types';
@@ -12,6 +12,11 @@ const STATUS_CONFIG: Record<
 > = {
   queued: { bg: 'bg-black/50', icon: <Clock className="w-4 h-4 text-white" /> },
   pending: { bg: 'bg-black/50', icon: <Clock className="w-4 h-4 text-white" /> },
+  optimizing: {
+    bg: 'bg-black/50',
+    icon: <Loader2 data-testid="status-spinner" className="w-4 h-4 text-white animate-spin" />,
+    label: 'بهینه‌سازی…',
+  },
   uploading: { bg: 'bg-black/25' },
   uploaded: { bg: 'bg-transparent' },
   failed: { bg: 'bg-red-950/60', icon: <RotateCcw className="w-4 h-4 text-red-300" />, label: 'خطا' },
