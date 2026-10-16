@@ -59,33 +59,12 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/about',
+        // Page HTML names this build's hashed /_next/static chunks, which the next deploy
+        // removes. Keep browsers revalidating and the CDN to a short window so a cached
+        // page never outlives its assets and renders unstyled.
+        source: '/:page(about|contact|terms|privacy|offline)',
         headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' },
-        ],
-      },
-      {
-        source: '/contact',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' },
-        ],
-      },
-      {
-        source: '/terms',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' },
-        ],
-      },
-      {
-        source: '/privacy',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' },
-        ],
-      },
-      {
-        source: '/offline',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800' },
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=60, must-revalidate' },
         ],
       },
       {
