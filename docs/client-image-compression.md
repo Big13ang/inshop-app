@@ -26,6 +26,7 @@
   - Encoding uses `@jsquash/webp` (libwebp, the same encoder Sharp uses).
   - wasm-vips was rejected: it needs `SharedArrayBuffer` and therefore site-wide COOP/COEP, and it is "early development".
 - **Format:** always WebP (alpha preserved).
+- **Quality (changed, see §13):** encode once at q95, not a 100 KB size search.
 - **Sizing:** mirror the backend's dimension/quality ladder. Because the backend is untouched and still runs `validateResolution` (both sides ≥1080) on the uploaded file, there is one constraint: **the short side must never drop below 1080**. See §3.
 - **Fallback:** silent. If the browser is unsupported, an error occurs, or the 8 s per-image budget is exceeded, the original file is uploaded unchanged and the backend compresses it as today.
 - **UX:** a new `optimizing` media status with its own overlay label `بهینه‌سازی…`.
@@ -359,3 +360,27 @@ All §10 items fixed (Sonnet, two parallel agents; verified by Opus):
 Not unit-tested: `createCompressionWorker.ts` (`import.meta` can't be parsed by babel-jest) — covered by E2E.
 
 **Results:** `npm test` 91 suites / 773 tests pass · `tsc --noEmit` clean · lint 0 errors (10 pre-existing warnings) · `npm run build` passes · E2E compression spec 8/8 in Chromium (run: `E2E_MOCK=true npx playwright test e2e/posts/compression.spec.ts --project=chromium`; requires `npx playwright install` — local browser build was outdated).
+
+## 13. Quality change: encode at q95, no size cap — 2026-10-16
+
+**Problem.** The sizing rules in §3 aimed the phone's output at ≤100 KB with a quality search (q80 down to q20). The backend then always re-encodes what it receives. Two lossy passes softened photos, which the seller saw as a quality loss compared with the backend-only path.
+
+**Measurement** (real test photo, 1086×1448 JPEG, PSNR against the source; higher is better):
+
+| Path | Upload | Final PSNR |
+|---|---|---|
+| Backend only (today's server path) | original | 41.20 dB |
+| Client q80, then backend | 66 KB | 39.97 dB |
+| Client q90, then backend | 126 KB | 40.40 dB |
+| **Client q95, then backend** | 191 KB | **41.00 dB** |
+| Lossless upload, then backend | 746 KB | 41.20 dB |
+
+The measurements used Sharp's encoder as a stand-in for jSquash. Verify on dev with `NEXT_PUBLIC_DEBUG_COMPRESSION=true`.
+
+**Decision.** Encode once at `CLIENT_WEBP_QUALITY = 95` on the largest backend-accepted size. The size search and the 100 KB target are removed. The backend still makes the final size decision.
+
+**Trade-off.** Uploads grow (about 66 KB → 191 KB for this photo; 79 KB for the 4000×3000 fixture). They stay far below typical camera originals. Backend CPU is unchanged, because the backend still re-encodes every photo.
+
+**Superseded:** the quality bullet in §1, steps 5–6 of "Compression algorithm" in §3, and the 100 KB goal in the success criteria. The rest of §3 (sizing, the short-side ≥1080 rule, dedupe, worker design) still applies.
+
+**Code:** `features/posts/new/services/compression/compressionPolicy.ts` (`compressPixels`, `CLIENT_WEBP_QUALITY`); tests in `__tests__/compressionPolicy.test.ts`.

@@ -9,7 +9,7 @@
 
 When a seller adds a photo, the phone sends the full camera file (often 3–10 MB) to the server. The server then shrinks it with Sharp, which is slow and uses a lot of server CPU.
 
-**Goal:** shrink the photo **on the phone** first, so the upload is small (about 100 KB) and the server has less work.
+**Goal:** shrink the photo **on the phone** first, so the server has less work. The photo is encoded once at high quality (q95) so the upload stays close to the original look.
 
 **Rule:** the page must never freeze while this happens, and if anything goes wrong, the original photo is uploaded as before. Nothing breaks for the user.
 
@@ -162,15 +162,14 @@ This is the most important logic. It is in [compressionPolicy.ts](features/posts
 
 **Constants** (mirror the backend, which we do not change):
 - `DIMENSIONS = [1920, 1440, 1200, 1080]` — the longest side to try, biggest first.
-- `QUALITIES = [80, 65, 50, 35, 20]` — WebP qualities to try.
-- `MAX_TARGET_SIZE_BYTES = 100 KB` — the goal.
+- `CLIENT_WEBP_QUALITY = 95` — the one WebP quality used. Why 95: the backend always re-encodes what it receives, so a low quality here would be encoded twice and look soft. Measured: q80 then backend scored 40.0 dB, q95 then backend 41.0 dB, backend alone 41.2 dB.
 - `MIN_SIDE = 1080` — the **shortest** side must stay at least 1080, or the backend rejects the upload.
 
 **Step by step:**
 1. `getCandidateTargets(width, height)` builds a list of sizes to try, one per dimension. It never enlarges the image, and it removes duplicates.
 2. For each size, `compressPixels` resizes the image once.
-3. `searchBestQuality` tries qualities with a **binary search**: it checks the middle quality first, then halves the range. Quality gets smaller as the number goes down, so the search finds the highest quality that is still under 100 KB in about 3 tries instead of 5.
-4. The first size that fits wins. If nothing fits, the smallest result is kept.
+3. There is **no size search** any more. The image is encoded once at q95 (`compressPixels`). The backend decides the final size.
+4. The largest size on the ladder is the one sent. The backend, not the phone, makes it smaller if needed.
 
 **Why the short-side rule matters:** a 2:1 panorama resized to 1920 wide would be 960 tall, which the backend rejects. So we scale it so the short side is 1080 instead.
 
@@ -261,7 +260,7 @@ The server does the same kind of work with Sharp, and it trusts nothing the clie
 ## Step 16 — Try it yourself (a 15-minute exercise)
 
 1. Open [compressionPolicy.test.ts](features/posts/new/services/compression/__tests__/compressionPolicy.test.ts) and run `npm test -- compressionPolicy`. Read the test names: they describe the rules.
-2. Change `QUALITIES` temporarily to `[80, 50]` and run the tests again. See which tests fail and why. Then revert.
+2. Change `CLIENT_WEBP_QUALITY` temporarily to `80` and run the tests again. See which tests fail and why. Then revert.
 3. Read [workerHandler.test.ts](features/posts/new/services/compression/__tests__/workerHandler.test.ts) to see how the worker is tested without a real browser.
 
 ---
@@ -276,6 +275,6 @@ The server does the same kind of work with Sharp, and it trusts nothing the clie
 | `workerPool.ts` | Queue, timeouts, idle shutdown, circuit breaker |
 | `compress.worker.ts` | The worker file; wires the WASM codecs |
 | `workerHandler.ts` | Worker logic: warm up, decode, compress |
-| `compressionPolicy.ts` | Pure rules: sizes, qualities, binary search |
+| `compressionPolicy.ts` | Pure rules: sizes and the q95 encode |
 | `types.ts` | Messages between page and worker |
 | `uploadPipeline.ts` (outside) | Calls compressImage, then upload |
