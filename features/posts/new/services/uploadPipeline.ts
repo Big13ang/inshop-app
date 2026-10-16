@@ -9,6 +9,7 @@ import { ERROR_MESSAGES } from "@/lib/constants/errors";
 import { Result, extractMediaId } from "@/lib/utils";
 
 import { MAX_IMAGES } from "../constants";
+import { compressImage } from "./compression/compressImage";
 
 const limit = pLimit(3);
 
@@ -110,31 +111,6 @@ const handleLimitConcurrentUploads = async (
     await Promise.all(uploadPromises);
 }
 
-type UploadMediaWithTusArguments = {
-    mediaItem: MediaItem;
-    uploadSessionId: string;
-    onProgress: (percentage: number) => void;
-    onError: (error: Error) => void;
-    onSuccess: (url: string) => void;
-}
-
-const uploadMediaWithTus = async ({
-    onError,
-    mediaItem,
-    onProgress,
-    onSuccess,
-    uploadSessionId,
-}: UploadMediaWithTusArguments) => {
-    return await tusUpload({
-        uploadSessionId,
-        id: mediaItem.id,
-        file: mediaItem.file,
-        onError,
-        onProgress,
-        onSuccess,
-    })
-}
-
 const handleMediaUploadSuccess = (media: MediaItem, url?: string) => {
     const serverMediaId = extractMediaId(url);
     useMediaStore.getState().patchItem(media.id, {
@@ -172,10 +148,22 @@ const handleMediaUploadProgress = (media: MediaItem, percentage: number) => {
     });
 };
 
+// Returns the file to upload. media.file and previewUrl stay the original;
+// only the uploaded bytes change. A failure falls back to the original so the
+// item can never be stranded at 'optimizing'.
+const resolveFileToUpload = async (media: MediaItem): Promise<File> => {
+    useMediaStore.getState().patchItem(media.id, { status: 'optimizing' });
+    const compressed = await Result.try(compressImage(media.file));
+    return compressed.ok ? compressed.value : media.file;
+};
+
 const uploadNextMedia = async (media: MediaItem, uploadSessionId: string) => {
+    const fileToUpload = await resolveFileToUpload(media);
+
     const result = await Result.try(
-        uploadMediaWithTus({
-            mediaItem: media,
+        tusUpload({
+            id: media.id,
+            file: fileToUpload,
             uploadSessionId,
             onError: (error) => handleMediaUploadError(media, error),
             onProgress: (percentage) => handleMediaUploadProgress(media, percentage),
