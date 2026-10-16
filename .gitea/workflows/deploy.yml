@@ -433,3 +433,33 @@ jobs:
           echo "Active running tasks: ${running_count}"
           test "${running_count}" -gt 0
           echo "Production frontend successfully deployed with newly built production image!"
+
+      - name: Purge the ArvanCloud CDN cache
+        # Pages cached at the edge before this deploy reference /_next/static chunks the
+        # new build no longer has, so they render as bare HTML until they expire. Best
+        # effort: a failed purge must never fail an already-finished deploy.
+        continue-on-error: true
+        env:
+          ARVAN_API_KEY: ${{ secrets.ARVAN_API_KEY }}
+          ARVAN_DOMAIN: inshop.social
+        run: |
+          set -uo pipefail
+          if [ -z "${ARVAN_API_KEY}" ]; then
+            echo "::warning::ARVAN_API_KEY secret is not set; skipping CDN purge."
+            exit 0
+          fi
+          case "${ARVAN_API_KEY}" in
+            "Apikey "*) auth="${ARVAN_API_KEY}" ;;
+            *) auth="Apikey ${ARVAN_API_KEY}" ;;
+          esac
+          status="$(curl -sS -o /tmp/arvan-purge.json -w '%{http_code}' --max-time 15 \
+            -X POST "https://napi.arvancloud.ir/cdn/4.0/domains/${ARVAN_DOMAIN}/caching/purge" \
+            -H "Authorization: ${auth}" \
+            -H 'Content-Type: application/json' \
+            -d '{"purge":"all"}')"
+          cat /tmp/arvan-purge.json; echo
+          if [ "${status}" -ge 300 ]; then
+            echo "::warning::ArvanCloud purge returned HTTP ${status}."
+            exit 1
+          fi
+          echo "Purged ArvanCloud CDN cache for ${ARVAN_DOMAIN}."
