@@ -1,4 +1,5 @@
 import type { BeforeErrorState, Options } from 'ky';
+import { getRuntimeApiUrl } from '@/lib/runtimeConfig';
 import { Result } from './result';
 
 export function getBaseUrl(overrideUrl?: string): string {
@@ -8,6 +9,12 @@ export function getBaseUrl(overrideUrl?: string): string {
 
   // 1. Client-side browser hostname detection (Highest priority in browser)
   if (typeof window !== 'undefined') {
+    // Deploy-time override from /runtime-config.js wins over hostname detection
+    const runtimeApiUrl = getRuntimeApiUrl();
+    if (runtimeApiUrl) {
+      return runtimeApiUrl;
+    }
+
     const host = window.location.hostname;
 
     // Any development domain or subdomain
@@ -38,6 +45,11 @@ export function getBaseUrl(overrideUrl?: string): string {
   // 2. Node.js environment variable check (SSR / Node.js runtime)
   if (process.env.INTERNAL_API_URL) {
     return process.env.INTERNAL_API_URL.replace(/\/$/, '');
+  }
+
+  const runtimeApiUrl = getRuntimeApiUrl();
+  if (runtimeApiUrl) {
+    return runtimeApiUrl;
   }
 
   const appEnv = process.env.APP_ENV || process.env.NEXT_PUBLIC_APP_ENV;
