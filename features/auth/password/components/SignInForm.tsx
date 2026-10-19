@@ -18,6 +18,7 @@ import {
   useResetPasswordPhoneNumberMutation,
 } from '@/features/auth/hooks/useAuthMutations';
 import { authAnalytics } from '@/features/auth/analytics/authAnalytics';
+import { getSafeCallbackUrl } from '@/lib/utils/navigation';
 
 export interface SignInFormProps {
   defaultValues?: Partial<SignInFormData>;
@@ -28,8 +29,7 @@ export default function SignInForm({ defaultValues }: SignInFormProps = {}) {
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  const callbackUrl = searchParams?.get('callbackUrl');
-  const destination = callbackUrl || '/app/profile';
+  const destination = getSafeCallbackUrl(searchParams?.get('callbackUrl'));
 
   const sendOtpMutation = useSendPhoneNumberOTPMutation();
   const verifyMutation = useVerifyPhoneNumberMutation();
