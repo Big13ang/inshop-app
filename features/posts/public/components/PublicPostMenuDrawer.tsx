@@ -7,6 +7,7 @@ import { usePostContext } from '@/features/posts/components/Post/PostContext';
 import { useDeletePendingPost } from '@/features/posts/services/deletePostService';
 import DeletePostConfirmationBottomSheet from '@/features/posts/components/DeletePostConfirmationBottomSheet';
 import type { PublicPost } from '@/features/posts/services/publicPostService';
+import { goBackSafely } from '@/lib/utils/navigation';
 
 interface PublicPostMenuDrawerProps {
   post: PublicPost;
@@ -31,7 +32,7 @@ export function PublicPostMenuDrawer({ post, onDeleted }: PublicPostMenuDrawerPr
         if (onDeleted) {
           onDeleted();
         } else {
-          router.push('/');
+          goBackSafely(router);
         }
       },
     });
