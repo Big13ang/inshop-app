@@ -8,7 +8,10 @@ const ONE_YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 
 export async function resolveProxyResponse(request: NextRequest): Promise<NextResponse> {
   if (await isMissingPostForCrawler(request)) {
-    return new NextResponse(null, { status: 404 });
+    return new NextResponse(null, {
+      status: 404,
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60' },
+    });
   }
 
   const response = NextResponse.next();

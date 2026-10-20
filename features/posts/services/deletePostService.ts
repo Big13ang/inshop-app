@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
+import { http, Result } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import { useUser } from '@/features/profile/context/UserContext';
+import { expireSellerProfileCache } from '@/features/profile/actions/expireSellerProfileCache';
 import type {
   SellerPost,
   SellerPostsByUsernameData,
@@ -203,8 +205,16 @@ export function removePostFromAllCaches(queryClient: QueryClient, deletedId: str
   queryClient.removeQueries({ queryKey: ['posts', 'public-detail', deletedId], type: 'inactive' });
 }
 
+// Fire-and-forget: the delete already succeeded, so a cache-expiry failure must not show an error.
+// Only the seller's profile needs expiring: crawlers asking for the deleted post itself get a 404 from the proxy.
+function expireSellerProfileAfterDelete(sellerUsername?: string | null) {
+  if (!sellerUsername) return;
+  void Result.try(expireSellerProfileCache(sellerUsername));
+}
+
 export function useDeletePendingPost() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation<void, unknown, string, DeletionRollbackContext>({
     mutationFn: async (id: string) => {
@@ -229,6 +239,7 @@ export function useDeletePendingPost() {
     },
     onSuccess: () => {
       toast.success('پست با موفقیت حذف شد');
+      expireSellerProfileAfterDelete(user?.sellerProfile?.username);
     },
     onSettled: async (_data, _error, deletedId) => {
       // First invalidate pending-rejected, then username/profile & all posts
