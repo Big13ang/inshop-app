@@ -22,18 +22,8 @@ test.describe('Add New Post — Next button guards', () => {
     addPostPage,
   }) => {
     await addPostPage.uploadValidImage();
-    await addPostPage.clickGalleryCell(0);
     await addPostPage.waitForSelectionCount(1);
     await addPostPage.clickNext();
     await addPostPage.assertOnDetailsPhase();
-  });
-
-  test('uploading files but selecting none still blocks Next', async ({ addPostPage }) => {
-    await addPostPage.uploadValidImage();
-    // No selection tap — selectedIds is empty
-    await addPostPage.clickNext();
-    await expect(
-      addPostPage.page.getByText(text.alertNoImages),
-    ).toBeVisible({ timeout: 5_000 });
   });
 });

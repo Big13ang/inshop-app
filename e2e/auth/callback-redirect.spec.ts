@@ -1,14 +1,15 @@
 /**
  * E2E — Login redirect: callbackUrl is only honoured for same-origin paths.
  *
- * The sign-in API is mocked in the browser so these tests cover the frontend
- * redirect logic without needing the backend.
+ * With E2E_MOCK=true the sign-in API is mocked in the browser. With mocks off
+ * (the default) it runs against the real backend and needs E2E_PHONE / E2E_PASSWORD.
+ * Requests to hosts outside localhost are always blocked, so a bad redirect can
+ * never reach a real external site.
  */
 
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { E2E_ACCOUNT, E2E_MOCKS_ENABLED } from '../fixtures/mode';
 
-const PHONE = '09121234567';
-const PASSWORD = 'abcdef12';
 const DEFAULT_LANDING = '/app/profile';
 
 const ME_BODY = {
@@ -72,8 +73,8 @@ async function signInFrom(page: Page, callbackUrl: string | null) {
   const path = callbackUrl === null ? '/auth/login' : `/auth/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   await page.goto(path, { waitUntil: 'networkidle' });
   await expect(async () => {
-    await page.getByPlaceholder('۰۹۱۲۳۴۵۶۷۸۹').fill(PHONE);
-    await page.locator('#password-input').fill(PASSWORD);
+    await page.getByPlaceholder('۰۹۱۲۳۴۵۶۷۸۹').fill(E2E_ACCOUNT.phone);
+    await page.locator('#password-input').fill(E2E_ACCOUNT.password);
     await page.getByRole('button', { name: 'ورود به حساب کاربری', exact: true }).click();
     await expect(page).not.toHaveURL(/\/auth\/login/, { timeout: 5_000 });
   }).toPass({ timeout: 60_000 });
@@ -86,7 +87,9 @@ test.describe('Login redirect after sign-in', () => {
   test.beforeEach(async ({ context, page }) => {
     attemptedExternal = [];
     dialogs = [];
-    await mockBackend(context, 'http://localhost:8000');
+    if (E2E_MOCKS_ENABLED) {
+      await mockBackend(context, 'http://localhost:8000');
+    }
     await blockExternalNavigations(context, attemptedExternal);
     page.on('dialog', (dialog) => {
       dialogs.push(dialog.message());

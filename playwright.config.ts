@@ -4,6 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 loadEnvConfig(process.cwd());
 
 const CI = !!process.env.CI;
+// Without mocks every upload is compressed and sent to the real backend, which is slow and rate-limited.
+const REAL_BACKEND = process.env.E2E_MOCK !== 'true';
 
 export default defineConfig({
   testDir: './e2e',
@@ -18,7 +20,10 @@ export default defineConfig({
   retries: CI ? 2 : 0,
 
   // Limit workers in CI to avoid resource contention
-  workers: CI ? 1 : undefined,
+  workers: CI ? 1 : REAL_BACKEND ? 2 : undefined,
+
+  timeout: REAL_BACKEND ? 120_000 : 30_000,
+  expect: { timeout: REAL_BACKEND ? 30_000 : 5_000 },
 
   reporter: [
     ['html', { open: 'never' }],

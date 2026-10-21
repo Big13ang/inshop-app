@@ -9,6 +9,7 @@
 import { test, expect } from '../fixtures';
 import { TINY_PNG } from '../pages/AddPostPage';
 import { text, MAX_IMAGES } from '../../features/posts/new/constants';
+import { ERROR_MESSAGES } from '../../lib/constants/errors';
 
 test.describe('Add New Post — file upload', () => {
   test('uploading a valid image adds it to the gallery', async ({ addPostPage }) => {
@@ -27,18 +28,14 @@ test.describe('Add New Post — file upload', () => {
 
   test('uploading an invalid file type shows a format warning toast', async ({ addPostPage }) => {
     await addPostPage.uploadInvalidFile('document.heic');
-    await expect(
-      addPostPage.page.getByText('عکس های HEIC پشتیبانی نمی شوند').or(addPostPage.page.getByText('فرمت تصویر نامعتبر است')),
-    ).toBeVisible({ timeout: 5_000 });
+    await expect(addPostPage.page.getByText(ERROR_MESSAGES.upload.heicNotSupported)).toBeVisible();
   });
 
-  test('toast for invalid file includes the rejected-file count in its description', async ({
-    addPostPage,
-  }) => {
+  test('toast for an invalid file names the rejected file', async ({ addPostPage }) => {
     await addPostPage.uploadInvalidFile('document.heic');
     await expect(
-      addPostPage.page.getByText('پشتیبانی نمی‌شوند').or(addPostPage.page.getByText('نامعتبر است')),
-    ).toBeVisible({ timeout: 5_000 });
+      addPostPage.page.getByText(ERROR_MESSAGES.upload.imageUnacceptable('document.heic')),
+    ).toBeVisible();
   });
 
 

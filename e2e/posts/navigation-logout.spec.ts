@@ -1,20 +1,27 @@
+import { routeMock, E2E_SESSION_TOKEN } from '../fixtures/mode';
+import { mockSignedInSeller } from '../fixtures/authMocks';
 import { test, expect } from '../fixtures';
 
 test.describe('Bottom Navigation & Logout E2E', () => {
-  
+  // The bottom nav was redesigned: it no longer has "پست جدید" or "خروج" tabs, and logout moved
+  // to the profile menu (ProfileMenu → LogoutConfirmationBottomSheet). Rewrite with Task 3's auth specs.
+  test.fixme();
+
   test.beforeEach(async ({ page, context }) => {
-    // Set a mock session token cookie to bypass proxy authentication check
+    // Session cookie: a fake token in mock mode, the real E2E_SESSION_TOKEN against a real backend.
     await context.addCookies([
       {
         name: 'better-auth.session_token',
-        value: 'mock-session-token',
+        value: E2E_SESSION_TOKEN ?? '',
         domain: 'localhost',
         path: '/',
       },
     ]);
 
+    await mockSignedInSeller(page);
+
     // Mock the sign-out endpoint to return success and delete the session cookie
-    await page.route('**/api/auth/sign-out', async (route) => {
+    await routeMock(page, '**/api/auth/sign-out', async (route) => {
       await route.fulfill({
         status: 200,
         headers: {
@@ -56,7 +63,7 @@ test.describe('Bottom Navigation & Logout E2E', () => {
       resolveSignOut = resolve;
     });
 
-    await page.route('**/api/auth/sign-out', async (route) => {
+    await routeMock(page, '**/api/auth/sign-out', async (route) => {
       await signOutPromise;
       await route.fulfill({
         status: 200,

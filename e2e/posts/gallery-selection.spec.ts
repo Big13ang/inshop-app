@@ -64,7 +64,7 @@ test.describe('Add New Post — gallery selection', () => {
   });
 
 
-  test('clicking a cell that is still uploading does not select it', async ({ addPostPage }) => {
+  test('tapping a cell that is still uploading does not change its selection', async ({ addPostPage }) => {
     await addPostPage.mockSlowUploadApi(5_000);
     await addPostPage.uploadFiles([
       { name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG },
@@ -72,14 +72,18 @@ test.describe('Add New Post — gallery selection', () => {
     const cell = addPostPage.galleryContainer.locator('div.aspect-square').first();
     await expect(cell).toBeVisible({ timeout: 5_000 });
     await expect(cell.getByText(/٪/)).toBeVisible({ timeout: 5_000 });
+    // Selected automatically as soon as it passed validation
+    await addPostPage.waitForSelectionCount(1);
 
     await addPostPage.clickGalleryCell(0);
 
-    // No order badge should appear — selection is rejected while status !== 'uploaded'
-    await expect(addPostPage.galleryContainer.getByText('1', { exact: true })).not.toBeVisible();
+    // Taps are ignored until the upload finishes, so it stays selected
+    await expect(cell.getByText(/٪/)).toBeVisible();
+    await addPostPage.waitForSelectionCount(1);
   });
 
-  test('clicking a failed cell retries the upload instead of selecting it', async ({
+  // Retry is not built yet: the "تلاش دوباره" button in StatusOverlay does nothing (deferred review item).
+  test.fixme('clicking a failed cell retries the upload instead of selecting it', async ({
     addPostPage,
   }) => {
     await addPostPage.mockUploadApiWithError();

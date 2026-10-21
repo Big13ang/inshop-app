@@ -1,3 +1,4 @@
+import { routeMock } from '../fixtures/mode';
 /**
  * E2E Tests — Auth / OTP
  *
@@ -286,7 +287,7 @@ test.describe('OTP page — retry after failure', () => {
   }) => {
     // First verify fails, then succeed on retry
     let callCount = 0;
-    await page.route(
+    await routeMock(page, 
       (url) =>
         url.pathname.includes('/api/auth/phone-number/verify') ||
         url.pathname.includes('/api/auth/phone-number/sign-up'),

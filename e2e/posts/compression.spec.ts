@@ -1,3 +1,4 @@
+import { E2E_MOCKS_ENABLED, routeMock } from '../fixtures/mode';
 /**
  * E2E — Add New Post: client-side image compression
  *
@@ -79,6 +80,10 @@ async function waitForUploads(creations: CapturedUpload[], count: number) {
 }
 
 test.describe('Add New Post — client-side compression', () => {
+  // Compression falls back to the original after 8 s (JOB_TIMEOUT_MS). Several big images
+  // compressing at once in parallel tests can hit that, so this file runs its tests one at a time.
+  test.describe.configure({ mode: 'default' });
+
   test('4000×3000 JPEG is uploaded as WebP, ≤100 KB, 1920×1440', async ({ addPostPage }) => {
     const { creations } = captureUploads(addPostPage.page);
     await addPostPage.uploadFiles([await loadFixture('photo-4000x3000.jpg', 'image/jpeg')]);
@@ -142,7 +147,7 @@ test.describe('Add New Post — client-side compression', () => {
       });
     });
     // Hold the PATCH so "uploading" is observable.
-    await page.route(
+    await routeMock(page, 
       (url) => url.pathname.includes('/uploads'),
       async (route) => {
         if (route.request().method() === 'PATCH') await new Promise((r) => setTimeout(r, 400));
@@ -165,8 +170,7 @@ test.describe('Add New Post — client-side compression', () => {
     await page.addInitScript(() => {
       delete (window as unknown as { OffscreenCanvas?: unknown }).OffscreenCanvas;
     });
-    await page.reload();
-    await addPostPage.dismissOnboardingIfPresent();
+    await addPostPage.reload();
 
     const { creations } = captureUploads(page);
     const original = await loadFixture('photo-4000x3000.jpg', 'image/jpeg');
@@ -180,9 +184,10 @@ test.describe('Add New Post — client-side compression', () => {
   });
 
   test('a 404 on the worker chunk falls back to the original and does not retry endlessly', async ({ addPostPage }) => {
+    test.skip(!E2E_MOCKS_ENABLED, 'Mock-only: needs a simulated 404 for the worker script');
     const { page } = addPostPage;
     let workerRequests = 0;
-    await page.route(
+    await routeMock(page, 
       (url) => WORKER_REQUEST.test(url.pathname),
       (route) => {
         workerRequests += 1;
@@ -190,8 +195,7 @@ test.describe('Add New Post — client-side compression', () => {
       },
     );
     // Drop warmed workers so the next compression has to fetch the script again.
-    await page.reload();
-    await addPostPage.dismissOnboardingIfPresent();
+    await addPostPage.reload();
 
     const { creations } = captureUploads(page);
     const original = await loadFixture('photo-4000x3000.jpg', 'image/jpeg');

@@ -16,9 +16,7 @@ async function selectTwoImages(addPostPage: import('../pages/AddPostPage').AddPo
   ]);
   await addPostPage.waitForGalleryHasUploadedItem();
   await addPostPage.waitForUploadedCount(2);
-  await addPostPage.clickGalleryCell(0);
-  await addPostPage.waitForSelectionCount(1);
-  await addPostPage.clickGalleryCell(1);
+  // Both are selected automatically on upload
   await addPostPage.waitForSelectionCount(2);
 }
 

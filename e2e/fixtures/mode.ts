@@ -7,9 +7,12 @@
  *
  * Real-backend runs need an existing account and session:
  *   E2E_PHONE, E2E_PASSWORD, E2E_SESSION_TOKEN
+ * Optional for real-backend runs:
+ *   E2E_IMAGE=<path>          image the add-post specs upload
+ *   E2E_ALLOW_PUBLISH=true    also run specs that publish a real post
  */
 
-import { type Page } from '@playwright/test';
+import { type Page, test } from '@playwright/test';
 
 export const E2E_MOCKS_ENABLED = process.env.E2E_MOCK === 'true';
 
@@ -20,6 +23,17 @@ export const E2E_ACCOUNT = {
 
 /** Session cookie for the add-post flow. Mocked runs use a fixed fake token. */
 export const E2E_SESSION_TOKEN = E2E_MOCKS_ENABLED ? 'mock-session-token' : (process.env.E2E_SESSION_TOKEN ?? null);
+
+/**
+ * Call inside a test that publishes a post. Against a real backend that creates a real post on the
+ * account, so it only runs when E2E_ALLOW_PUBLISH=true is set as well.
+ */
+export function skipUnlessPublishAllowed() {
+  test.skip(
+    !E2E_MOCKS_ENABLED && process.env.E2E_ALLOW_PUBLISH !== 'true',
+    'Publishes a real post: set E2E_ALLOW_PUBLISH=true to run it against a real backend',
+  );
+}
 
 /**
  * Installs a route mock only when mocks are enabled. With mocks off, the request

@@ -14,7 +14,8 @@ import { test as base } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { OtpPage } from '../pages/OtpPage';
 import { AddPostPage } from '../pages/AddPostPage';
-import { env } from '@/env';
+import { E2E_MOCKS_ENABLED, E2E_SESSION_TOKEN } from './mode';
+import { mockSignedInSeller } from './authMocks';
 
 type Fixtures = {
   loginPage: LoginPage;
@@ -60,20 +61,21 @@ export const test = base.extend<Fixtures>({
    * handler takes priority over this fixture's success mock.
    */
   addPostPage: async ({ page, context }, use) => {
-    const E2E_MOCK = env.E2E_MOCK !== 'false';
-
-    await context.addCookies([
-      {
-        name: 'better-auth.session_token',
-        value: E2E_MOCK ? 'mock-session-token' : 'w0WoIOwqTDWQ75kS230AprXIGTuKSG1F.6yhfYefEs8nMSUVrjUcVrnz%2BF9j%2BSb7zq0I56pdLe%2F0%3D',
-        domain: 'localhost',
-        path: '/',
-      },
-    ]);
+    if (E2E_SESSION_TOKEN) {
+      await context.addCookies([
+        {
+          name: 'better-auth.session_token',
+          value: E2E_SESSION_TOKEN,
+          domain: 'localhost',
+          path: '/',
+        },
+      ]);
+    }
 
     const addPostPage = new AddPostPage(page);
 
-    if (E2E_MOCK) {
+    if (E2E_MOCKS_ENABLED) {
+      await mockSignedInSeller(page);
       await addPostPage.mockUploadApi();
       await addPostPage.mockPublishApi();
     }

@@ -12,10 +12,12 @@ test.describe('Add New Post — file input attributes', () => {
     await expect(addPostPage.fileInput).toHaveAttribute('type', 'file');
   });
 
-  test('file input has accept="image/*" to open the native gallery on iOS/Android', async ({
+  test('touch devices get accept="image/*" to open the native gallery; desktop lists the supported formats', async ({
     addPostPage,
+    hasTouch,
   }) => {
-    await expect(addPostPage.fileInput).toHaveAttribute('accept', 'image/*');
+    const expected = hasTouch ? 'image/*' : 'image/jpeg,image/png,image/webp';
+    await expect(addPostPage.fileInput).toHaveAttribute('accept', expected);
   });
 
   test('file input has the multiple attribute to allow multi-select', async ({ addPostPage }) => {

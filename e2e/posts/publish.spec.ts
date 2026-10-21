@@ -1,5 +1,5 @@
 /**
- * E2E — Add New Post: publish (POST /api/posts)
+ * E2E — Add New Post: publish (POST /upload-sessions/publish)
  *
  * Covers the Step 3 "Publish" acceptance criteria: loading state, success
  * message + delayed redirect, error handling with state preservation, and
@@ -8,6 +8,8 @@
 
 import { test, expect } from '../fixtures';
 import { text } from '../../features/posts/new/constants';
+import { ERROR_MESSAGES } from '../../lib/constants/errors';
+import { skipUnlessPublishAllowed } from '../fixtures/mode';
 
 test.describe('Add New Post — publish loading state', () => {
   test('Share button shows a spinner and disables while the request is pending', async ({
@@ -28,10 +30,11 @@ test.describe('Add New Post — publish success', () => {
   test('shows the admin-approval toast and redirects to pending posts page immediately', async ({
     addPostPage,
   }) => {
+    skipUnlessPublishAllowed();
     await addPostPage.advanceToDetailsPhase();
     await addPostPage.fillCaption('محصول جدید با کیفیت بالا');
 
-    const publishResponse = addPostPage.page.waitForResponse('**/api/posts');
+    const publishResponse = addPostPage.waitForPublishResponse();
     await addPostPage.clickShare();
     await publishResponse;
 
@@ -55,7 +58,7 @@ test.describe('Add New Post — publish failure', () => {
     await addPostPage.fillAndSubmitPost('محصول جدید با کیفیت بالا');
 
     await expect(
-      addPostPage.page.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید'),
+      addPostPage.page.getByText(ERROR_MESSAGES.posts.submitFailed),
     ).toBeVisible({ timeout: 5_000 });
   });
 
@@ -64,7 +67,7 @@ test.describe('Add New Post — publish failure', () => {
     await addPostPage.fillAndSubmitPost('محصول جدید با کیفیت بالا');
 
     await expect(
-      addPostPage.page.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید'),
+      addPostPage.page.getByText(ERROR_MESSAGES.posts.submitFailed),
     ).toBeVisible({ timeout: 5_000 });
     await expect(addPostPage.captionTextarea).toHaveValue('محصول جدید با کیفیت بالا');
   });
@@ -74,7 +77,7 @@ test.describe('Add New Post — publish failure', () => {
     await addPostPage.fillAndSubmitPost('محصول جدید با کیفیت بالا');
 
     await expect(
-      addPostPage.page.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید'),
+      addPostPage.page.getByText(ERROR_MESSAGES.posts.submitFailed),
     ).toBeVisible({ timeout: 5_000 });
     // The selected-media slider still shows the one selected image after the failure.
     await expect(addPostPage.page.getByText('فایل 1 از 1')).toBeVisible();
@@ -87,14 +90,14 @@ test.describe('Add New Post — publish failure', () => {
     await addPostPage.fillAndSubmitPost('محصول جدید با کیفیت بالا');
 
     await expect(
-      addPostPage.page.getByText('ارسال پست با خطا مواجه شد، دوباره تلاش کنید'),
+      addPostPage.page.getByText(ERROR_MESSAGES.posts.submitFailed),
     ).toBeVisible({ timeout: 5_000 });
     await expect(addPostPage.shareButton).toBeEnabled();
   });
 });
 
 test.describe('Add New Post — duplicate submission prevention', () => {
-  test('only one POST /api/posts request fires even if Share is clicked while pending', async ({
+  test('only one publish request fires even if Share is clicked while pending', async ({
     addPostPage,
   }) => {
     await addPostPage.mockSlowPublishApi(1_500);
@@ -109,7 +112,7 @@ test.describe('Add New Post — duplicate submission prevention', () => {
     await addPostPage.shareButton.click({ force: true }).catch(() => {});
 
     // Give the in-flight (mocked, 1.5s) request time to resolve, then confirm
-    // exactly one POST /api/posts request was ever made.
+    // exactly one publish request was ever made.
     await addPostPage.page.waitForTimeout(2_000);
     expect(addPostPage.publishRequestCount).toBe(1);
   });
