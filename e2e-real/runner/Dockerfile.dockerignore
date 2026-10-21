@@ -1,0 +1,6 @@
+# Used instead of the root .dockerignore, which excludes e2e-real/
+*
+!tsconfig.json
+!features/
+!e2e-real/
+e2e-real/stack/

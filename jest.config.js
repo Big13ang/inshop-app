@@ -47,6 +47,7 @@ const config = {
     '/temp/',
     '/.next/',
     '/e2e/',
+    '/e2e-real/',
   ],
   collectCoverageFrom: [
     'features/**/*.{ts,tsx}',

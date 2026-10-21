@@ -1,6 +1,6 @@
 import * as tus from 'tus-js-client';
 import { Result } from '@/lib/utils'; // Project's Result helper
-import { env } from '@/env';
+import { getPublicApiUrl } from '@/lib/runtimeConfig';
 import { FetchHttpStack } from './fetchHttpStack';
 
 export interface TusUploadOptions {
@@ -66,7 +66,7 @@ export function tusUpload({
     onProgress,
     onSuccess,
     onError,
-    endpoint = `${env.NEXT_PUBLIC_API_URL}/uploads`,
+    endpoint = `${getPublicApiUrl()}/uploads`,
     uploadSessionId = '',
 }: TusUploadOptions): Promise<Result<string, Error>> {
     return new Promise((resolve) => {

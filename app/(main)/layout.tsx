@@ -81,6 +81,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Blocking on purpose: deploy-time API/CDN URLs must be set before app code runs */}
+        <script src="/runtime-config.js" />
         <StaleAssetRecovery />
         {/* enamad validation */}
         <meta name="enamad" content="26426690" />

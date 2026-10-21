@@ -1,4 +1,4 @@
-import { env } from '@/env';
+import { getPublicApiUrl } from '@/lib/runtimeConfig';
 
 export interface UploadParams {
   id: string;
@@ -13,7 +13,7 @@ export interface UploadStrategy {
 }
 
 export function createChunkStrategy(
-  _endpoint = `${env.NEXT_PUBLIC_API_URL}/uploads`,
+  _endpoint = `${getPublicApiUrl()}/uploads`,
 ): UploadStrategy {
   return {
     async upload(_params: UploadParams): Promise<string> {

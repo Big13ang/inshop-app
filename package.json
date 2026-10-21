@@ -20,6 +20,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:real": "bash e2e-real/stack/run.sh",
     "diff:generate": "node .agents/skills/detail-recap/scripts/detail-recap.js",
     "upload-sourcemaps": "./scripts/upload-sourcemaps.sh",
     "prepare": "lefthook install"
@@ -80,6 +81,7 @@
     "@types/jalaali-js": "^1.2.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@typescript/native-preview": "^7.0.0-dev.20260707.2",
@@ -92,6 +94,7 @@
     "jest-fixed-jsdom": "^0.0.11",
     "lefthook": "^1.10.0",
     "msw": "^2.14.6",
+    "pg": "^8.23.1",
     "tailwindcss": "^4",
     "typescript": "^7.0.0"
   },
