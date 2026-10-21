@@ -53,6 +53,24 @@ const addMediaItem = (files: File[]): MediaItem[] => {
     return newMediaItems;
 }
 
+// Android can lose access to a picked file later (NotReadableError), typically while it
+// waits its turn to upload. Read the whole file into memory while access is still valid.
+const copyIntoMemory = async (file: File): Promise<Result<File>> => {
+    const bytes = await Result.try(file.arrayBuffer());
+    if (!bytes.ok) return Result.err(bytes.error);
+    return Result.ok(new File([bytes.value], file.name, {
+        type: file.type,
+        lastModified: file.lastModified,
+    }));
+};
+
+const rejectMediaItem = (item: MediaItem, reason: string) => {
+    useMediaStore.getState().removeItem(item.id);
+    toast.error(ERROR_MESSAGES.upload.imageUnacceptable(item.file.name), {
+        description: reason,
+    });
+};
+
 const validateMediaItems = async (mediaItems: MediaItem[]) => {
     const store = useMediaStore.getState();
     const mediaList = store.mediaList || [];
@@ -72,18 +90,19 @@ const validateMediaItems = async (mediaItems: MediaItem[]) => {
         const rejection = await validateOne(item.file);
 
         if (rejection) {
-            store.removeItem(item.id);
+            rejectMediaItem(item, rejection.reason);
+            continue;
+        }
 
-
-
-            toast.error(ERROR_MESSAGES.upload.imageUnacceptable(item.file.name), {
-                description: rejection.reason,
-            });
+        const copy = await copyIntoMemory(item.file);
+        if (!copy.ok) {
+            rejectMediaItem(item, ERROR_MESSAGES.upload.fileUnreadable);
         } else {
             validCount += 1;
 
             const updateValidItem = {
                 ...item,
+                file: copy.value,
                 isValid: true,
                 order: validCount,
                 status: 'queued' as const,

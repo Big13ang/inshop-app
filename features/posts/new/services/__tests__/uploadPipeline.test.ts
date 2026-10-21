@@ -24,6 +24,23 @@ function createTestFile(name = 'photo.jpg', size = 1024 * 1024, type = 'image/jp
   return new File([new ArrayBuffer(size)], name, { type });
 }
 
+async function expectSameFile(received: File, original: File) {
+  expect(received.name).toBe(original.name);
+  expect(received.type).toBe(original.type);
+  expect(new Uint8Array(await received.arrayBuffer())).toEqual(new Uint8Array(await original.arrayBuffer()));
+}
+
+/** A file that can be read now but no longer later, like a picked photo Android revokes access to. */
+function createRevocableFile(name: string, content: string) {
+  const file = new File([content], name, { type: 'image/jpeg' });
+  const revoke = () => {
+    const unreadable = () => Promise.reject(new DOMException('The requested file could not be read', 'NotReadableError'));
+    Object.defineProperty(file, 'arrayBuffer', { value: unreadable });
+    Object.defineProperty(file, 'slice', { value: () => ({ arrayBuffer: unreadable }) });
+  };
+  return { file, revoke };
+}
+
 async function waitForCalls(count: number) {
   for (let i = 0; i < 50 && (compressImage as jest.Mock).mock.calls.length < count; i++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -292,18 +309,18 @@ describe('uploadPipeline Service Integration', () => {
 
       expect(seen.indexOf('optimizing')).toBeGreaterThan(-1);
       expect(seen.indexOf('optimizing')).toBeLessThan(seen.indexOf('uploading'));
-      expect(compressImage).toHaveBeenCalledWith(original);
+      await expectSameFile((compressImage as jest.Mock).mock.calls[0][0], original);
       expect((tusUpload as jest.Mock).mock.calls[0][0].file).toBe(compressed);
 
       const item = useMediaStore.getState().mediaList[0];
-      expect(item.file).toBe(original);
+      await expectSameFile(item.file, original);
       expect(item.status).toBe('uploaded');
     });
 
     it('uploads the original when compression returns it unchanged', async () => {
       const original = createTestFile('small.jpg', 2048);
       await startUploadPipeline([original], 'session-123');
-      expect((tusUpload as jest.Mock).mock.calls[0][0].file).toBe(original);
+      await expectSameFile((tusUpload as jest.Mock).mock.calls[0][0].file, original);
     });
 
     it('sets status to optimizing at the moment compressImage is called', async () => {
@@ -324,7 +341,7 @@ describe('uploadPipeline Service Integration', () => {
 
       await startUploadPipeline([original], 'session-123');
 
-      expect((tusUpload as jest.Mock).mock.calls[0][0].file).toBe(original);
+      await expectSameFile((tusUpload as jest.Mock).mock.calls[0][0].file, original);
       expect(useMediaStore.getState().mediaList[0].status).toBe('uploaded');
     });
 
@@ -337,7 +354,7 @@ describe('uploadPipeline Service Integration', () => {
       await startUploadPipeline([original], 'session-123');
 
       const item = useMediaStore.getState().mediaList[0];
-      expect(item.file).toBe(original);
+      await expectSameFile(item.file, original);
       expect(item.previewUrl).toBe('blob:http://localhost/test-preview');
     });
 
@@ -406,6 +423,46 @@ describe('uploadPipeline Service Integration', () => {
       expect(uploaded).toHaveLength(3);
       expect(new Set(uploaded)).toEqual(new Set(compressedByName.values()));
       expect(uploaded.every((f) => f.type === 'image/webp')).toBe(true);
+    });
+  });
+
+  describe('Files the browser stops letting us read (Android NotReadableError)', () => {
+    it('still uploads the picked photo when access to it is lost while it waits in the queue', async () => {
+      const { file, revoke } = createRevocableFile('queued.jpg', 'photo-bytes');
+      // Access is lost after the photo was picked, before its upload starts.
+      (compressImage as jest.Mock).mockImplementation(async (f: File) => {
+        revoke();
+        return f;
+      });
+      let uploadedBytes = '';
+      (tusUpload as jest.Mock).mockImplementation(async ({ file: sent, onSuccess, id }) => {
+        uploadedBytes = new TextDecoder().decode(await (sent as File).arrayBuffer());
+        onSuccess?.(`http://localhost:3000/uploads/srv-${id}`);
+        return Result.ok('ok');
+      });
+
+      await startUploadPipeline([file], 'session-123');
+
+      expect(uploadedBytes).toBe('photo-bytes');
+      expect(useMediaStore.getState().mediaList[0].status).toBe('uploaded');
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it('drops a photo that cannot be read at all, tells the seller, and uploads the rest', async () => {
+      const { file: broken, revoke } = createRevocableFile('broken.jpg', 'x');
+      revoke();
+      const fine = createTestFile('fine.jpg');
+
+      await startUploadPipeline([broken, fine], 'session-123');
+
+      const items = useMediaStore.getState().mediaList;
+      expect(items.map((i) => i.file.name)).toEqual(['fine.jpg']);
+      expect(items[0].order).toBe(1);
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageUnacceptable('broken.jpg'),
+        { description: ERROR_MESSAGES.upload.fileUnreadable },
+      );
+      expect(tusUpload).toHaveBeenCalledTimes(1);
     });
   });
 });
