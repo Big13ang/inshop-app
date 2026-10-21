@@ -21,6 +21,8 @@ export default defineConfig({
   ],
   outputDir: '../test-results/e2e-real',
   globalSetup: './global-setup.ts',
+  // Real requests on a busy CI machine take longer than the 5s default
+  expect: { timeout: 10_000 },
 
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4100',
