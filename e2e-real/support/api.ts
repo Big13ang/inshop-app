@@ -2,6 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 import { readOtp } from './db';
 import { E2E_ENV } from './env';
 import { E2E_PASSWORD, uniquePhone } from './identities';
+import type { SellerApplication } from './sellers';
 
 export interface TestUser {
   phoneNumber: string;
@@ -32,4 +33,30 @@ export async function createUser(request: APIRequestContext): Promise<TestUser> 
     newPassword: user.password,
   });
   return user;
+}
+
+/**
+ * Applies as a seller through POST /pre-register, the endpoint behind
+ * /seller/apply. The backend only queues it; see waitForSellerApplication.
+ */
+export async function applyAsSeller(request: APIRequestContext, application: SellerApplication): Promise<void> {
+  const response = await request.post(`${E2E_ENV.apiUrl}/pre-register`, {
+    data: {
+      name: application.firstName,
+      lastName: application.lastName,
+      phoneNumber: application.phoneNumber,
+      nationalIdNumber: application.nationalId,
+      province: application.province,
+      city: application.city,
+      instagramId: application.instagramId,
+      followersCount: application.followers,
+      productCategory: application.category,
+      bio: application.description,
+      // The form always sends this; the backend requires it
+      businessType: 'نامشخص',
+    },
+  });
+  if (!response.ok()) {
+    throw new Error(`POST /pre-register failed: ${response.status()} ${await response.text()}`);
+  }
 }
