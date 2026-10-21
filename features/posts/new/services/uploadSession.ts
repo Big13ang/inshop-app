@@ -30,6 +30,10 @@ export function useUploadSession() {
     queryKey: queryKeys.posts.uploadSession(),
     queryFn: async () => {
       const data = await fetchUploadSession();
+      // Several components can ask for a session at once. Keep the first one that arrives:
+      // files may already be uploading into it, so a late answer must not replace it.
+      const existing = useMediaStore.getState().uploadSessionId;
+      if (existing) return { uploadSessionId: existing, expiresAt: data.expiresAt };
       setUploadSessionId(data.uploadSessionId);
       return data;
     },

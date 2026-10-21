@@ -61,11 +61,19 @@ test.describe('Add New Post — publish keeps the selection order', () => {
 
     await addPostPage.clickNext();
     await addPostPage.fillCaption('محصول با ترتیب جدید تصاویر');
-    const publishRequest = addPostPage.page.waitForRequest(
-      (req) => req.method() === 'POST' && new URL(req.url()).pathname.endsWith('/upload-sessions/publish'),
-    );
+    // Read the body through a pass-through route: against a real backend the request event
+    // does not expose fetch bodies. fallback() sends the request on unchanged.
+    const publishPayload = new Promise<{ mediaIds: string[] }>((resolve) => {
+      void addPostPage.page.route(
+        (url) => url.pathname.endsWith('/upload-sessions/publish'),
+        (route) => {
+          if (route.request().method() === 'POST') resolve(route.request().postDataJSON());
+          return route.fallback();
+        },
+      );
+    });
     await addPostPage.clickShare();
-    const payload = (await publishRequest).postDataJSON() as { mediaIds: string[] };
+    const payload = await publishPayload;
 
     expect(payload.mediaIds).toEqual([
       mediaIdByFile.get('photo_2'),
