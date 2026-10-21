@@ -121,7 +121,7 @@ test.describe('Login redirect after sign-in', () => {
   });
 
   test('an auth page callbackUrl is ignored so login does not loop', async ({ page }) => {
-    await signInFrom(page, '/auth/otp');
+    await signInFrom(page, '/auth/login');
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_LANDING}$`), { timeout: 30_000 });
   });
 

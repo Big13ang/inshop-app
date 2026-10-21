@@ -1,7 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@/lib/test-utils';
-import Login, { LoginProps } from '@/features/auth/login/Login';
 import SignInForm from '@/features/auth/password/components/SignInForm';
 import { TEXTS as LOGIN_TEXTS } from '@/features/auth/login/constants';
 import { AUTH_FORMS, AUTH_FORM_CONFIG } from '@/features/auth/constant';
@@ -88,44 +87,7 @@ export const createAuthActions = (user: User) => ({
   clickSubmit: (name?: RegExp | string) => user.click(authLocators.submitButton(name)),
 });
 
-// ─── 3. Login Driver ─────────────────────────────────────────────────────────
-
-export interface LoginDriverOptions {
-  onSubmit?: LoginProps['onSubmit'];
-}
-
-export function createLoginDriver(options: LoginDriverOptions = {}) {
-  const onSubmit = options.onSubmit ?? jest.fn();
-  const user = userEvent.setup();
-  const actions = createAuthActions(user);
-
-  render(<Login onSubmit={onSubmit} />);
-
-  return {
-    user,
-    onSubmit,
-    ...actions,
-
-    // Element queries
-    phoneLabel: authLocators.phoneLabel,
-    phoneInput: () => authLocators.phoneInput(),
-    phoneInputByPlaceholder: () => authLocators.phoneInputByPlaceholder(),
-    alert: authLocators.alert,
-    queryAlert: authLocators.queryAlert,
-    submitButton: () => authLocators.submitButton(LOGIN_TEXTS.submit),
-    submittingButton: () => authLocators.submitButton(LOGIN_TEXTS.isSubmitting),
-    querySubmitButton: () => authLocators.querySubmitButton(LOGIN_TEXTS.submit),
-    querySubmittingButton: () => authLocators.querySubmitButton(LOGIN_TEXTS.isSubmitting),
-
-    // Flow Action
-    fillAndSubmit: async (phone: string) => {
-      await actions.fillPhone(phone);
-      await actions.clickSubmit(LOGIN_TEXTS.submit);
-    },
-  };
-}
-
-// ─── 4. Register (Sign Up Finalize) Driver ───────────────────────────────────
+// ─── 3. Register (Sign Up Finalize) Driver ───────────────────────────────────
 
 export interface SignUpFinalizeDriverOptions {
   phoneNumber?: string;
@@ -173,7 +135,7 @@ export function createSignUpFinalizeDriver(options: SignUpFinalizeDriverOptions 
   };
 }
 
-// ─── 5. Reset Password (Forgot Pass Finalize) Driver ─────────────────────────
+// ─── 4. Reset Password (Forgot Pass Finalize) Driver ─────────────────────────
 
 export interface ResetPasswordFinalizeDriverOptions {
   phoneNumber?: string;
