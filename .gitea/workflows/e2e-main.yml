@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           git clone --depth 1 --branch main \
-            "https://oauth2:${BACKEND_CHECKOUT_TOKEN}@git.inshop.social/Mohsen/inshop-backend.git" \
+            "http://oauth2:${BACKEND_CHECKOUT_TOKEN}@gitea:3000/Mohsen/inshop-backend.git" \
             "${BACKEND_DIR}"
 
       - name: Start the E2E stack
