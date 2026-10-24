@@ -1,9 +1,14 @@
 import http from 'node:http';
 import https from 'node:https';
 import { spawn } from 'node:child_process';
+import { buildAllowedOrigins, rewriteLocation } from './devProxyHelpers.mjs';
 
 const TARGET = process.env.DEV_PROXY_TARGET || 'https://api.dev.inshop.social';
 const PORT = Number(process.env.DEV_PROXY_PORT || 8000);
+// Loopback by default so the proxy (which attaches auth to forwarded requests)
+// is not reachable from the LAN. Opt in with DEV_PROXY_HOST=0.0.0.0.
+const HOST = process.env.DEV_PROXY_HOST || '127.0.0.1';
+const allowedOrigins = buildAllowedOrigins(process.env.DEV_PROXY_ALLOWED_ORIGINS);
 const targetUrl = new URL(TARGET);
 const isWithNext = process.argv.includes('--with-next');
 const client = targetUrl.protocol === 'http:' ? http : https;
@@ -11,10 +16,18 @@ const client = targetUrl.protocol === 'http:' ? http : https;
 let nextChild = null;
 
 const server = http.createServer((req, res) => {
-  const origin = req.headers.origin || 'http://localhost:4000';
+  // Only reflect allowlisted origins (credentials are allowed, so never reflect blindly).
+  const requestOrigin = req.headers.origin;
+  const origin = requestOrigin && allowedOrigins.has(requestOrigin) ? requestOrigin : null;
+  const proxyOrigin = `http://${req.headers.host}`;
 
   // Handle CORS Preflight
   if (req.method === 'OPTIONS') {
+    if (!origin) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
@@ -29,6 +42,8 @@ const server = http.createServer((req, res) => {
   }
 
   const rawCookie = String(req.headers.cookie || '');
+  // better-auth's session cookie is a signed value `<token>.<hmac>`; the Bearer
+  // flow expects only the raw token, so keep the part before the dot.
   const tokenMatch = rawCookie.match(/better-auth\.session_token=([^.;\s]+)/);
 
   const forwardHeaders = {
@@ -62,10 +77,18 @@ const server = http.createServer((req, res) => {
       const resHeaders = { ...proxyRes.headers };
 
       // Ensure caller origin is allowed with credentials
-      resHeaders['access-control-allow-origin'] = origin;
-      resHeaders['access-control-allow-credentials'] = 'true';
-      resHeaders['access-control-expose-headers'] =
-        'Content-Range, X-Content-Range, Location, Tus-Resumable, Tus-Version, Tus-Extension, Tus-Max-Size, Upload-Offset, Upload-Length, Upload-Metadata';
+      if (origin) {
+        resHeaders['access-control-allow-origin'] = origin;
+        resHeaders['access-control-allow-credentials'] = 'true';
+        resHeaders['access-control-expose-headers'] =
+          'Content-Range, X-Content-Range, Location, Tus-Resumable, Tus-Version, Tus-Extension, Tus-Max-Size, Upload-Offset, Upload-Length, Upload-Metadata';
+      }
+
+      // TUS builds Location from the Host it received (the remote API). Point it
+      // back at this proxy so the PATCH stays same-site and carries the cookie.
+      if (resHeaders.location) {
+        resHeaders.location = rewriteLocation(resHeaders.location, targetUrl, proxyOrigin);
+      }
 
       // Rewrite cookies for localhost
       const setCookie = proxyRes.headers['set-cookie'];
@@ -94,8 +117,9 @@ const server = http.createServer((req, res) => {
     if (!res.headersSent) {
       res.writeHead(502, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Credentials': 'true',
+        ...(origin
+          ? { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Credentials': 'true' }
+          : {}),
       });
       res.end(JSON.stringify({ error: 'Proxy Gateway Error', message: err.message }));
     }
@@ -141,9 +165,9 @@ function cleanup() {
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, HOST, () => {
   console.log(`\n======================================================`);
-  console.log(`🚀 InShop Dev Proxy is running on http://localhost:${PORT}`);
+  console.log(`🚀 InShop Dev Proxy is running on http://${HOST}:${PORT}`);
   console.log(`🎯 Forwarding all traffic to: ${TARGET}`);
   console.log(`🍪 Cookie rewriting & Bearer token attachment active`);
   console.log(`======================================================\n`);

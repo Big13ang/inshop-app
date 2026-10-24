@@ -25,9 +25,10 @@ test.describe('Add New Post — one failed upload does not affect the others', (
       addPostPage.galleryContainer.getByText(text.statusFailed),
     ).toBeVisible({ timeout: 20_000 });
 
-    // ...while the other file completes normally and can be selected.
+    // ...while the other file completes normally and stays selected.
     await addPostPage.waitForUploadedCount(1);
-    await addPostPage.clickGalleryCell(1);
-    await addPostPage.waitForSelectionCount(1);
+    await expect(
+      addPostPage.galleryContainer.locator('[data-status="uploaded"][data-selected="true"]'),
+    ).toHaveCount(1);
   });
 });

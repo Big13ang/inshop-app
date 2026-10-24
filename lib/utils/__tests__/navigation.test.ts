@@ -1,5 +1,5 @@
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { goBackSafely, getIsInternal, setIsInternal, getLoginUrlWithCallback } from '../navigation';
+import { goBackSafely, getIsInternal, setIsInternal, getLoginUrlWithCallback, getSafeCallbackUrl } from '../navigation';
 
 describe('navigation utility', () => {
   let mockRouter: { back: jest.Mock; replace: jest.Mock };
@@ -51,6 +51,45 @@ describe('navigation utility', () => {
     it('appends URI-encoded callbackUrl when a valid target path is provided', () => {
       expect(getLoginUrlWithCallback('/app/profile')).toBe('/auth/login?callbackUrl=%2Fapp%2Fprofile');
       expect(getLoginUrlWithCallback('/app/posts/new?draft=1')).toBe('/auth/login?callbackUrl=%2Fapp%2Fposts%2Fnew%3Fdraft%3D1');
+    });
+  });
+
+  describe('getSafeCallbackUrl', () => {
+    it.each([
+      null,
+      undefined,
+      '',
+      'https://evil.example',
+      'http://evil.example/x',
+      '//evil.example',
+      '/\\evil.example',
+      'javascript:alert(1)',
+      'data:text/html,x',
+      '  /app',
+      '/app\n/x',
+      '/auth/login',
+    ])('falls back to /app/profile for unsafe value %p', (raw) => {
+      expect(getSafeCallbackUrl(raw)).toBe('/app/profile');
+    });
+
+    it.each(['/app/profile', '/app/posts/new', '/p/123?ref=feed#top', '/@shop_name', '/authors'])(
+      'keeps same-origin path %p unchanged',
+      (raw) => {
+        expect(getSafeCallbackUrl(raw)).toBe(raw);
+      }
+    );
+
+    it('accepts an absolute URL on the current origin, whether localhost or a deployed host', () => {
+      expect(getSafeCallbackUrl(`${window.location.origin}/app/posts/new?draft=1`)).toBe('/app/posts/new?draft=1');
+    });
+
+    it('rejects absolute URLs on other hosts, including other app environments', () => {
+      expect(getSafeCallbackUrl('https://dev.inshop.social/app/profile', '/home')).toBe('/home');
+      expect(getSafeCallbackUrl('https://inshop.social/app/profile', '/home')).toBe('/home');
+    });
+
+    it('uses the provided fallback when the value is unsafe', () => {
+      expect(getSafeCallbackUrl('https://evil.example', '/home')).toBe('/home');
     });
   });
 });

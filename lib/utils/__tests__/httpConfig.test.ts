@@ -25,6 +25,25 @@ describe('getBaseUrl API resolution', () => {
     });
   });
 
+  describe('runtime override (PUBLIC_API_URL)', () => {
+    it('in the browser, the injected runtime config wins over hostname detection', () => {
+      (global as any).window = {
+        location: { hostname: 'dev.inshop.social' },
+        __INSHOP_RUNTIME_CONFIG__: { apiUrl: 'https://api.e2e.example.com/' },
+      };
+      expect(getBaseUrl()).toBe('https://api.e2e.example.com');
+    });
+
+    it('on the server, INTERNAL_API_URL still wins over PUBLIC_API_URL', () => {
+      process.env.INTERNAL_API_URL = 'http://backend:8000';
+      process.env.PUBLIC_API_URL = 'https://api.e2e.example.com';
+      expect(getBaseUrl()).toBe('http://backend:8000');
+
+      delete process.env.INTERNAL_API_URL;
+      expect(getBaseUrl()).toBe('https://api.e2e.example.com');
+    });
+  });
+
   describe('client-side browser hostname detection (window is defined)', () => {
     const setWindowHostname = (hostname: string) => {
       (global as any).window = {

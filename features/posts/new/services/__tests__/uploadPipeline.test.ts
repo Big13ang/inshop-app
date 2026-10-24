@@ -2,6 +2,7 @@ import { startUploadPipeline } from '../uploadPipeline';
 import { useMediaStore } from '../mediaStore';
 import { validateOne } from '../validateOne';
 import { tusUpload } from '@/lib/tus-client';
+import { compressImage } from '../compression/compressImage';
 import { toast } from 'sonner';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { Result } from '@/lib/utils';
@@ -15,8 +16,35 @@ jest.mock('@/lib/tus-client', () => ({
   tusUpload: jest.fn(),
 }));
 
+jest.mock('../compression/compressImage', () => ({
+  compressImage: jest.fn(),
+}));
+
 function createTestFile(name = 'photo.jpg', size = 1024 * 1024, type = 'image/jpeg'): File {
   return new File([new ArrayBuffer(size)], name, { type });
+}
+
+async function expectSameFile(received: File, original: File) {
+  expect(received.name).toBe(original.name);
+  expect(received.type).toBe(original.type);
+  expect(new Uint8Array(await received.arrayBuffer())).toEqual(new Uint8Array(await original.arrayBuffer()));
+}
+
+/** A file that can be read now but no longer later, like a picked photo Android revokes access to. */
+function createRevocableFile(name: string, content: string) {
+  const file = new File([content], name, { type: 'image/jpeg' });
+  const revoke = () => {
+    const unreadable = () => Promise.reject(new DOMException('The requested file could not be read', 'NotReadableError'));
+    Object.defineProperty(file, 'arrayBuffer', { value: unreadable });
+    Object.defineProperty(file, 'slice', { value: () => ({ arrayBuffer: unreadable }) });
+  };
+  return { file, revoke };
+}
+
+async function waitForCalls(count: number) {
+  for (let i = 0; i < 50 && (compressImage as jest.Mock).mock.calls.length < count; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
 }
 
 describe('uploadPipeline Service Integration', () => {
@@ -26,6 +54,7 @@ describe('uploadPipeline Service Integration', () => {
     jest.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
     useMediaStore.getState().reset();
     (validateOne as jest.Mock).mockResolvedValue(null);
+    (compressImage as jest.Mock).mockImplementation(async (file: File) => file);
     (tusUpload as jest.Mock).mockImplementation(async ({ onSuccess, id }: { onSuccess?: (url: string) => void; id: string }) => {
       onSuccess?.(`http://localhost:3000/uploads/srv-${id}`);
       return Result.ok(`http://localhost:3000/uploads/srv-${id}`);
@@ -255,6 +284,185 @@ describe('uploadPipeline Service Integration', () => {
         ERROR_MESSAGES.upload.failedToUpload('lowres.jpg'),
         { description: ERROR_MESSAGES.upload.resolutionTooSmall }
       );
+    });
+  });
+
+  describe('Client-side compression', () => {
+    it('goes through optimizing before uploading and sends the compressed file to TUS', async () => {
+      const original = createTestFile('big.jpg', 2048);
+      const compressed = new File([new ArrayBuffer(10)], 'big.webp', { type: 'image/webp' });
+      (compressImage as jest.Mock).mockResolvedValue(compressed);
+
+      const seen: string[] = [];
+      const unsubscribe = useMediaStore.subscribe((state) => {
+        const status = state.mediaList[0]?.status;
+        if (status && seen[seen.length - 1] !== status) seen.push(status);
+      });
+      (tusUpload as jest.Mock).mockImplementation(async ({ onProgress, onSuccess, id }) => {
+        onProgress?.(50);
+        onSuccess?.(`http://localhost:3000/uploads/srv-${id}`);
+        return Result.ok('ok');
+      });
+
+      await startUploadPipeline([original], 'session-123');
+      unsubscribe();
+
+      expect(seen.indexOf('optimizing')).toBeGreaterThan(-1);
+      expect(seen.indexOf('optimizing')).toBeLessThan(seen.indexOf('uploading'));
+      await expectSameFile((compressImage as jest.Mock).mock.calls[0][0], original);
+      expect((tusUpload as jest.Mock).mock.calls[0][0].file).toBe(compressed);
+
+      const item = useMediaStore.getState().mediaList[0];
+      await expectSameFile(item.file, original);
+      expect(item.status).toBe('uploaded');
+    });
+
+    it('uploads the original when compression returns it unchanged', async () => {
+      const original = createTestFile('small.jpg', 2048);
+      await startUploadPipeline([original], 'session-123');
+      await expectSameFile((tusUpload as jest.Mock).mock.calls[0][0].file, original);
+    });
+
+    it('sets status to optimizing at the moment compressImage is called', async () => {
+      let statusDuringCompress: string | undefined;
+      (compressImage as jest.Mock).mockImplementation(async (file: File) => {
+        statusDuringCompress = useMediaStore.getState().mediaList[0]?.status;
+        return file;
+      });
+
+      await startUploadPipeline([createTestFile('a.jpg')], 'session-123');
+
+      expect(statusDuringCompress).toBe('optimizing');
+    });
+
+    it('uploads the original and does not get stuck when compressImage rejects', async () => {
+      const original = createTestFile('boom.jpg');
+      (compressImage as jest.Mock).mockRejectedValue(new Error('worker exploded'));
+
+      await startUploadPipeline([original], 'session-123');
+
+      await expectSameFile((tusUpload as jest.Mock).mock.calls[0][0].file, original);
+      expect(useMediaStore.getState().mediaList[0].status).toBe('uploaded');
+    });
+
+    it('keeps previewUrl and file as the original after compression', async () => {
+      const original = createTestFile('big.jpg');
+      (compressImage as jest.Mock).mockResolvedValue(
+        new File([new ArrayBuffer(10)], 'big.webp', { type: 'image/webp' }),
+      );
+
+      await startUploadPipeline([original], 'session-123');
+
+      const item = useMediaStore.getState().mediaList[0];
+      await expectSameFile(item.file, original);
+      expect(item.previewUrl).toBe('blob:http://localhost/test-preview');
+    });
+
+    it('uses the original filename (not .webp) in the failure toast', async () => {
+      (compressImage as jest.Mock).mockResolvedValue(
+        new File([new ArrayBuffer(10)], 'fail.webp', { type: 'image/webp' }),
+      );
+      (tusUpload as jest.Mock).mockImplementation(async ({ onError }: { onError?: (err: Error) => void }) => {
+        const err = new Error('Connection reset by peer');
+        onError?.(err);
+        return Result.err(err);
+      });
+
+      await startUploadPipeline([createTestFile('fail.jpg')], 'session-123');
+
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.failedToUpload('fail.jpg'),
+        expect.anything(),
+      );
+    });
+
+    it('runs at most 3 compressImage calls concurrently', async () => {
+      const releases: Array<() => void> = [];
+      let active = 0;
+      let maxActive = 0;
+      (compressImage as jest.Mock).mockImplementation(
+        (file: File) =>
+          new Promise<File>((resolve) => {
+            active += 1;
+            maxActive = Math.max(maxActive, active);
+            releases.push(() => {
+              active -= 1;
+              resolve(file);
+            });
+          }),
+      );
+
+      const files = Array.from({ length: 5 }, (_, i) => createTestFile(`c-${i}.jpg`));
+      const pipeline = startUploadPipeline(files, 'session-123');
+
+      await waitForCalls(3);
+      expect(compressImage).toHaveBeenCalledTimes(3);
+
+      while (releases.length) {
+        releases.shift()!();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      await pipeline;
+
+      expect(maxActive).toBeLessThanOrEqual(3);
+      expect(compressImage).toHaveBeenCalledTimes(5);
+    });
+
+    it('passes the compressed file to tusUpload for every item in a multi-file batch', async () => {
+      const compressedByName = new Map<string, File>();
+      (compressImage as jest.Mock).mockImplementation(async (file: File) => {
+        const compressed = new File([new ArrayBuffer(4)], file.name.replace('.jpg', '.webp'), { type: 'image/webp' });
+        compressedByName.set(file.name, compressed);
+        return compressed;
+      });
+
+      const files = [createTestFile('one.jpg'), createTestFile('two.jpg'), createTestFile('three.jpg')];
+      await startUploadPipeline(files, 'session-123');
+
+      const uploaded = (tusUpload as jest.Mock).mock.calls.map((call) => call[0].file as File);
+      expect(uploaded).toHaveLength(3);
+      expect(new Set(uploaded)).toEqual(new Set(compressedByName.values()));
+      expect(uploaded.every((f) => f.type === 'image/webp')).toBe(true);
+    });
+  });
+
+  describe('Files the browser stops letting us read (Android NotReadableError)', () => {
+    it('still uploads the picked photo when access to it is lost while it waits in the queue', async () => {
+      const { file, revoke } = createRevocableFile('queued.jpg', 'photo-bytes');
+      // Access is lost after the photo was picked, before its upload starts.
+      (compressImage as jest.Mock).mockImplementation(async (f: File) => {
+        revoke();
+        return f;
+      });
+      let uploadedBytes = '';
+      (tusUpload as jest.Mock).mockImplementation(async ({ file: sent, onSuccess, id }) => {
+        uploadedBytes = new TextDecoder().decode(await (sent as File).arrayBuffer());
+        onSuccess?.(`http://localhost:3000/uploads/srv-${id}`);
+        return Result.ok('ok');
+      });
+
+      await startUploadPipeline([file], 'session-123');
+
+      expect(uploadedBytes).toBe('photo-bytes');
+      expect(useMediaStore.getState().mediaList[0].status).toBe('uploaded');
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it('drops a photo that cannot be read at all, tells the seller, and uploads the rest', async () => {
+      const { file: broken, revoke } = createRevocableFile('broken.jpg', 'x');
+      revoke();
+      const fine = createTestFile('fine.jpg');
+
+      await startUploadPipeline([broken, fine], 'session-123');
+
+      const items = useMediaStore.getState().mediaList;
+      expect(items.map((i) => i.file.name)).toEqual(['fine.jpg']);
+      expect(items[0].order).toBe(1);
+      expect(toast.error).toHaveBeenCalledWith(
+        ERROR_MESSAGES.upload.imageUnacceptable('broken.jpg'),
+        { description: ERROR_MESSAGES.upload.fileUnreadable },
+      );
+      expect(tusUpload).toHaveBeenCalledTimes(1);
     });
   });
 });

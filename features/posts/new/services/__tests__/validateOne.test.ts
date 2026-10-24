@@ -82,6 +82,24 @@ describe('validateOne & validateImage', () => {
     });
   });
 
+  describe('Maximum pixel count (40 MP)', () => {
+    it('accepts exactly 40 megapixels', async () => {
+      const buf = createMockPngBuffer(8000, 5000);
+      const file = createMockFile('exactly-40mp.png', buf, 'image/png');
+
+      expect(await validateOne(file)).toBeNull();
+    });
+
+    it('rejects a header above 40 megapixels', async () => {
+      const buf = createMockPngBuffer(8001, 5000);
+      const file = createMockFile('over-40mp.png', buf, 'image/png');
+
+      const rejection = await validateOne(file);
+      expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_HIGH);
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooHigh);
+    });
+  });
+
   describe('Format Policy & Codec Rules', () => {
     it('accepts valid static WebP', async () => {
       const buf = createMockWebpBuffer(1200, 1200, false);

@@ -30,6 +30,8 @@ export default function CampaignLayout({ children }: Readonly<{ children: React.
   return (
     <html lang="fa" dir="rtl">
       <head>
+        {/* Blocking on purpose: deploy-time API/CDN URLs must be set before app code runs */}
+        <script src="/runtime-config.js" />
         <StaleAssetRecovery />
       </head>
       <body>

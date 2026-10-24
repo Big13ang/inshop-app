@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { http } from '@/lib/utils';
+import { http, Result } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
+import { useUser } from '@/features/profile/context/UserContext';
+import { expireSellerProfileCache } from '@/features/profile/actions/expireSellerProfileCache';
 import type {
   SellerPost,
   SellerPostsByUsernameData,
@@ -60,18 +62,27 @@ export function rollbackPostCaches(
   }
 }
 
-export async function invalidatePostDeletionQueries(queryClient: QueryClient) {
+export async function invalidatePostDeletionQueries(queryClient: QueryClient, deletedId: string) {
   // 1. First invalidate pending-rejected
   await queryClient.invalidateQueries({
     queryKey: [...queryKeys.posts.seller(), 'pending-rejected'],
   });
 
-  // 2. Then invalidate for username and all post queries
+  // 2. Then invalidate for username and all post queries, except the public detail query.
+  // Refetching it while its page is still shown turns the page into a 404.
   await queryClient.invalidateQueries({
     queryKey: queryKeys.user.profile,
   });
   await queryClient.invalidateQueries({
     queryKey: queryKeys.posts.all,
+    predicate: (query) => query.queryKey[1] !== 'public-detail',
+  });
+
+  // 3. Mark the deleted post's detail stale without refetching it. It refetches (and shows 404)
+  // only when someone next opens that post.
+  await queryClient.invalidateQueries({
+    queryKey: ['posts', 'public-detail', deletedId],
+    refetchType: 'none',
   });
 }
 
@@ -188,12 +199,22 @@ export function removePostFromAllCaches(queryClient: QueryClient, deletedId: str
   removePostFromUserProfileCache(queryClient, deletedId);
   removePostFromSellerApprovedCache(queryClient, deletedId);
   removePostFromPendingRejectedCache(queryClient, deletedId);
-  queryClient.removeQueries({ queryKey: queryKeys.posts.detail(deletedId) });
-  queryClient.removeQueries({ queryKey: ['posts', 'public-detail', deletedId] });
+  // Only inactive detail queries are removed. The post page being left is still mounted;
+  // removing its active query makes it refetch, get a 404 and show the not-found screen.
+  queryClient.removeQueries({ queryKey: queryKeys.posts.detail(deletedId), type: 'inactive' });
+  queryClient.removeQueries({ queryKey: ['posts', 'public-detail', deletedId], type: 'inactive' });
+}
+
+// Fire-and-forget: the delete already succeeded, so a cache-expiry failure must not show an error.
+// Only the seller's profile needs expiring: crawlers asking for the deleted post itself get a 404 from the proxy.
+function expireSellerProfileAfterDelete(sellerUsername?: string | null) {
+  if (!sellerUsername) return;
+  void Result.try(expireSellerProfileCache(sellerUsername));
 }
 
 export function useDeletePendingPost() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
   return useMutation<void, unknown, string, DeletionRollbackContext>({
     mutationFn: async (id: string) => {
@@ -218,10 +239,11 @@ export function useDeletePendingPost() {
     },
     onSuccess: () => {
       toast.success('پست با موفقیت حذف شد');
+      expireSellerProfileAfterDelete(user?.sellerProfile?.username);
     },
-    onSettled: async () => {
+    onSettled: async (_data, _error, deletedId) => {
       // First invalidate pending-rejected, then username/profile & all posts
-      await invalidatePostDeletionQueries(queryClient);
+      await invalidatePostDeletionQueries(queryClient, deletedId);
     },
   });
 }

@@ -1,0 +1,138 @@
+# Throwaway full stack for real-backend E2E tests (e2e-real/).
+# Everything runs from a fresh, in-memory database and is removed on `down -v`.
+#
+# Host ports (chosen to avoid the dev stack):
+#   frontend 4100, backend 8100, postgres 5435, minio 9102
+#
+# BACKEND_DIR points at the backend checkout (default: sibling repo).
+name: inshop-e2e
+
+x-backend-env: &backend-env
+  env_file: backend.env
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: inshop_e2e
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: e2e-postgres-password
+    ports:
+      - '127.0.0.1:5435:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d inshop_e2e']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  minio:
+    # Docker Hub no longer serves MinIO images; CI overrides these with mirrored copies
+    image: ${MINIO_IMAGE:-minio/minio:latest}
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: e2e-minio
+      MINIO_ROOT_PASSWORD: e2e-minio-password
+    ports:
+      - '127.0.0.1:9102:9000'
+    tmpfs:
+      - /data
+
+  minio-init:
+    image: ${MINIO_MC_IMAGE:-minio/mc:latest}
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set e2e http://minio:9000 e2e-minio e2e-minio-password; do sleep 1; done;
+      mc mb -p e2e/inshop-e2e-uploads &&
+      mc anonymous set download e2e/inshop-e2e-uploads
+      "
+
+  # Better Auth owns user/session/account/verification; its CLI creates them.
+  # The backend builds every other table from entities (DB_SCHEMA_SYNC=true).
+  auth-schema:
+    <<: *backend-env
+    image: inshop-e2e-backend:local
+    build:
+      context: ${BACKEND_DIR:-../../../inshop-back-end}
+    # npm 10 fails to resolve the CLI's peer deps ("edgesOut" of null) without
+    # --legacy-peer-deps; /tmp keeps npx away from the image's own package.json
+    working_dir: /tmp
+    environment:
+      NPM_CONFIG_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
+    entrypoint: ['sh', '-c']
+    command:
+      - printf 'y\n' | npx --yes --legacy-peer-deps @better-auth/cli@1.4.21 migrate --config /app/dist/src/auth/better-auth.instance.js
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    <<: *backend-env
+    # Built by auth-schema above; never pulled
+    image: inshop-e2e-backend:local
+    pull_policy: never
+    depends_on:
+      auth-schema:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - '127.0.0.1:8100:8000'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:8000/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 3s
+      timeout: 5s
+      retries: 60
+
+  frontend:
+    image: inshop-e2e-frontend:local
+    build:
+      context: ../..
+      args:
+        APP_ENV: e2e
+        NEXT_PUBLIC_APP_ENV: e2e
+        NEXT_PUBLIC_APP_URL: http://localhost:4100
+        # Build-time fallbacks only; the runtime values below are what the app uses
+        NEXT_PUBLIC_API_URL: http://localhost:8100
+        NEXT_PUBLIC_CDN_URL: http://localhost:9102/inshop-e2e-uploads
+        NEXT_PUBLIC_GLITCHTIP_DSN: ''
+        GLITCHTIP_DSN: ''
+        NEXT_PUBLIC_GA_ID: ''
+        NEXT_PUBLIC_GTM_ID: ''
+    environment:
+      PUBLIC_API_URL: http://localhost:8100
+      PUBLIC_CDN_URL: http://localhost:9102/inshop-e2e-uploads
+      INTERNAL_API_URL: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:4100:3000'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/runtime-config.js').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 3s
+      timeout: 5s
+      retries: 60

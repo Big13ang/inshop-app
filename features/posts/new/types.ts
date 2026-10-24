@@ -7,7 +7,7 @@ export type SelectedFile = {
 export type MediaKind = "image" | "video";
 
 export type MediaStatus =
-  "queued" | "pending" | "uploading" | "uploaded" | "failed";
+  "queued" | "pending" | "optimizing" | "uploading" | "uploaded" | "failed";
 
 export type MediaItem = {
   id: string;

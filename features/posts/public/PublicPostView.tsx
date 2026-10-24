@@ -148,7 +148,7 @@ export function PublicPostView({ postId, initialPost }: Props) {
       mimeType: m.mimeType,
       altText: m.altText,
     })),
-    createdAt: post.publishedAt,
+    updatedAt: post.updatedAt,
     sellerName: owner?.shopName || '',
     sellerAvatar: owner?.profilePhotoUrl || '',
     isVerified: false,

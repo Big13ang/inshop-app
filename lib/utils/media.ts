@@ -1,4 +1,4 @@
-import { env } from '@/env';
+import { getPublicCdnUrl } from '@/lib/runtimeConfig';
 
 export type MediaKind = 'image' | 'video';
 
@@ -21,7 +21,7 @@ function formatKey(key: string): string {
   if (key.startsWith('http://') || key.startsWith('https://')) {
     return key;
   }
-  const baseUrl = (env.NEXT_PUBLIC_CDN_URL || '').replace(/\/+$/, '');
+  const baseUrl = getPublicCdnUrl();
   const cleanKey = key.replace(/^\/+/, '');
   return baseUrl ? `${baseUrl}/${cleanKey}` : cleanKey;
 }
@@ -41,7 +41,7 @@ export function getMediaKind(fileOrMime: File | string): MediaKind {
 /**
  * Resolves a media key or media object to a full URL.
  * - If given a full URL (http:// or https://), returns it as-is.
- * - If given a relative key/path, prepends NEXT_PUBLIC_CDN_URL.
+ * - If given a relative key/path, prepends the CDN URL (runtime PUBLIC_CDN_URL, else NEXT_PUBLIC_CDN_URL).
  * - Returns empty string if media is null/undefined/empty.
  */
 export function getMediaUrl(media?: MediaInput): string {

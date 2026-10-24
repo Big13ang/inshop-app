@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { toast } from 'sonner';
 import SelectPhaseFooter from '../SelectPhaseFooter';
@@ -43,6 +43,32 @@ describe('SelectPhaseFooter Component (Behavior)', () => {
 
       const nextBtn = screen.getByRole('button', { name: /بعدی/ });
       expect(nextBtn).toBeDisabled();
+    });
+
+    it.each(['queued', 'optimizing', 'uploading', 'pending'] as const)(
+      'disables Next button while an item is %s',
+      (status) => {
+        useMediaStore.getState().setMediaList([createMockMediaItem({ status })]);
+
+        render(<SelectPhaseFooter isSessionLoading={false} onTriggerPicker={jest.fn()} />);
+
+        expect(screen.getByRole('button', { name: /بعدی/ })).toBeDisabled();
+      },
+    );
+
+    it('enables Next button once the optimizing item becomes uploaded', () => {
+      const item = createMockMediaItem({ status: 'optimizing' });
+      useMediaStore.getState().setMediaList([item]);
+
+      render(<SelectPhaseFooter isSessionLoading={false} onTriggerPicker={jest.fn()} />);
+      const nextBtn = screen.getByRole('button', { name: /بعدی/ });
+      expect(nextBtn).toBeDisabled();
+
+      act(() => {
+        useMediaStore.getState().patchItem(item.id, { status: 'uploaded' });
+      });
+
+      expect(nextBtn).toBeEnabled();
     });
 
     it('disables Next button while upload session is initializing', () => {

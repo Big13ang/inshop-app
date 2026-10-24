@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { E2E_MOCKS_ENABLED, E2E_SESSION_TOKEN } from '../fixtures/mode';
 
 test.describe('Pending Posts Menu E2E', () => {
+  // Needs real pending posts on the seller's account; there is nothing to mock it against.
+  test.skip(E2E_MOCKS_ENABLED, 'Real backend only: needs existing pending posts');
+
   test.beforeEach(async ({ page }) => {
     // Hide Next.js Dev Overlay to prevent it from intercepting pointer events in E2E tests
     await page.addInitScript(() => {
@@ -13,11 +17,11 @@ test.describe('Pending Posts Menu E2E', () => {
   });
 
   test('opens and closes the pending posts menu', async ({ page, context }) => {
-    // Set a mock session token cookie to bypass proxy authentication check
+    // Session cookie: a fake token in mock mode, the real E2E_SESSION_TOKEN against a real backend.
     await context.addCookies([
       {
         name: 'better-auth.session_token',
-        value: 'mock-session-token',
+        value: E2E_SESSION_TOKEN ?? '',
         domain: 'localhost',
         path: '/',
       },

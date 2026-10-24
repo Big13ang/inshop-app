@@ -8,6 +8,7 @@ export const REJECTION_CODES = {
   FILE_TOO_LARGE: 'file_too_large',
   RESOLUTION_TOO_LOW: 'resolution_too_low',
   HEIC_NOT_SUPPORTED: 'heic_not_supported',
+  RESOLUTION_TOO_HIGH: 'resolution_too_high',
 } as const;
 
 export type RejectionCode = (typeof REJECTION_CODES)[keyof typeof REJECTION_CODES];
@@ -26,9 +27,12 @@ export type ValidatorFn = (file: File) => Promise<FileValidationRejection | null
 const IMAGE_RULES = {
   maxBytes: 10 * 1024 * 1024,
   minDimension: 1080,
+  // Mirrors the backend's MAX_INPUT_PIXELS (and the compression worker's limit).
+  maxPixels: 40_000_000,
   mimeError: ERROR_MESSAGES.upload.imageFormatLimit,
   sizeError: ERROR_MESSAGES.upload.imageSizeLimit,
   resolutionError: ERROR_MESSAGES.upload.resolutionTooSmall,
+  pixelsError: ERROR_MESSAGES.upload.resolutionTooHigh,
   heicError: ERROR_MESSAGES.upload.heicNotSupported,
   animatedError: ERROR_MESSAGES.upload.animatedWebpNotAllowed,
   readError: ERROR_MESSAGES.upload.fileUnreadable,
@@ -62,6 +66,10 @@ function validateHeaderRules(parsed: ParsedHeader): Omit<FileValidationRejection
 
   if (!isDimensionValid(parsed.width, parsed.height)) {
     return { code: REJECTION_CODES.RESOLUTION_TOO_LOW, reason: IMAGE_RULES.resolutionError };
+  }
+
+  if (parsed.width * parsed.height > IMAGE_RULES.maxPixels) {
+    return { code: REJECTION_CODES.RESOLUTION_TOO_HIGH, reason: IMAGE_RULES.pixelsError };
   }
 
   return null;

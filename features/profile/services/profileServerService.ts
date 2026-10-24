@@ -4,13 +4,14 @@ import { http, Result, type ApiResponse } from '@/lib/utils';
 import type { UserMe } from './profileService';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { debugAuth } from '@/lib/utils/authDebug';
+import { sellerProfileCacheTag } from './sellerProfileCacheTag';
 
 export async function getPublicSellerProfile(
   username: string
 ): Promise<SellerPostsByUsernameData | null> {
   'use cache';
   cacheLife('hours');
-  cacheTag(`seller-${username.trim().toLowerCase()}`);
+  cacheTag(sellerProfileCacheTag(username));
 
   const trimmed = (username || '').trim();
   if (!trimmed) return null;

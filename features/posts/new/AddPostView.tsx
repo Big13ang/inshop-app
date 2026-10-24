@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
 import AddPostHeader from './components/AddPostHeader';
 import AddPostOnboardingSheet from './components/AddPostOnboardingSheet';
@@ -9,6 +9,7 @@ import AddPostBody from './components/AddPostBody';
 import { isMobile } from '@/lib/utils';
 import { startUploadPipeline } from './services/uploadPipeline';
 import { useUploadSession } from './services/uploadSession';
+import { prewarmCompression, releaseIdleCompressionWorkers } from './services/compression/compressionPool';
 
 export type PostFlowNavigationIntent = 'back' | 'pending-posts';
 
@@ -24,8 +25,30 @@ function useHasMounted() {
   return useSyncExternalStore(subscribeMounted, getSnapshotMounted, getServerSnapshotMounted);
 }
 
+function cancelIdlePrewarm(handle: number) {
+  cancelIdleCallback(handle);
+  releaseIdleCompressionWorkers();
+}
+
+function cancelTimeoutPrewarm(timer: ReturnType<typeof setTimeout>) {
+  clearTimeout(timer);
+  releaseIdleCompressionWorkers();
+}
+
+// Warm the compression worker pool (and its WASM) once the browser is idle.
+// Effect is justified: it syncs with an external system (Worker/idle scheduler).
+function schedulePrewarm(): () => void {
+  if (typeof requestIdleCallback === 'function') {
+    const handle = requestIdleCallback(prewarmCompression);
+    return () => cancelIdlePrewarm(handle);
+  }
+  const timer = setTimeout(prewarmCompression, 1000);
+  return () => cancelTimeoutPrewarm(timer);
+}
+
 export default function AddPostView({ onNavigate: _onNavigate }: AddPostViewProps) {
   const imagesInputRef = useRef<HTMLInputElement>(null);
+  useEffect(schedulePrewarm, []);
   const isMounted = useHasMounted();
   const { data: uploadSession, isSuccess, isPending: isSessionPending } = useUploadSession();
   const isSessionLoading = isMounted && isSessionPending;

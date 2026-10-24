@@ -4,7 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { ChevronRight, Plus, Loader2 } from 'lucide-react';
 import { MAX_IMAGES, text } from '../constants';
 import { useMediaStore } from '../services/mediaStore';
-import type { MediaItem } from '../types';
+import type { MediaItem, MediaStatus } from '../types';
 
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ interface SelectPhaseFooterProps {
   onTriggerPicker: () => void;
 }
 
-const PENDING_STATS = new Set(['queued', 'uploading', 'pending']);
+const PENDING_STATS = new Set<MediaStatus>(['queued', 'optimizing', 'uploading', 'pending']);
 
 const isMediaSelected = (m: MediaItem) =>
   m.status === 'uploaded' || (m.order !== null && !!m.previewUrl);
