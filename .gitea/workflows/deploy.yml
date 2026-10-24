@@ -21,6 +21,12 @@
 #
 # 4. workflow_dispatch:
 #    - Manual deployment to dev or prod with optional custom tag and environment choice.
+#
+# Every path above is gated: build-image -> e2e -> deploy. The e2e job runs the
+# real-backend Playwright suite against the image that was just built and the
+# registry's backend image, and nothing is deployed unless it passes. Branch
+# protection on main requires the "e2e" status, so a develop commit that failed
+# E2E cannot be merged into main.
 # =============================================================================
 name: frontend-ci-cd
 
@@ -336,10 +342,73 @@ jobs:
           echo "digest=${digest}" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
-  # 2. Deploy to Dev (dev_application_dev_frontend)
+  # 2. Real-backend E2E gate
+  #    Runs the exact image digest built above, plus the backend image already in
+  #    the registry (dev-latest for dev, prod-latest for production), in a throwaway
+  #    stack. No source is rebuilt, and the host Docker layer cache is reused.
+  #    Both deploy jobs need this job, and its status on the commit is what
+  #    branch protection on main requires before develop can be merged.
+  # ---------------------------------------------------------------------------
+  e2e:
+    needs: build-image
+    runs-on: docker
+    timeout-minutes: 30
+    concurrency:
+      group: e2e-real-stack
+      cancel-in-progress: false
+    env:
+      COMPOSE_FILE: e2e-real/stack/docker-compose.e2e.yml
+      COMPOSE_PROJECT_NAME: inshop-e2e-${{ github.run_id }}
+      FRONTEND_IMAGE: "${{ needs.build-image.outputs.digest }}"
+      BACKEND_IMAGE: "${{ vars.REGISTRY_HOST }}/inshop/backend:${{ needs.build-image.outputs.is_dev == 'true' && 'dev-latest' || 'prod-latest' }}"
+      BACKEND_PULL_POLICY: missing
+      MINIO_IMAGE: ${{ vars.MINIO_IMAGE }}
+      MINIO_MC_IMAGE: ${{ vars.MINIO_MC_IMAGE }}
+      NPM_REGISTRY: ${{ vars.E2E_NPM_REGISTRY || 'https://registry.npmjs.org/' }}
+    steps:
+      - name: Checkout (stack and tests only)
+        uses: actions/checkout@v4
+
+      - name: Log in to the internal registry
+        run: echo "${{ secrets.REGISTRY_PASS }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Start the E2E stack from the built images
+        run: |
+          set -euo pipefail
+          echo "Frontend: ${FRONTEND_IMAGE}"
+          echo "Backend:  ${BACKEND_IMAGE}"
+          docker compose -f "${COMPOSE_FILE}" up -d --no-build --wait
+
+      - name: Build the Playwright runner (layer cache reused)
+        run: |
+          set -euo pipefail
+          docker build -f e2e-real/runner/Dockerfile -t inshop-e2e-runner:ci .
+
+      - name: Run the real-backend suite
+        run: |
+          set -euo pipefail
+          docker run --rm --shm-size=1g --network host \
+            -e CI=true \
+            -e E2E_BASE_URL=http://localhost:4100 \
+            -e E2E_API_URL=http://localhost:8100 \
+            -e E2E_DATABASE_URL=postgres://postgres:e2e-postgres-password@localhost:5435/inshop_e2e \
+            inshop-e2e-runner:ci
+
+      - name: Show stack logs
+        if: failure()
+        run: |
+          set -uo pipefail
+          docker compose -f "${COMPOSE_FILE}" logs --no-color --tail 200 || true
+
+      - name: Tear down the stack
+        if: always()
+        run: docker compose -f "${COMPOSE_FILE}" down -v --remove-orphans
+
+  # ---------------------------------------------------------------------------
+  # 3. Deploy to Dev (dev_application_dev_frontend)
   # ---------------------------------------------------------------------------
   deploy-dev:
-    needs: build-image
+    needs: [build-image, e2e]
     if: needs.build-image.outputs.is_dev == 'true'
     runs-on: swarm-deploy
     env:
@@ -398,10 +467,10 @@ jobs:
           echo "Cleared dev nginx page cache."
 
   # ---------------------------------------------------------------------------
-  # 3. Deploy to Production (application_frontend)
+  # 4. Deploy to Production (application_frontend)
   # ---------------------------------------------------------------------------
   deploy-prod:
-    needs: build-image
+    needs: [build-image, e2e]
     if: needs.build-image.outputs.is_dev == 'false'
     runs-on: swarm-deploy
     env:

@@ -5,6 +5,11 @@
 #   frontend 4100, backend 8100, postgres 5435, minio 9102
 #
 # BACKEND_DIR points at the backend checkout (default: sibling repo).
+#
+# CI runs the images it already built and pushed instead of building them again:
+#   FRONTEND_IMAGE / BACKEND_IMAGE  registry references to run
+#   BACKEND_PULL_POLICY=missing     lets compose pull BACKEND_IMAGE (default: never)
+#   docker compose up --no-build
 name: inshop-e2e
 
 x-backend-env: &backend-env
@@ -64,7 +69,7 @@ services:
   # The backend builds every other table from entities (DB_SCHEMA_SYNC=true).
   auth-schema:
     <<: *backend-env
-    image: inshop-e2e-backend:local
+    image: ${BACKEND_IMAGE:-inshop-e2e-backend:local}
     build:
       context: ${BACKEND_DIR:-../../../inshop-back-end}
     # npm 10 fails to resolve the CLI's peer deps ("edgesOut" of null) without
@@ -81,9 +86,9 @@ services:
 
   backend:
     <<: *backend-env
-    # Built by auth-schema above; never pulled
-    image: inshop-e2e-backend:local
-    pull_policy: never
+    # Locally: built by auth-schema above and never pulled. CI: pulled from the registry
+    image: ${BACKEND_IMAGE:-inshop-e2e-backend:local}
+    pull_policy: ${BACKEND_PULL_POLICY:-never}
     depends_on:
       auth-schema:
         condition: service_completed_successfully
@@ -104,7 +109,7 @@ services:
       retries: 60
 
   frontend:
-    image: inshop-e2e-frontend:local
+    image: ${FRONTEND_IMAGE:-inshop-e2e-frontend:local}
     build:
       context: ../..
       args:
