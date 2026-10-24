@@ -7,7 +7,7 @@ import type { BasePostData } from '../types';
 const mockBasePost: BasePostData = {
   id: 'test-post-1',
   description: 'یک توضیح ساده برای تست',
-  createdAt: '2026-09-01T12:00:00.000Z',
+  updatedAt: '2026-09-01T12:00:00.000Z',
   sellerName: 'تست شاپ',
   sellerAvatar: '/test.jpg',
   isVerified: false,

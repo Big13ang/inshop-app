@@ -46,6 +46,12 @@ export function PublicPostMenuDrawer({ post, onDeleted }: PublicPostMenuDrawerPr
       <PostMenu.Root isOpen={state.isMenuOpen} onClose={actions.closeMenu}>
         <PostMenu.Title>تنظیمات پست</PostMenu.Title>
 
+        <PostMenu.EditItem
+          postId={post.id}
+          authorUsername={owner?.username || ''}
+          onClick={actions.closeMenu}
+        />
+
         <PostMenu.CopyLinkItem url={shareUrl} onCopy={actions.closeMenu} />
 
         <PostMenu.ShareItem

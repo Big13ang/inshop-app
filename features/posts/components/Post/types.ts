@@ -12,7 +12,7 @@ export interface BasePostData {
   id: string;
   description: string;
   media?: PostMediaItem[];
-  createdAt: string;
+  updatedAt: string;
   sellerName: string;
   sellerAvatar: string;
   isVerified: boolean;

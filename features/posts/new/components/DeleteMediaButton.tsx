@@ -15,6 +15,7 @@ interface DeleteMediaButtonProps {
 export default function DeleteMediaButton({ mediaId }: DeleteMediaButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { data: session } = useUploadSession();
+  const isEditing = useMediaStore((s) => s.isEditing);
 
   const {
     isPending: isDeleting,
@@ -62,7 +63,7 @@ export default function DeleteMediaButton({ mediaId }: DeleteMediaButtonProps) {
         shape="circle"
         className="absolute top-4 left-4 bg-zinc-900/90 text-zinc-300 hover:text-white size-8 flex items-center justify-center hover:bg-zinc-950 transition-all border border-white/15 z-[25] p-0 min-w-0"
         title="حذف از انتخاب شده‌ها"
-        disabled={isDeleting}
+        disabled={isDeleting || isEditing}
       >
         {isDeleting ? (
           <Loader2 className="w-4 h-4 animate-spin text-white" />

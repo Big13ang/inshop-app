@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Edit Post · Full QA</title>
+<style>
+/* Shared styles for the edit-post plan, progress and QA pages. Dark only. */
+:root {
+  --bg: #161614;
+  --surface: #1f1e1b;
+  --surface-2: #26241f;
+  --fg: #ece9e2;
+  --muted: #a19d94;
+  --line: #36342f;
+  --accent: #7fc2ad;
+  --accent-soft: #223b34;
+  --warn: #e0b06a;
+  --warn-soft: #3a2f1d;
+  --bad: #e58a7d;
+  --bad-soft: #3d2420;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 56px;
+}
+.wrap { max-width: 820px; margin: 0 auto; min-width: 0; }
+h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 8px; text-wrap: balance; }
+h2 { font-size: 18px; margin: 28px 0 10px; }
+h3 { font-size: 15px; margin: 0 0 4px; }
+p { margin: 0 0 12px; max-width: 65ch; }
+ul, ol { margin: 0 0 12px; padding-left: 20px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+a:focus-visible, input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: var(--accent-soft); color: var(--fg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.muted { color: var(--muted); }
+.eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+
+.nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px; }
+.nav a { font-size: 13px; text-decoration: none; color: var(--fg); border: 1px solid var(--line); background: var(--surface); padding: 5px 11px; border-radius: 999px; }
+.nav a[aria-current="page"] { border-color: var(--accent); color: var(--accent); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 14px; min-width: 0; }
+.card h2 { margin: 0 0 10px; font-size: 16px; }
+.card > :last-child { margin-bottom: 0; }
+.card-head { display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+
+.pill { display: inline-block; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
+.pill.done { background: var(--accent-soft); color: var(--accent); }
+.pill.doing { background: var(--warn-soft); color: var(--warn); }
+.pill.blocked { background: var(--bad-soft); color: var(--bad); }
+.pill.todo { background: var(--surface-2); color: var(--muted); }
+
+.bar { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+.status { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 16px 0 22px; display: flex; flex-direction: column; gap: 10px; }
+.status-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: start; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; background: var(--surface-2); }
+tr:last-child td { border-bottom: 0; }
+
+.note { font-size: 14px; color: var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 9px 12px; margin: 10px 0 0; }
+.note.bad { color: var(--bad); background: var(--bad-soft); }
+
+/* Checklist items */
+.item { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 12px; padding: 13px 0; border-top: 1px solid var(--line); }
+.item:first-of-type { border-top: 0; padding-top: 4px; }
+.item input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--accent); }
+.item-title { font-weight: 600; }
+.item-steps { margin: 6px 0 0; }
+.expect { margin-top: 6px; font-size: 14px; }
+.expect b { color: var(--accent); font-weight: 600; }
+.item-body { min-width: 0; }
+
+.reset { font: inherit; font-size: 13px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 11px; cursor: pointer; margin-top: 8px; }
+
+@media (max-width: 420px) {
+  h1 { font-size: 22px; }
+  .item { grid-template-columns: 20px minmax(0, 1fr); }
+}
+.table-wrap{margin:8px 0}</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">Edit post · all changes</p>
+  <h1>Full QA checklist</h1>
+  <p class="muted">Everything in the edit post feature, the edit menu item, the save flow, and the post date. Part 1 lists what the automated tests cover. Part 2 is the manual checklist. Part 3 lists the gaps. Ticks are saved in this browser only.</p>
+
+  <section class="status" data-checklist="edit-post-full-qa">
+    <div class="status-row">
+      <span data-pill class="pill doing">Awaiting manual QA</span>
+      <span data-count class="muted">0 of 15 checked</span>
+    </div>
+    <div class="bar" aria-hidden="true"><span data-bar></span></div>
+    <div><button type="button" class="reset" data-reset>Clear all ticks</button></div>
+
+    <h2 style="margin:12px 0 0">Part 2 · Manual checks</h2>
+
+    <div class="item">
+      <input type="checkbox" id="m1">
+      <div class="item-body">
+        <div class="item-title">Edit item from the public post menu (owner)</div>
+        <ol class="item-steps"><li>Open your approved post, tap the 3 dots.</li></ol>
+        <div class="expect"><b>Expected:</b> The "ویرایش پست" item is shown and links to /app/post/edit/&lt;id&gt;.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m2">
+      <div class="item-body">
+        <div class="item-title">Edit item hidden for other sellers</div>
+        <ol class="item-steps"><li>Open another seller's post, tap the 3 dots.</li></ol>
+        <div class="expect"><b>Expected:</b> No edit item.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m3">
+      <div class="item-body">
+        <div class="item-title">Edit item on the pending list</div>
+        <ol class="item-steps"><li>Open pending/rejected posts, tap the 3 dots on a post.</li></ol>
+        <div class="expect"><b>Expected:</b> The edit item is shown above delete and opens the edit page.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m4">
+      <div class="item-body">
+        <div class="item-title">Edit page loads the saved post</div>
+        <ol class="item-steps"><li>Open the edit link.</li></ol>
+        <div class="expect"><b>Expected:</b> The caption is prefilled, and every image shows the full picture (not a thumbnail).</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m5">
+      <div class="item-body">
+        <div class="item-title">Delete disabled on the edit page</div>
+        <ol class="item-steps"><li>Look at the delete button on the image.</li></ol>
+        <div class="expect"><b>Expected:</b> It is disabled. Tapping it does nothing and sends no request.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m6">
+      <div class="item-body">
+        <div class="item-title">Save is disabled for an empty caption</div>
+        <ol class="item-steps"><li>Clear the caption.</li></ol>
+        <div class="expect"><b>Expected:</b> ذخیره is disabled. Typing text enables it again.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m7">
+      <div class="item-body">
+        <div class="item-title">Save updates the description</div>
+        <ol class="item-steps"><li>Change the caption and press ذخیره.</li></ol>
+        <div class="expect"><b>Expected:</b> A success toast shows, and the page redirects to the pending review page.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m8">
+      <div class="item-body">
+        <div class="item-title">Saved post goes back to review</div>
+        <ol class="item-steps"><li>After saving, open the pending list.</li></ol>
+        <div class="expect"><b>Expected:</b> The post is listed as pending, and it is not in the public feed.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m9">
+      <div class="item-body">
+        <div class="item-title">Lists refresh without reload</div>
+        <ol class="item-steps"><li>After saving, check the feed, your profile, and the public post.</li></ol>
+        <div class="expect"><b>Expected:</b> The new text shows (or the post is removed from public views), without a manual refresh.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m10">
+      <div class="item-body">
+        <div class="item-title">Date shows the last update</div>
+        <ol class="item-steps"><li>After saving, look at the post date on its card.</li></ol>
+        <div class="expect"><b>Expected:</b> The date is today (updatedAt), not the original creation date.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m11">
+      <div class="item-body">
+        <div class="item-title">Save failure keeps the text</div>
+        <ol class="item-steps"><li>Turn off the network, change the caption, press ذخیره.</li></ol>
+        <div class="expect"><b>Expected:</b> An error toast shows. The caption stays in the field.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m12">
+      <div class="item-body">
+        <div class="item-title">Not-found for bad or foreign ids</div>
+        <ol class="item-steps"><li>Open /app/post/edit/not-a-uuid, and a valid id that belongs to someone else.</li></ol>
+        <div class="expect"><b>Expected:</b> The "پست مورد نظر وجود ندارد" page shows. There is no 500 error.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m13">
+      <div class="item-body">
+        <div class="item-title">Signed-out visitor</div>
+        <ol class="item-steps"><li>Sign out, then open an edit URL.</li></ol>
+        <div class="expect"><b>Expected:</b> The page does not show post data. Note what actually happens.</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m14">
+      <div class="item-body">
+        <div class="item-title">New-post flow still works</div>
+        <ol class="item-steps"><li>Open /app/posts/new, add images, write a caption, publish.</li></ol>
+        <div class="expect"><b>Expected:</b> It works as before, and the edit state does not appear (delete works).</div>
+      </div>
+    </div>
+
+    <div class="item">
+      <input type="checkbox" id="m15">
+      <div class="item-body">
+        <div class="item-title">Layout at phone width and in dark mode</div>
+        <ol class="item-steps"><li>Check the edit page at about 400px wide and in dark mode.</li></ol>
+        <div class="expect"><b>Expected:</b> Text and buttons are readable. The page does not scroll sideways.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Part 1 · Automated coverage</h2>
+    <p class="muted">These suites run in the frontend (Jest) and the backend (node:test). Run them before the manual checks.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Suite</th><th>What it covers</th></tr></thead>
+        <tbody>
+<tr><td><code>features/post-edit/services/__tests__/postEditService.test.tsx</code></td><td>Reads the post from the single-post route and unwraps the response. Saves the description with PATCH. Invalidates all post queries and the user profile after a save, and nothing on a failed save.</td></tr>
+<tr><td><code>features/post-edit/__tests__/PostEditClientWrapper.test.tsx</code></td><td>Shows the details screen with the saved caption. Loads the post into the store in edit mode. Clears the store on leave. Shows the not-found page on error.</td></tr>
+<tr><td><code>features/post-edit/components/__tests__/PostEditFooter.test.tsx</code></td><td>Save sends the current caption. Save is disabled for an empty caption. A successful save redirects to /app/posts/pending.</td></tr>
+<tr><td><code>features/posts/public/components/__tests__/PublicPostMenuDrawer.test.tsx</code></td><td>Edit item shows for the owner, is hidden from other sellers, and closes the menu when tapped.</td></tr>
+<tr><td><code>features/posts/pending/__tests__/PendingPostsView.menu.test.tsx</code></td><td>The pending list menu shows the edit item with its link, above delete.</td></tr>
+<tr><td><code>features/posts/components/Post/__tests__/PostTimestamp.test.tsx</code></td><td>The card date shows updatedAt, not createdAt.</td></tr>
+<tr><td><code>features/posts/services/__tests__/publicPostUpdatedAt.test.ts</code></td><td>The feed-to-public mapping carries updatedAt.</td></tr>
+<tr><td><code>features/post-edit/services/__tests__/cacheRefresh.test.tsx</code></td><td>A save refetches the mounted feed and user profile queries using real observers. A failed save refetches nothing.</td></tr>
+<tr><td><code>features/posts/new/components/__tests__/DeleteMediaButton.editMode.test.tsx</code></td><td>Delete is disabled while editing a saved post and stays enabled in the new-post flow.</td></tr>
+<tr><td><code>features/posts/components/PostMenu/__tests__/EditPostMenuItem.test.tsx</code></td><td>The edit item links to /app/post/edit/:id for the owner. It is hidden for other sellers and for posts with no owner username. It shows on the seller's own list.</td></tr>
+<tr><td><code>features/posts/components/Post/__tests__/PostDescription.test.tsx</code></td><td>Fixture updated to updatedAt. The date display itself is not asserted (see gaps).</td></tr>
+<tr><td><code>features/posts/new/**  (existing suites)</code></td><td>Regression: all 292 new-post tests still pass after the shared store and delete button changes.</td></tr>
+<tr><td><code>src/post/post.service.spec.ts (backend)</code></td><td>Owner lookup: malformed id returns 404 without a query. Valid id is scoped to the signed-in seller. Other sellers get 404. Deleted posts are excluded.</td></tr>
+<tr><td><code>src/post/seller-post.controller.spec.ts (backend)</code></td><td>Owned post returns its shape with ready media. Not-found and database errors propagate. Combined pending/rejected and update routes still behave as before.</td></tr>
+<tr><td><code>src/post/seller-post.auth.spec.ts (backend)</code></td><td>No session gets 401 from the global auth guard. A signed-in request passes it.</td></tr>
+<tr><td><code>src/upload-session/seller.guard.spec.ts (backend)</code></td><td>Verified sellers pass. Signed-in non-sellers and requests with no user get 403 SELLER.VERIFICATION_REQUIRED.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Part 3 · Not covered by the tests</h2>
+    <ul>
+<li>Backend HTTP behavior (real 401 and 403 responses, real database) is not run here. The unit tests call the guard and controller directly. Run the e2e suite against a live backend.</li>
+<li>The PATCH save is not tested against a running backend.</li>
+<li>The pre-push hook (lefthook) did not run, because it is not on the PATH.</li>
+    </ul>
+  </section>
+</div>
+<script>
+// Ticks for every checklist on the page. Each checklist root has data-checklist (storage key),
+// and contains [data-count] and [data-bar] and [data-pill] elements that are kept in sync.
+(function () {
+  var roots = Array.prototype.slice.call(document.querySelectorAll('[data-checklist]'));
+
+  function readSaved(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveState(key, boxes) {
+    var state = {};
+    boxes.forEach(function (box) { state[box.id] = box.checked; });
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch (e) {
+      // Storage can be blocked. Ticks still work for this page view.
+    }
+  }
+
+  function setupChecklist(root) {
+    var key = root.getAttribute('data-checklist');
+    var boxes = Array.prototype.slice.call(root.querySelectorAll('input[type="checkbox"]'));
+    var countEl = root.querySelector('[data-count]');
+    var barEl = root.querySelector('[data-bar]');
+    var pillEl = root.querySelector('[data-pill]');
+    var resetEl = root.querySelector('[data-reset]');
+    var saved = readSaved(key);
+
+    function render() {
+      var checked = boxes.filter(function (box) { return box.checked; }).length;
+      var total = boxes.length;
+      countEl.textContent = checked + ' of ' + total + ' checked';
+      barEl.style.width = Math.round((checked / total) * 100) + '%';
+      pillEl.textContent = checked === total ? 'QA complete' : 'Awaiting manual QA';
+      pillEl.className = checked === total ? 'pill done' : 'pill doing';
+    }
+
+    function handleChange() {
+      saveState(key, boxes);
+      render();
+    }
+
+    function handleReset() {
+      boxes.forEach(function (box) { box.checked = false; });
+      saveState(key, boxes);
+      render();
+    }
+
+    boxes.forEach(function (box) {
+      box.checked = Boolean(saved[box.id]);
+      box.addEventListener('change', handleChange);
+    });
+    if (resetEl) resetEl.addEventListener('click', handleReset);
+    render();
+  }
+
+  roots.forEach(setupChecklist);
+})();
+</script>
+</body>
+</html>

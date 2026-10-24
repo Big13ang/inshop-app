@@ -112,6 +112,9 @@ export function PendingPostsView({ onAddPost }: PendingPostsViewProps) {
           {text.menuTitle}
         </PostMenu.Title>
         {activeMenuId ? (
+          <PostMenu.EditItem postId={activeMenuId} onClick={handleCloseMenu} />
+        ) : null}
+        {activeMenuId ? (
           <PostMenu.DeleteItem
             postId={activeMenuId}
             label={text.deleteLabel}

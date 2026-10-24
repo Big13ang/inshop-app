@@ -59,7 +59,7 @@ export function PendingPostCard({ post, onOpenMenu }: PendingPostCardProps) {
     id: post.id,
     description: post.description,
     media: post.media,
-    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
     sellerName,
     sellerAvatar: post.sellerAvatar || user?.sellerProfile?.profilePhotoUrl || '',
     isVerified: post.isVerified ?? !!user?.isVerifiedSeller,

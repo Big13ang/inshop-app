@@ -34,6 +34,7 @@ export interface PublicPost {
   id: string;
   description: string;
   publishedAt: string;
+  updatedAt: string;
   owner?: PublicPostShop;
   shop?: PublicPostShop;
   media: PublicPostMedia[];
@@ -55,6 +56,7 @@ export function mapFeedPostToPublicPost(feedPost: BackendFeedPost): PublicPost {
     id: feedPost.id,
     description: feedPost.description,
     publishedAt: feedPost.createdAt || feedPost.updatedAt,
+    updatedAt: feedPost.updatedAt,
     owner,
     shop: owner,
     media: (feedPost.media || []).map((m) => ({
