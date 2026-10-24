@@ -22,11 +22,11 @@
 # 4. workflow_dispatch:
 #    - Manual deployment to dev or prod with optional custom tag and environment choice.
 #
-# Every path above is gated: build-image -> e2e -> deploy. The e2e job runs the
-# real-backend Playwright suite against the image that was just built and the
-# registry's backend image, and nothing is deployed unless it passes. Branch
-# protection on main requires the "e2e" status, so a develop commit that failed
-# E2E cannot be merged into main.
+# The e2e job runs the real-backend Playwright suite on every build, in parallel
+# with the dev deploy. Production deploys wait for it, so nothing reaches
+# production unless it passes. Branch protection on main requires the "e2e"
+# status on the commit, so a develop commit that failed E2E cannot be merged
+# into main.
 # =============================================================================
 name: frontend-ci-cd
 
@@ -408,7 +408,7 @@ jobs:
   # 3. Deploy to Dev (dev_application_dev_frontend)
   # ---------------------------------------------------------------------------
   deploy-dev:
-    needs: [build-image, e2e]
+    needs: build-image
     if: needs.build-image.outputs.is_dev == 'true'
     runs-on: swarm-deploy
     env:
