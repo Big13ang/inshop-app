@@ -15,7 +15,7 @@
 #    - Tags with <tag>, prod-<sha>, and prod-latest.
 #    - Deploys automatically to PROD environment: application_frontend (inshop.social).
 #
-# 3. Push to master/main:
+# 3. Push to main:
 #    - Builds production image tagged with prod-<sha> and prod-latest.
 #    - Deploys automatically to PROD environment: application_frontend (inshop.social).
 #
@@ -27,7 +27,6 @@ name: frontend-ci-cd
 on:
   push:
     branches:
-      - master
       - main
       - develop
       - dev

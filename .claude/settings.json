@@ -20,5 +20,39 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx jest *)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm test)",
+      "Bash(npm run test)",
+      "Bash(npm run lint)",
+      "Bash(npm run check)",
+      "Bash(getent *)",
+      "Read(//data/InShop/inshop-app/**)",
+      "Read(//data/InShop/inshop-back-end/**)",
+      "Read(//data/InShop/inshop-infrastructure/**)",
+      "Read(//data/InShop/worktrees/**)",
+      "Edit(//data/InShop/worktrees/**)",
+      "Write(//data/InShop/worktrees/**)",
+      "Bash(git add *)",
+      "Bash(git worktree add *)",
+      "Bash(npm run build)",
+      "Bash(npx eslint *)",
+      "Bash(npm run test:e2e:real *)",
+      "Bash(bash e2e-real/stack/run.sh *)",
+      "Bash(npx playwright test *)",
+      "Bash(docker compose *)",
+      "Bash(docker build *)",
+      "Bash(docker tag *)",
+      "Bash(docker save *)",
+      "Bash(gzip *)",
+      "Bash(ssh inshop-e2e-dev *)",
+      "Bash(make deploy-e2e-app *)",
+      "Bash(ansible-playbook -i inventories/production/hosts.yml playbooks/deploy-e2e-application.yml *)",
+      "Bash(curl *)"
+    ]
   }
 }
