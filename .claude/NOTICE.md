@@ -1,7 +1,9 @@
 # Third-party notice
 
 The skills in this folder and `.claude/references/` are copied from
-https://github.com/addyosmani/agent-skills (commit fetched 2026-10-16).
+https://github.com/addyosmani/agent-skills (commit fetched 2026-10-16; the
+remaining skills and references were added 2026-10-26 from commit aeac41d).
+Upstream hooks, subagents, and commands are intentionally not installed.
 
 License text (from the upstream LICENSE file):
 
