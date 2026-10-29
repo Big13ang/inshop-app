@@ -5,12 +5,13 @@ import type { UserMe } from './profileService';
 import type { SellerPostsByUsernameData } from '@/features/posts/types';
 import { debugAuth } from '@/lib/utils/authDebug';
 import { sellerProfileCacheTag } from './sellerProfileCacheTag';
+import { PUBLIC_CONTENT_CACHE_LIFE } from '@/lib/constants/cacheLife';
 
 export async function getPublicSellerProfile(
   username: string
 ): Promise<SellerPostsByUsernameData | null> {
   'use cache';
-  cacheLife('hours');
+  cacheLife(PUBLIC_CONTENT_CACHE_LIFE);
   cacheTag(sellerProfileCacheTag(username));
 
   const trimmed = (username || '').trim();
