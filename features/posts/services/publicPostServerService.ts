@@ -1,10 +1,11 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import { http, Result, type ApiResponse } from '@/lib/utils';
 import type { PublicPost } from './publicPostService';
+import { PUBLIC_CONTENT_CACHE_LIFE } from '@/lib/constants/cacheLife';
 
 export async function fetchPublicPostServer(id: string): Promise<PublicPost | null> {
   'use cache';
-  cacheLife('hours');
+  cacheLife(PUBLIC_CONTENT_CACHE_LIFE);
   cacheTag(`post-${id}`);
 
   const resResult = await Result.try(() =>
