@@ -58,7 +58,7 @@ describe('validateOne & validateImage', () => {
       const rejection = await validateOne(file);
       expect(rejection).not.toBeNull();
       expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_LOW);
-      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmall);
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1079, 1200));
     });
 
     it('rejects image with height below 1080px', async () => {
@@ -68,7 +68,7 @@ describe('validateOne & validateImage', () => {
       const rejection = await validateOne(file);
       expect(rejection).not.toBeNull();
       expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_LOW);
-      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmall);
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1920, 1079));
     });
 
     it('rejects rotated JPEG where EXIF orientation brings effective height below 1080px', async () => {
