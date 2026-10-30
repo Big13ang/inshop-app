@@ -168,7 +168,7 @@ describe('headerParser - parseImageHeader', () => {
     });
 
     it('returns unknown_format for non-image binary', () => {
-      const textBuf = Buffer.from('This is a plain text file, not an image!').buffer;
+      const textBuf = new TextEncoder().encode('This is a plain text file, not an image!').buffer;
       const res = parseImageHeader(textBuf);
 
       expect(res.ok).toBe(false);
