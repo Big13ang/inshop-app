@@ -23,7 +23,11 @@ export const ERROR_MESSAGES = {
   upload: {
     sessionInvalid: 'شناسه بارگذاری پست نامعتبر است. برای تلاش مجدد صفحه را رفرش کنید.',
     failed: 'بارگذاری فایل با خطا روبرو شد. لطفا دوباره تلاش کنید.',
-    resolutionTooSmall: 'کیفیت عکس شما پایین است. حداقل کیفیت عکس باید ۱۰۸۰x۱۰۸۰ پیکسل باشد.',
+    resolutionTooSmall: 'می‌خواهیم محصول شما با کیفیت بالا دیده شود؛ برای همین اندازه عکس باید حداقل ۱۰۸۰×۱۰۸۰ پیکسل باشد.',
+    resolutionTooSmallWithSize: (width: number, height: number) => {
+        const toFa = (n: number) => n.toLocaleString('fa-IR', { useGrouping: false });
+        return `اندازه عکس شما ${toFa(width)}×${toFa(height)} پیکسل است و باید بزرگ‌تر باشد. می‌خواهیم محصول شما با کیفیت بالا دیده شود؛ لطفا عکسی با اندازه حداقل ۱۰۸۰×۱۰۸۰ پیکسل انتخاب کنید.`;
+    },
     resolutionTooHigh: 'ابعاد عکس بیش از حد بزرگ است. حداکثر ۴۰ مگاپیکسل مجاز است.',
     imageSizeLimit: 'حجم عکس باید کمتر از ۱۰ مگابایت باشد.',
     imageFormatLimit: 'فرمت تصویر نامعتبر است. فقط عکس‌های JPG، PNG و WEBP مجاز هستند.',
