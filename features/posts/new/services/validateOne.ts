@@ -31,7 +31,6 @@ const IMAGE_RULES = {
   maxPixels: 40_000_000,
   mimeError: ERROR_MESSAGES.upload.imageFormatLimit,
   sizeError: ERROR_MESSAGES.upload.imageSizeLimit,
-  resolutionError: ERROR_MESSAGES.upload.resolutionTooSmall,
   pixelsError: ERROR_MESSAGES.upload.resolutionTooHigh,
   heicError: ERROR_MESSAGES.upload.heicNotSupported,
   animatedError: ERROR_MESSAGES.upload.animatedWebpNotAllowed,
@@ -65,7 +64,10 @@ function validateHeaderRules(parsed: ParsedHeader): Omit<FileValidationRejection
   }
 
   if (!isDimensionValid(parsed.width, parsed.height)) {
-    return { code: REJECTION_CODES.RESOLUTION_TOO_LOW, reason: IMAGE_RULES.resolutionError };
+    return {
+      code: REJECTION_CODES.RESOLUTION_TOO_LOW,
+      reason: ERROR_MESSAGES.upload.resolutionTooSmallWithSize(parsed.width, parsed.height),
+    };
   }
 
   if (parsed.width * parsed.height > IMAGE_RULES.maxPixels) {
