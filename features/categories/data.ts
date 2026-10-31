@@ -1,0 +1,436 @@
+// Category tree shown in the categories explorer. Labels are Persian; keep ids stable (they are used in URLs).
+import type { ParentCategory } from './types';
+
+export const CATEGORIES: ParentCategory[] = [
+  {
+    id: 'fashion',
+    title: 'مد و پوشاک',
+    iconName: 'Shirt',
+    subcategories: [
+      {
+        id: 'shoes',
+        title: 'کفش مردانه و رسمی',
+        searchQuery: 'کفش',
+        iconName: 'Footprints',
+      },
+      {
+        id: 'shoes_women',
+        title: 'کفش مجلسی زنانه',
+        searchQuery: 'کفش مجلسی',
+        iconName: 'Sparkles',
+      },
+      {
+        id: 'sneakers',
+        title: 'کتانی و اسنیکر',
+        searchQuery: 'اسنیکر',
+        iconName: 'Footprints',
+      },
+      {
+        id: 'boots',
+        title: 'بوت و نیم‌بوت چرم',
+        searchQuery: 'بوت',
+        iconName: 'Footprints',
+      },
+      {
+        id: 'men_clothing',
+        title: 'لباس و پیراهن مردانه',
+        searchQuery: 'پیراهن مردانه',
+        iconName: 'Shirt',
+      },
+      {
+        id: 'women_clothing',
+        title: 'لباس و مانتو زنانه',
+        searchQuery: 'لباس زنانه',
+        iconName: 'Shirt',
+      },
+      {
+        id: 'bags',
+        title: 'کیف و کوله‌پشتی',
+        searchQuery: 'کیف',
+        iconName: 'ShoppingBag',
+      },
+      {
+        id: 'sunglasses',
+        title: 'عینک و اکسسوری مد',
+        searchQuery: 'عینک',
+        iconName: 'Glasses',
+      },
+      {
+        id: 'kids_wear',
+        title: 'پوشاک کودک و نوزاد',
+        searchQuery: 'لباس بچه',
+        iconName: 'Baby',
+      },
+    ],
+  },
+  {
+    id: 'gold',
+    title: 'طلا و زیورآلات',
+    iconName: 'Gem',
+    subcategories: [
+      {
+        id: 'gold_set',
+        title: 'نیم‌ست و ست طلا',
+        searchQuery: 'نیم ست',
+        iconName: 'Sparkles',
+      },
+      {
+        id: 'gold_bar',
+        title: 'شمش خالص ۲۴ عیار',
+        searchQuery: 'شمش',
+        iconName: 'Coins',
+      },
+      {
+        id: 'necklace',
+        title: 'گردنبند و زنجیر طلا',
+        searchQuery: 'زنجیر',
+        iconName: 'Gem',
+      },
+      {
+        id: 'ring',
+        title: 'حلقه ازدواج و برلیان',
+        searchQuery: 'انگشتر',
+        iconName: 'CircleDot',
+      },
+      {
+        id: 'earrings',
+        title: 'گوشواره طلا سفید',
+        searchQuery: 'گوشواره',
+        iconName: 'Sparkles',
+      },
+      {
+        id: 'crown',
+        title: 'تاج و نیم‌تاج لوکس',
+        searchQuery: 'تاج',
+        iconName: 'Crown',
+      },
+      {
+        id: 'bracelet',
+        title: 'دستبند و النگو طلا',
+        searchQuery: 'دستبند طلا',
+        iconName: 'Watch',
+      },
+      {
+        id: 'silver',
+        title: 'نقره و بدلیجات خاص',
+        searchQuery: 'نقره',
+        iconName: 'Gem',
+      },
+    ],
+  },
+  {
+    id: 'digital',
+    title: 'کالای دیجیتال',
+    iconName: 'Smartphone',
+    subcategories: [
+      {
+        id: 'mobile',
+        title: 'گوشی موبایل و آیفون',
+        searchQuery: 'موبایل',
+        iconName: 'Smartphone',
+      },
+      {
+        id: 'laptop',
+        title: 'لپ‌تاپ و اولترابوک',
+        searchQuery: 'لپ‌تاپ',
+        iconName: 'Laptop',
+      },
+      {
+        id: 'smartwatch',
+        title: 'ساعت و مچ‌بند هوشمند',
+        searchQuery: 'ساعت هوشمند',
+        iconName: 'Watch',
+      },
+      {
+        id: 'headphones',
+        title: 'هدفون و ایرپادز',
+        searchQuery: 'ایربادز',
+        iconName: 'Headphones',
+      },
+      {
+        id: 'accessories',
+        title: 'کیبورد و لوازم گیم',
+        searchQuery: 'کیبورد',
+        iconName: 'Keyboard',
+      },
+      {
+        id: 'speaker',
+        title: 'اسپیکر و سیستم صوتی',
+        searchQuery: 'اسپیکر',
+        iconName: 'Volume2',
+      },
+      {
+        id: 'tablet',
+        title: 'تبلت و قلم هوشمند',
+        searchQuery: 'تبلت',
+        iconName: 'Tablet',
+      },
+      {
+        id: 'camera',
+        title: 'دوربین و تجهیزات فیلم',
+        searchQuery: 'دوربین',
+        iconName: 'Camera',
+      },
+    ],
+  },
+  {
+    id: 'beauty',
+    title: 'زیبایی و سلامت',
+    iconName: 'Sparkles',
+    subcategories: [
+      {
+        id: 'perfume',
+        title: 'عطر و ادکلن اصل',
+        searchQuery: 'عطر',
+        iconName: 'Flame',
+      },
+      {
+        id: 'skincare',
+        title: 'مراقبت پوست و سرم',
+        searchQuery: 'پوست',
+        iconName: 'Droplets',
+      },
+      {
+        id: 'makeup',
+        title: 'آرایش صورت و چشم',
+        searchQuery: 'آرایش',
+        iconName: 'Sparkles',
+      },
+      {
+        id: 'haircare',
+        title: 'شامپو و مراقبت مو',
+        searchQuery: 'مو',
+        iconName: 'Scissors',
+      },
+      {
+        id: 'appliances',
+        title: 'لوازم شخصی برقی',
+        searchQuery: 'سشوار',
+        iconName: 'Zap',
+      },
+      {
+        id: 'hygiene',
+        title: 'بهداشت و مراقبت بدن',
+        searchQuery: 'بهداشت',
+        iconName: 'ShieldCheck',
+      },
+    ],
+  },
+  {
+    id: 'home',
+    title: 'خانه و آشپزخانه',
+    iconName: 'Home',
+    subcategories: [
+      {
+        id: 'appliances_kitchen',
+        title: 'اسپرسوساز و برقی',
+        searchQuery: 'قهوه ساز',
+        iconName: 'Coffee',
+      },
+      {
+        id: 'decor',
+        title: 'فرش و دکوراسیون لوکس',
+        searchQuery: 'فرش',
+        iconName: 'Lamp',
+      },
+      {
+        id: 'cookware',
+        title: 'ظروف پخت و قابلمه',
+        searchQuery: 'ظروف پخت',
+        iconName: 'Utensils',
+      },
+      {
+        id: 'tableware',
+        title: 'سرویس پذیرایی و کریستال',
+        searchQuery: 'سرویس چینی',
+        iconName: 'UtensilsCrossed',
+      },
+      {
+        id: 'bedding',
+        title: 'کالای خواب و تشک',
+        searchQuery: 'روتختی',
+        iconName: 'Bed',
+      },
+      {
+        id: 'furniture',
+        title: 'مبلمان و اکسسوری چوب',
+        searchQuery: 'مبلمان',
+        iconName: 'Armchair',
+      },
+    ],
+  },
+  {
+    id: 'supermarket',
+    title: 'کالای سوپرمارکتی',
+    iconName: 'ShoppingBag',
+    subcategories: [
+      {
+        id: 'beverages',
+        title: 'قهوه، چای و نوشیدنی',
+        searchQuery: 'قهوه',
+        iconName: 'Coffee',
+      },
+      {
+        id: 'staples',
+        title: 'کالاهای اساسی و برنج',
+        searchQuery: 'برنج',
+        iconName: 'Package',
+      },
+      {
+        id: 'snacks',
+        title: 'تنقلات و شکلات',
+        searchQuery: 'شکلات',
+        iconName: 'Cookie',
+      },
+      {
+        id: 'dairy',
+        title: 'لبنیات و پروتئین',
+        searchQuery: 'لبنیات',
+        iconName: 'Milk',
+      },
+      {
+        id: 'cleaning',
+        title: 'شوینده و بهداشت خانه',
+        searchQuery: 'شوینده',
+        iconName: 'Sparkles',
+      },
+    ],
+  },
+  {
+    id: 'sports',
+    title: 'ورزش و سفر',
+    iconName: 'Dumbbell',
+    subcategories: [
+      {
+        id: 'sports_shoes',
+        title: 'کفش رانینگ و ورزشی',
+        searchQuery: 'کفش ورزشی',
+        iconName: 'Footprints',
+      },
+      {
+        id: 'luggage',
+        title: 'چمدان و ساک مسافرتی',
+        searchQuery: 'چمدان',
+        iconName: 'Luggage',
+      },
+      {
+        id: 'sports_wear',
+        title: 'پوشاک و ست ورزشی',
+        searchQuery: 'لباس ورزشی',
+        iconName: 'Shirt',
+      },
+      {
+        id: 'gym',
+        title: 'تجهیزات بدنسازی و فیتنس',
+        searchQuery: 'بدنسازی',
+        iconName: 'Dumbbell',
+      },
+      {
+        id: 'camping',
+        title: 'کوهنوردی و کمپینگ',
+        searchQuery: 'کمپینگ',
+        iconName: 'Compass',
+      },
+      {
+        id: 'bicycle',
+        title: 'دوچرخه و لوازم جانبی',
+        searchQuery: 'دوچرخه',
+        iconName: 'Bike',
+      },
+    ],
+  },
+  {
+    id: 'books',
+    title: 'کتاب و هنر',
+    iconName: 'BookOpen',
+    subcategories: [
+      {
+        id: 'books_print',
+        title: 'کتاب‌های چاپی و رمان',
+        searchQuery: 'کتاب',
+        iconName: 'BookOpen',
+      },
+      {
+        id: 'stationery',
+        title: 'نوشت‌افزار و دفتر نفیس',
+        searchQuery: 'نوشت افزار',
+        iconName: 'PenTool',
+      },
+      {
+        id: 'crafts',
+        title: 'صنایع دستی و هنر',
+        searchQuery: 'صنایع دستی',
+        iconName: 'Palette',
+      },
+      {
+        id: 'art_tools',
+        title: 'رنگ روغن و طراحی',
+        searchQuery: 'وسایل نقاشی',
+        iconName: 'Palette',
+      },
+    ],
+  },
+  {
+    id: 'tools',
+    title: 'ابزار و خودرو',
+    iconName: 'Wrench',
+    subcategories: [
+      {
+        id: 'auto_parts',
+        title: 'لوازم یدکی خودرو',
+        searchQuery: 'لوازم یدکی',
+        iconName: 'Car',
+      },
+      {
+        id: 'power_tools',
+        title: 'دریل و ابزار برقی',
+        searchQuery: 'دریل',
+        iconName: 'Wrench',
+      },
+      {
+        id: 'car_audio',
+        title: 'سیستم صوتی خودرو',
+        searchQuery: 'سیستم صوتی',
+        iconName: 'Radio',
+      },
+      {
+        id: 'hand_tools',
+        title: 'جعبه ابزار و آچار',
+        searchQuery: 'جعبه ابزار',
+        iconName: 'Hammer',
+      },
+    ],
+  },
+  {
+    id: 'kids',
+    title: 'اسباب‌بازی و کودک',
+    iconName: 'Baby',
+    subcategories: [
+      {
+        id: 'toys',
+        title: 'اسباب‌بازی و لگو',
+        searchQuery: 'لگو',
+        iconName: 'Boxes',
+      },
+      {
+        id: 'baby_hygiene',
+        title: 'پوشک و بهداشت کودک',
+        searchQuery: 'پوشک',
+        iconName: 'ShieldCheck',
+      },
+      {
+        id: 'stroller',
+        title: 'کالسکه و صندلی خودرو',
+        searchQuery: 'کالسکه',
+        iconName: 'Baby',
+      },
+      {
+        id: 'baby_clothing',
+        title: 'لباس نوزاد و سرهمی',
+        searchQuery: 'لباس نوزاد',
+        iconName: 'Shirt',
+      },
+    ],
+  },
+];
+
