@@ -42,3 +42,5 @@ export default function CampaignLayout({ children }: Readonly<{ children: React.
     </html>
   );
 }
+
+// Rollout test marker: comment only, no behaviour change.
