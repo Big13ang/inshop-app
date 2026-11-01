@@ -2,31 +2,48 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CATEGORIES } from '../data';
 import { CategoriesContext, type CategoriesContextValue } from '../context/CategoriesContext';
-import type { ParentCategory } from '../types';
+import { useCategoryTree } from '../services/categoriesService';
+import type { CategoryNode } from '../types';
+import { getActiveChildren, getActiveRoots } from '../utils/categoryTree';
 
-function buildFeedHref(parent: ParentCategory, query: string, subcategoryId?: string): string {
+function buildFeedHref(parent: CategoryNode, subcategoryId?: string): string {
     const params = new URLSearchParams([['cat', parent.id]]);
     if (subcategoryId) {
         params.set('subcat', subcategoryId);
     }
-    params.set('q', query);
     return `/?${params.toString()}`;
 }
 
 export function CategoriesRoot({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const [activeParent, setActiveParent] = useState<ParentCategory>(CATEGORIES[0]);
+    const { data: categories = [], isPending, isError } = useCategoryTree();
+    const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
+
+    const roots = getActiveRoots(categories);
+    const activeParent = roots.find((root) => root.id === selectedParentId) ?? roots[0] ?? null;
+    const subcategories = activeParent ? getActiveChildren(categories, activeParent.id) : [];
+
+    function handleSelectParent(parent: CategoryNode) {
+        setSelectedParentId(parent.id);
+    }
+
+    function handleSelectSubcategory(subcategory: CategoryNode) {
+        if (!activeParent) return;
+        router.push(buildFeedHref(activeParent, subcategory.id));
+    }
+
+    function handleSelectViewAll() {
+        if (!activeParent) return;
+        router.push(buildFeedHref(activeParent));
+    }
 
     const value: CategoriesContextValue = {
-        state: { activeParent },
+        state: { roots, activeParent, subcategories, isPending, isError },
         actions: {
-            selectParent: setActiveParent,
-            selectSubcategory: (parent, subcategory) =>
-                router.push(buildFeedHref(parent, subcategory.searchQuery, subcategory.id)),
-            selectViewAll: (parent) =>
-                router.push(buildFeedHref(parent, parent.subcategories[0]?.searchQuery ?? parent.title)),
+            selectParent: handleSelectParent,
+            selectSubcategory: handleSelectSubcategory,
+            selectViewAll: handleSelectViewAll,
         },
     };
 

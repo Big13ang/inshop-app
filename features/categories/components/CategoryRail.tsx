@@ -1,41 +1,14 @@
 'use client';
 
-import {
-    Baby,
-    BookOpen,
-    Dumbbell,
-    Gem,
-    Home,
-    ShoppingBag,
-    Shirt,
-    Smartphone,
-    Sparkles,
-    Wrench,
-    type LucideIcon,
-} from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CATEGORIES } from '../data';
 import { useCategories } from '../context/CategoriesContext';
-import type { ParentCategory, ParentIconName } from '../types';
+import type { CategoryNode } from '../types';
 
-const PARENT_ICON_MAP: Record<ParentIconName, LucideIcon> = {
-    Shirt,
-    Gem,
-    Smartphone,
-    Sparkles,
-    Home,
-    ShoppingBag,
-    BookOpen,
-    Wrench,
-    Dumbbell,
-    Baby,
-};
-
-function RailItem({ parent }: { parent: ParentCategory }) {
+function RailItem({ parent }: { parent: CategoryNode }) {
     const { state, actions } = useCategories();
-    const isActive = state.activeParent.id === parent.id;
-    const Icon = PARENT_ICON_MAP[parent.iconName];
+    const isActive = state.activeParent?.id === parent.id;
 
     return (
         <Button
@@ -53,7 +26,7 @@ function RailItem({ parent }: { parent: ParentCategory }) {
                     isActive ? 'bg-primary text-on-primary' : 'bg-container-base text-secondary',
                 )}
             >
-                <Icon className="size-5" strokeWidth={isActive ? 2.2 : 1.75} aria-hidden="true" />
+                <ShoppingBag className="size-5" strokeWidth={isActive ? 2.2 : 1.75} aria-hidden="true" />
             </span>
             <span
                 className={cn(
@@ -61,17 +34,19 @@ function RailItem({ parent }: { parent: ParentCategory }) {
                     isActive ? 'font-bold text-primary' : 'font-medium text-secondary',
                 )}
             >
-                {parent.title}
+                {parent.name}
             </span>
         </Button>
     );
 }
 
 export function CategoryRail() {
+    const { state } = useCategories();
+
     return (
         <aside className="w-23 shrink-0 overflow-y-auto no-scrollbar border-e border-primary/5 bg-surface-l1 py-2">
             <ul className="flex flex-col gap-1 px-1">
-                {CATEGORIES.map((parent) => (
+                {state.roots.map((parent) => (
                     <li key={parent.id}>
                         <RailItem parent={parent} />
                     </li>

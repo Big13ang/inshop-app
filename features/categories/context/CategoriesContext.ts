@@ -1,14 +1,18 @@
 import { createContext, use } from 'react';
-import type { ParentCategory, SubCategory } from '../types';
+import type { CategoryNode } from '../types';
 
 export interface CategoriesState {
-    activeParent: ParentCategory;
+    roots: CategoryNode[];
+    activeParent: CategoryNode | null;
+    subcategories: CategoryNode[];
+    isPending: boolean;
+    isError: boolean;
 }
 
 export interface CategoriesActions {
-    selectParent: (parent: ParentCategory) => void;
-    selectSubcategory: (parent: ParentCategory, subcategory: SubCategory) => void;
-    selectViewAll: (parent: ParentCategory) => void;
+    selectParent: (parent: CategoryNode) => void;
+    selectSubcategory: (subcategory: CategoryNode) => void;
+    selectViewAll: () => void;
 }
 
 export interface CategoriesContextValue {

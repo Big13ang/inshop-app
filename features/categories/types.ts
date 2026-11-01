@@ -1,33 +1,13 @@
-export type ParentIconName =
-  | 'Shirt'
-  | 'Gem'
-  | 'Smartphone'
-  | 'Sparkles'
-  | 'Home'
-  | 'ShoppingBag'
-  | 'BookOpen'
-  | 'Wrench'
-  | 'Dumbbell'
-  | 'Baby';
-
-export type SubIconName =
-  | 'Armchair' | 'Baby' | 'Bed' | 'Bike' | 'BookOpen' | 'Boxes' | 'Camera' | 'Car'
-  | 'CircleDot' | 'Coffee' | 'Coins' | 'Compass' | 'Cookie' | 'Crown' | 'Droplets'
-  | 'Dumbbell' | 'Flame' | 'Footprints' | 'Gem' | 'Glasses' | 'Hammer' | 'Headphones'
-  | 'Keyboard' | 'Lamp' | 'Laptop' | 'Luggage' | 'Milk' | 'Package' | 'Palette' | 'PenTool'
-  | 'Radio' | 'Scissors' | 'ShieldCheck' | 'Shirt' | 'ShoppingBag' | 'Smartphone' | 'Sparkles'
-  | 'Tablet' | 'Utensils' | 'UtensilsCrossed' | 'Volume2' | 'Watch' | 'Wrench' | 'Zap';
-
-export interface SubCategory {
+// Mirrors the backend `CategoryView` returned by GET /categories/tree (inshop-backend src/category/category.service.ts).
+export interface CategoryNode {
   id: string;
-  title: string;
-  searchQuery: string;
-  iconName: SubIconName;
+  name: string;
+  parentId: string | null;
+  isActive: boolean;
+  isLeaf: boolean;
+  selectable: boolean;
 }
 
-export interface ParentCategory {
-  id: string;
-  title: string;
-  iconName: ParentIconName;
-  subcategories: SubCategory[];
+export interface CategoryTreeData {
+  categories: CategoryNode[];
 }
