@@ -269,7 +269,7 @@ describe('uploadPipeline Service Integration', () => {
     it('UPL-08: displays specialized resolution error when backend returns resolution failure', async () => {
       (tusUpload as jest.Mock).mockImplementation(
         async ({ onError }: { onError?: (err: Error) => void }) => {
-          const err = new Error('tus: image resolution too small, must be 1080');
+          const err = new Error('tus: image resolution too small, must be 800');
           onError?.(err);
           return Result.err(err);
         }

@@ -5,7 +5,7 @@ import { Result } from '@/lib/utils/result';
 export const DIMENSIONS = [1920, 1440, 1200, 1080] as const;
 export const MAX_INPUT_PIXELS = 40_000_000;
 // Backend validateResolution requires both sides >= MIN_SIDE.
-export const MIN_SIDE = 1080;
+export const MIN_SIDE = 800;
 // The backend always re-encodes what it receives. Encoding here at a low quality
 // means two lossy passes, which visibly softens the photo. q95 keeps the client
 // pass close to lossless (measured within ~0.2 dB of the backend-only result),

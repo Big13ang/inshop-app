@@ -145,7 +145,7 @@ const handleMediaUploadError = (media: MediaItem, error: unknown) => {
 
     const errObj = error instanceof Error ? error : new Error(typeof error === 'string' ? error : 'Upload failed');
     let description = errObj.message;
-    if (errObj.message.includes('resolution') || errObj.message.includes('1080')) {
+    if (errObj.message.includes('resolution')) {
         description = ERROR_MESSAGES.upload.resolutionTooSmall;
     } else {
         const cleanMsg = errObj.message.replace(/^tus:\s*/i, '');

@@ -15,7 +15,7 @@ describe('constants', () => {
         expect(DIMENSIONS).toEqual([1920, 1440, 1200, 1080]);
         expect(CLIENT_WEBP_QUALITY).toBe(95);
         expect(MAX_INPUT_PIXELS).toBe(40_000_000);
-        expect(MIN_SIDE).toBe(1080);
+        expect(MIN_SIDE).toBe(800);
     });
 });
 
@@ -29,19 +29,28 @@ describe('getCandidateTargets', () => {
         expect(targets).toEqual([
             { width: 1920, height: 1440 },
             { width: 1440, height: 1080 },
+            { width: 1200, height: 900 },
+            { width: 1080, height: 810 },
         ]);
     });
 
     it('never repeats for a 1080x1920 portrait', () => {
         const targets = getCandidateTargets(1080, 1920);
         expect(hasRepeats(targets)).toBe(false);
-        expect(targets).toEqual([{ width: 1080, height: 1920 }]);
+        expect(targets).toEqual([
+            { width: 1080, height: 1920 },
+            { width: 810, height: 1440 },
+            { width: 800, height: 1422 },
+        ]);
     });
 
     it('never repeats for a 2:1 panorama', () => {
         const targets = getCandidateTargets(4000, 2000);
         expect(hasRepeats(targets)).toBe(false);
-        expect(targets).toEqual([{ width: 2160, height: 1080 }]);
+        expect(targets).toEqual([
+            { width: 1920, height: 960 },
+            { width: 1600, height: 800 },
+        ]);
     });
 
     it('returns a single target for small images', () => {
@@ -51,7 +60,8 @@ describe('getCandidateTargets', () => {
     it('keeps distinct sizes ordered largest first', () => {
         expect(getCandidateTargets(1300, 1100)).toEqual([
             { width: 1300, height: 1100 },
-            { width: 1276, height: 1080 },
+            { width: 1200, height: 1015 },
+            { width: 1080, height: 914 },
         ]);
     });
 });
@@ -63,13 +73,13 @@ describe('getTargetSize', () => {
         expect(getTargetSize(1500, 1500, 1920)).toEqual({ width: 1500, height: 1500 });
     });
 
-    it('keeps the short side at 1080 for a 2:1 panorama', () => {
-        expect(getTargetSize(4000, 2000, 1920)).toEqual({ width: 2160, height: 1080 });
-        expect(getTargetSize(2000, 4000, 1080)).toEqual({ width: 1080, height: 2160 });
+    it('keeps the short side at or above MIN_SIDE for a 2:1 panorama', () => {
+        expect(getTargetSize(4000, 2000, 1920)).toEqual({ width: 1920, height: 960 });
+        expect(getTargetSize(2000, 4000, 1080)).toEqual({ width: 800, height: 1600 });
     });
 
     it('never upscales beyond the original', () => {
-        expect(getTargetSize(1200, 1100, 1080)).toEqual({ width: 1178, height: 1080 });
+        expect(getTargetSize(1200, 1100, 1080)).toEqual({ width: 1080, height: 990 });
         expect(getTargetSize(1080, 1080, 1080)).toEqual({ width: 1080, height: 1080 });
     });
 
@@ -160,7 +170,7 @@ describe('target size invariants', () => {
         [2000, 500],
         [500, 500],
         [1079, 4000],
-    ])('never upscales a %ix%i source with a side below 1080', (width, height) => {
+    ])('never upscales a %ix%i source', (width, height) => {
         for (const target of getCandidateTargets(width, height)) {
             expect(target.width).toBeLessThanOrEqual(width);
             expect(target.height).toBeLessThanOrEqual(height);

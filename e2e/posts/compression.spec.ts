@@ -101,14 +101,14 @@ test.describe('Add New Post — client-side compression', () => {
     expect(info.height).toBe(1440);
   });
 
-  test('panorama keeps its short side ≥ 1080', async ({ addPostPage }) => {
+  test('panorama keeps its short side ≥ 800', async ({ addPostPage }) => {
     const { creations } = captureUploads(addPostPage.page);
     await addPostPage.uploadFiles([await loadFixture('panorama-4000x2000.jpg', 'image/jpeg')]);
     await addPostPage.waitForUploadedCount(1, 30_000);
     await waitForUploads(creations, 1);
 
     const info = await sharp(creations[0].body).metadata();
-    expect(Math.min(info.width ?? 0, info.height ?? 0)).toBeGreaterThanOrEqual(1080);
+    expect(Math.min(info.width ?? 0, info.height ?? 0)).toBeGreaterThanOrEqual(800);
     expect(creations[0].uploadLength).toBeLessThanOrEqual(MAX_UPLOAD_BYTES);
   });
 
