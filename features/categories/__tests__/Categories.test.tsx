@@ -80,20 +80,20 @@ describe('Categories explorer', () => {
     expect(screen.getByRole('button', { name: /مد و پوشاک/ })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('opens the feed filtered by parent and subcategory ids when a subcategory is tapped', () => {
+  it('opens the subcategory posts page when a subcategory is tapped', () => {
     renderExplorer();
 
     fireEvent.click(screen.getByRole('button', { name: /کفش مردانه و رسمی/ }));
 
-    expect(mockPush).toHaveBeenCalledWith('/?cat=cat-fashion&subcat=cat-shoes');
+    expect(mockPush).toHaveBeenCalledWith('/categories/cat-shoes');
   });
 
-  it('opens the feed filtered by parent id when "view all" is tapped', () => {
+  it('opens the parent category posts page when "view all" is tapped', () => {
     renderExplorer();
 
     fireEvent.click(screen.getByRole('button', { name: 'مشاهده همه' }));
 
-    expect(mockPush).toHaveBeenCalledWith('/?cat=cat-fashion');
+    expect(mockPush).toHaveBeenCalledWith('/categories/cat-fashion');
   });
 
   it('shows a loading message while the tree is pending', () => {

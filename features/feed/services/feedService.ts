@@ -102,7 +102,9 @@ export function shouldRetryFeed(failureCount: number, error: unknown): boolean {
   return failureCount < 2;
 }
 
-export async function fetchFeedPosts(
+// Shared by every endpoint that returns the feed's `{ data, pagination }` page (feed, category posts).
+export async function fetchPostsPage(
+  path: string,
   cursor?: string | null,
   limit: number = 15
 ): Promise<FeedCursorPaginatedResult> {
@@ -116,7 +118,7 @@ export async function fetchFeedPosts(
       success: boolean;
       data: BackendFeedPost[];
       pagination?: { nextCursor: string | null; hasNext: boolean };
-    }>('/posts/feed', { searchParams: params })
+    }>(path, { searchParams: params })
   );
 
   const res = Result.unwrap(result);
@@ -128,6 +130,10 @@ export async function fetchFeedPosts(
       hasNext: res.pagination?.hasNext ?? false,
     },
   };
+}
+
+export function fetchFeedPosts(cursor?: string | null, limit?: number): Promise<FeedCursorPaginatedResult> {
+  return fetchPostsPage('/posts/feed', cursor, limit);
 }
 
 export function useInfiniteFeedPosts(limit: number = 15) {

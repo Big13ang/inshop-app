@@ -23,6 +23,31 @@ if (typeof window !== 'undefined') {
 
 import '@testing-library/jest-dom';
 import mockReact from 'react';
+
+// jsdom does not implement matchMedia; components like CustomSearchableSelect call it on render.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+// jsdom does not implement ResizeObserver; CustomSearchableSelect observes its option list.
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
 import { server } from './mocks/server';
 import { resetPendingPostsFixture } from './mocks/handlers';
 

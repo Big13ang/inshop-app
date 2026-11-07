@@ -7,14 +7,6 @@ import { useCategoryTree } from '../services/categoriesService';
 import type { CategoryNode } from '../types';
 import { getActiveChildren, getActiveRoots } from '../utils/categoryTree';
 
-function buildFeedHref(parent: CategoryNode, subcategoryId?: string): string {
-    const params = new URLSearchParams([['cat', parent.id]]);
-    if (subcategoryId) {
-        params.set('subcat', subcategoryId);
-    }
-    return `/?${params.toString()}`;
-}
-
 export function CategoriesRoot({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const { data: categories = [], isPending, isError } = useCategoryTree();
@@ -29,13 +21,12 @@ export function CategoriesRoot({ children }: { children: React.ReactNode }) {
     }
 
     function handleSelectSubcategory(subcategory: CategoryNode) {
-        if (!activeParent) return;
-        router.push(buildFeedHref(activeParent, subcategory.id));
+        router.push(`/categories/${subcategory.id}`);
     }
 
     function handleSelectViewAll() {
         if (!activeParent) return;
-        router.push(buildFeedHref(activeParent));
+        router.push(`/categories/${activeParent.id}`);
     }
 
     const value: CategoriesContextValue = {
