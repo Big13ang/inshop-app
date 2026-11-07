@@ -2,15 +2,16 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http } from '@/lib/utils';
 import type { PostEdit, PostEditUpdateResult } from '@/features/post-edit/types';
-import { getPostForEdit, updatePostDescription, usePostForEdit, useUpdatePostDescription } from '../postEditService';
+import { getPostForEdit, replacePostCategories, updatePostDescription, usePostForEdit, useUpdatePostDescription } from '../postEditService';
 
 jest.mock('@/lib/utils', () => {
   const actual = jest.requireActual('@/lib/utils');
-  return { ...actual, http: { get: jest.fn(), patch: jest.fn() } };
+  return { ...actual, http: { get: jest.fn(), patch: jest.fn(), put: jest.fn() } };
 });
 
 const mockGet = http.get as jest.Mock;
 const mockPatch = http.patch as jest.Mock;
+const mockPut = http.put as jest.Mock;
 
 const mockPost: PostEdit = {
   id: 'post-1',
@@ -27,6 +28,7 @@ const mockPost: PostEdit = {
   createdAt: '2026-08-25T10:15:30.000Z',
   updatedAt: '2026-08-25T11:00:00.000Z',
   owner: null,
+  categories: [{ id: 'cat-1', name: 'موبایل' }],
   media: [],
 };
 
@@ -74,6 +76,14 @@ describe('getPostForEdit', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/seller/posts/post-1');
     expect(post).toEqual(mockPost);
+  });
+
+  it('keeps the categories the backend returns with the post', async () => {
+    mockGet.mockResolvedValueOnce(mockEnvelope);
+
+    const post = await getPostForEdit('post-1');
+
+    expect(post.categories).toEqual([{ id: 'cat-1', name: 'موبایل' }]);
   });
 });
 
@@ -146,5 +156,15 @@ describe('useUpdatePostDescription', () => {
     });
 
     expect(invalidate).not.toHaveBeenCalled();
+  });
+});
+
+describe('replacePostCategories', () => {
+  it('PUTs the category ids and returns the unwrapped result', async () => {
+    const result = { post: mockUpdated, categories: [{ id: 'cat-2', name: 'لپ تاپ' }], changed: true };
+    mockPut.mockResolvedValueOnce({ success: true, data: result });
+
+    await expect(replacePostCategories('post-1', ['cat-2'])).resolves.toEqual(result);
+    expect(mockPut).toHaveBeenCalledWith('/seller/posts/post-1/categories', { categoryIds: ['cat-2'] });
   });
 });
