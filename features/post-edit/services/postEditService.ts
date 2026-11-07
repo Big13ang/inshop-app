@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { http, type ApiResponse } from '@/lib/utils';
 import { queryKeys } from '@/lib/query-keys';
-import type { PostEdit, PostEditUpdateResult } from '@/features/post-edit/types';
+import type { PostEdit, PostEditUpdateResult, ReplacePostCategoriesResult } from '@/features/post-edit/types';
 
 export async function getPostForEdit(postId: string): Promise<PostEdit> {
   const res = await http.get<ApiResponse<PostEdit>>(`/seller/posts/${encodeURIComponent(postId)}`);
@@ -12,6 +12,14 @@ export async function updatePostDescription(postId: string, description: string)
   const res = await http.patch<ApiResponse<PostEditUpdateResult>>(
     `/seller/posts/${encodeURIComponent(postId)}`,
     { description },
+  );
+  return res.data;
+}
+
+export async function replacePostCategories(postId: string, categoryIds: string[]): Promise<ReplacePostCategoriesResult> {
+  const res = await http.put<ApiResponse<ReplacePostCategoriesResult>>(
+    `/seller/posts/${encodeURIComponent(postId)}/categories`,
+    { categoryIds },
   );
   return res.data;
 }
@@ -34,6 +42,19 @@ export function useUpdatePostDescription(postId: string) {
       // a server snapshot, and refetching replays the old cursor and returns the old list.
       // A reset starts a new snapshot, the same as pull-to-refresh. The user profile holds
       // its own post lists.
+      void queryClient.resetQueries({ queryKey: queryKeys.posts.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
+    },
+  });
+}
+
+export function useReplacePostCategories(postId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (categoryIds: string[]) => replacePostCategories(postId, categoryIds),
+    onSuccess: () => {
+      // A real change returns the post to review, so every post view is stale (see useUpdatePostDescription).
       void queryClient.resetQueries({ queryKey: queryKeys.posts.all });
       void queryClient.invalidateQueries({ queryKey: queryKeys.user.profile });
     },

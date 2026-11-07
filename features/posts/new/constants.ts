@@ -24,6 +24,16 @@ export const text = {
   alertImageTooLarge: ERROR_MESSAGES.upload.imageSizeLimit,
   loadingSession: 'در حال آماده‌سازی برای بارگذاری...',
 
+  // Category form
+  categoryLabel: 'دسته‌بندی',
+  categoryPlaceholder: 'انتخاب دسته‌بندی',
+  categorySheetTitle: 'انتخاب دسته‌بندی',
+  categorySearchPlaceholder: 'جستجو...',
+  categoryBack: 'بازگشت',
+  categoryLoadFailed: 'بارگذاری دسته‌بندی‌ها انجام نشد',
+  categoryRetry: 'تلاش دوباره',
+  categoryEmpty: 'موردی پیدا نشد',
+
   // Caption form
   captionLabel: 'توضیحات محصول',
   captionPlaceholder: 'توضیحات محصول را در این قسمت بنویسید',

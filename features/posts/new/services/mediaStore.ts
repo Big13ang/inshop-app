@@ -6,6 +6,8 @@ export type MediaStoreState = {
   setPhase: (phase: 'select' | 'details') => void;
   caption: string;
   setCaption: (caption: string) => void;
+  category: string;
+  setCategory: (category: string) => void;
   isValidating: boolean;
   setIsValidating: (isValidating: boolean) => void;
   mediaList: MediaItem[];
@@ -21,10 +23,11 @@ export type MediaStoreState = {
 
 const DEFAULT_VALUES: Pick<
   MediaStoreState,
-  'phase' | 'mediaList' | 'caption' | 'isValidating' | 'uploadSessionId' | 'isEditing'
+  'phase' | 'mediaList' | 'caption' | 'category' | 'isValidating' | 'uploadSessionId' | 'isEditing'
 > = {
   phase: 'select',
   caption: '',
+  category: '',
   mediaList: [],
   isValidating: false,
   uploadSessionId: null,
@@ -42,6 +45,9 @@ function buildStore(
     },
     setCaption: (caption: string) => {
       _set({ caption });
+    },
+    setCategory: (category: string) => {
+      _set({ category });
     },
     setIsValidating: (isValidating: boolean) => {
       _set({ isValidating });

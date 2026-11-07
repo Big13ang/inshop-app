@@ -28,6 +28,13 @@ describe('navigation utility', () => {
       expect(mockRouter.back).not.toHaveBeenCalled();
     });
 
+    it('calls router.replace with the given fallback if not internal', () => {
+      setIsInternal(false);
+      goBackSafely(mockRouter as unknown as AppRouterInstance, '/app/profile');
+      expect(mockRouter.replace).toHaveBeenCalledWith('/app/profile');
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    });
+
     it('calls router.back() if internal', () => {
       setIsInternal(true);
       goBackSafely(mockRouter as unknown as AppRouterInstance);
