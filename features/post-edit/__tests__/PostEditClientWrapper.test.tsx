@@ -11,6 +11,21 @@ jest.mock('next/navigation', () => ({
 jest.mock('@/features/post-edit/services/postEditService', () => ({
   usePostForEdit: jest.fn(),
   useUpdatePostDescription: () => ({ mutate: jest.fn(), isPending: false }),
+  useReplacePostCategories: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
+let mockCategoryEditEnabled = true;
+jest.mock('@/features/post-edit/constants', () => ({
+  get IS_CATEGORY_EDIT_ENABLED() {
+    return mockCategoryEditEnabled;
+  },
+}));
+
+jest.mock('@/features/categories/services/categoriesService', () => ({
+  useCategoryTree: () => ({
+    isPending: false,
+    data: [{ id: 'cat-1', name: 'موبایل', parentId: null, isActive: true, isLeaf: true, selectable: true }],
+  }),
 }));
 
 const mockUsePostForEdit = usePostForEdit as jest.Mock;
@@ -30,6 +45,7 @@ const loadedPost: PostEdit = {
   createdAt: '2026-08-25T10:15:30.000Z',
   updatedAt: '2026-08-25T11:00:00.000Z',
   owner: null,
+  categories: [{ id: 'cat-1', name: 'موبایل' }],
   media: [],
 };
 
@@ -47,6 +63,26 @@ describe('PostEditClientWrapper', () => {
     expect(screen.getByRole('button', { name: 'ذخیره' })).toBeInTheDocument();
   });
 
+  it('shows the saved category in the picker', () => {
+    mockUsePostForEdit.mockReturnValue({ data: loadedPost, isPending: false, isError: false });
+
+    render(<PostEditClientWrapper postId="post-1" />);
+
+    expect(screen.getByRole('combobox')).toHaveTextContent('موبایل');
+  });
+
+  it('hides the category picker and ignores the post categories while the feature is off', () => {
+    mockCategoryEditEnabled = false;
+    const { categories: _omitted, ...postWithoutCategories } = loadedPost;
+    mockUsePostForEdit.mockReturnValue({ data: postWithoutCategories, isPending: false, isError: false });
+
+    render(<PostEditClientWrapper postId="post-1" />);
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(useMediaStore.getState().category).toBe('');
+    mockCategoryEditEnabled = true;
+  });
+
   it('loads the post into the new-post store in edit mode', () => {
     mockUsePostForEdit.mockReturnValue({ data: loadedPost, isPending: false, isError: false });
 
@@ -55,6 +91,7 @@ describe('PostEditClientWrapper', () => {
     const state = useMediaStore.getState();
     expect(state.isEditing).toBe(true);
     expect(state.caption).toBe('کت پاییزه');
+    expect(state.category).toBe('cat-1');
     expect(state.phase).toBe('details');
   });
 

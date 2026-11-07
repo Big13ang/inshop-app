@@ -8,6 +8,11 @@ import { text } from '../../constants';
 import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import type { MediaItem } from '../../types';
 
+jest.mock('@/features/categories/services/categoriesService', () => ({
+  useCategoryTree: () => ({ isPending: false, data: [] }),
+}));
+
+
 function createMockMediaItem(overrides: Partial<MediaItem> = {}): MediaItem {
   return {
     id: `item-${Math.random().toString(36).slice(2, 8)}`,

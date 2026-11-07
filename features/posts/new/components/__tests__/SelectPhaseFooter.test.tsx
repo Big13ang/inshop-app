@@ -7,6 +7,11 @@ import { useMediaStore } from '../../services/mediaStore';
 import { text } from '../../constants';
 import type { MediaItem } from '../../types';
 
+jest.mock('@/features/categories/services/categoriesService', () => ({
+  useCategoryTree: () => ({ isPending: false, data: [] }),
+}));
+
+
 function createMockMediaItem(overrides: Partial<MediaItem> = {}): MediaItem {
   return {
     id: `media-${Math.random().toString(36).slice(2, 9)}`,

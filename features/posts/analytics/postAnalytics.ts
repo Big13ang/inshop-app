@@ -1,6 +1,6 @@
 import { analytics } from '@/lib/analytics/analytics';
 
-export type PostListName = 'home_feed' | 'search_results' | 'shop_grid' | 'viewed_posts';
+export type PostListName = 'home_feed' | 'category_posts' | 'search_results' | 'shop_grid' | 'viewed_posts';
 
 export interface AnalyticsPostItem {
   postId: string;

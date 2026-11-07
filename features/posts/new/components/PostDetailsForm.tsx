@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import SelectedMediaSlider from './SelectedMediaSlider';
+import { PostCategoryField } from './PostCategoryField';
 import { Textarea } from '@/components/ui/textarea';
 import { text } from '../constants';
 
@@ -12,6 +13,8 @@ interface PostDetailsFormProps {
   hasInputError: boolean;
   errorMessage?: string;
   aspectClassName?: string;
+  // Only the new-post flow picks a category; editing an existing post changes its caption only.
+  hasCategoryField?: boolean;
 }
 
 export default function PostDetailsForm({
@@ -20,6 +23,7 @@ export default function PostDetailsForm({
   hasInputError,
   errorMessage,
   aspectClassName = 'aspect-square',
+  hasCategoryField = false,
 }: PostDetailsFormProps) {
   const [isDirty, setIsDirty] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
@@ -55,6 +59,8 @@ export default function PostDetailsForm({
     >
       {/* SelectedMediaSlider reads selected items from the store directly */}
       <SelectedMediaSlider isCompact aspectClassName={aspectClassName} />
+
+      {hasCategoryField ? <PostCategoryField /> : null}
 
       <div className="flex flex-col gap-2">
         <label htmlFor="caption-textarea-input" className="font-bold text-xs text-secondary cursor-pointer pr-1">

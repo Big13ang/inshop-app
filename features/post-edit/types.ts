@@ -34,6 +34,13 @@ export interface PostEditMedia {
   thumbnailUrl: string | null;
 }
 
+// Mirrors DirectPostCategory (inshop-backend src/post/post.service.ts): a leaf category assigned to the post.
+// It carries no parent; resolve the path from GET /categories/tree when it is needed.
+export interface PostEditCategory {
+  id: string;
+  name: string;
+}
+
 export interface PostEdit {
   id: string;
   sellerId: string;
@@ -49,6 +56,7 @@ export interface PostEdit {
   createdAt: string;
   updatedAt: string;
   owner: PostEditOwner | null;
+  categories: PostEditCategory[];
   media: PostEditMedia[];
 }
 
@@ -67,4 +75,12 @@ export interface PostEditUpdateResult {
   rejectReason: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// Mirrors the result of PUT /seller/posts/:id/categories (PostService.replaceCategoriesBySeller).
+// `changed` is false when the list matched the current one; a real change sends the post back to review.
+export interface ReplacePostCategoriesResult {
+  post: PostEditUpdateResult;
+  categories: PostEditCategory[];
+  changed: boolean;
 }

@@ -25,11 +25,12 @@ function toMediaItem(media: PostEditMedia): MediaItem {
 
 // Syncs the loaded post into the new-post store once per post, and clears the store
 // on leave so the new-post page never sees edit state.
-export function PostEditStoreSync({ post }: { post: PostEdit }) {
+export function PostEditStoreSync({ post, savedCategoryId }: { post: PostEdit; savedCategoryId: string }) {
   useEffect(() => {
     const store = useMediaStore.getState();
     store.setIsEditing(true);
     store.setCaption(post.description);
+    store.setCategory(savedCategoryId);
     store.setMediaList(post.media.map(toMediaItem));
     store.setPhase('details');
 

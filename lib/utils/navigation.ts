@@ -13,11 +13,13 @@ if (typeof window !== 'undefined') {
   };
 }
 
-export function goBackSafely(router: AppRouterInstance) {
+// Goes back when the visitor navigated inside the app; otherwise (a direct visit, a reload,
+// a link opened from outside) there is no page of ours to return to, so it goes to the fallback.
+export function goBackSafely(router: AppRouterInstance, fallbackPath: string = '/') {
   if (isInternal) {
     router.back();
   } else {
-    router.replace('/');
+    router.replace(fallbackPath);
   }
 }
 
