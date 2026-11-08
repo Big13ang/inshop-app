@@ -3,7 +3,7 @@
 
 import { useTransition, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, User, Truck } from 'lucide-react';
+import { User, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/features/profile/context/UserContext';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,6 @@ import LogoutConfirmationBottomSheet from '../auth/LogoutConfirmationBottomSheet
 
 const ROUTES = {
     home: '/',
-    categories: '/categories',
     profile: '/app/profile',
     login: '/auth/login',
 } as const;
@@ -128,24 +127,6 @@ export default function MainFooterNav() {
                     "after:leading-none after:whitespace-nowrap after:pointer-events-none after:z-50"
                 )}>
                     <Truck
-                        data-testid="tab-icon"
-                        className={cn(
-                            'size-8',
-                            isActive ? 'text-primary' : 'text-secondary',
-                        )}
-                        strokeWidth={isActive ? 2.5 : 2}
-                        aria-hidden="true"
-                    />
-                </span>
-            ),
-        },
-        {
-            id: ROUTES.categories,
-            label: 'دسته‌بندی کالاها',
-            onPress: navigate,
-            customRender: (isActive: boolean) => (
-                <span className="flex flex-col items-center">
-                    <LayoutGrid
                         data-testid="tab-icon"
                         className={cn(
                             'size-8',

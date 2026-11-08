@@ -13,7 +13,6 @@ export default function DetailsPhaseFooter() {
   const router = useRouter();
   const { data: session } = useUploadSession();
   const caption = useMediaStore((s) => s.caption);
-  const category = useMediaStore((s) => s.category);
   const setPhase = useMediaStore((s) => s.setPhase);
   const reset = useMediaStore((s) => s.reset);
 
@@ -49,7 +48,6 @@ export default function DetailsPhaseFooter() {
       mediaIds: selectedMediaIds,
       description: caption,
       uploadSessionId: session.uploadSessionId,
-      ...(category ? { categoryIds: [category] } : {}),
     });
   };
 

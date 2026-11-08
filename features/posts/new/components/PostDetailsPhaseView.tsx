@@ -2,11 +2,7 @@ import { useMediaStore } from "../services/mediaStore";
 import { postBodySchema } from "../schemas/postSchema";
 import PostDetailsForm from "./PostDetailsForm";
 
-interface PostDetailsPhaseViewProps {
-    hasCategoryField?: boolean;
-}
-
-export const PostDetailsPhaseView = ({ hasCategoryField = false }: PostDetailsPhaseViewProps) => {
+export const PostDetailsPhaseView = () => {
     const caption = useMediaStore((s) => s.caption);
     const setCaption = useMediaStore((s) => s.setCaption);
 
@@ -24,7 +20,6 @@ export const PostDetailsPhaseView = ({ hasCategoryField = false }: PostDetailsPh
                 onCaptionChange={handleCaptionChange}
                 hasInputError={!!errorMessage}
                 errorMessage={errorMessage}
-                hasCategoryField={hasCategoryField}
             />
         </div>
     );

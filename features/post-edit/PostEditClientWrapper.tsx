@@ -7,7 +7,6 @@ import { PostEditHeader } from '@/features/post-edit/components/PostEditHeader';
 import { PostEditNotFound } from '@/features/post-edit/components/PostEditNotFound';
 import { PostEditOffline } from '@/features/post-edit/components/PostEditOffline';
 import { PostEditStoreSync } from '@/features/post-edit/components/PostEditStoreSync';
-import { IS_CATEGORY_EDIT_ENABLED } from '@/features/post-edit/constants';
 import { usePostForEdit } from '@/features/post-edit/services/postEditService';
 
 // A failed request with no server answer (offline, or the connection dropped) throws a
@@ -27,16 +26,13 @@ export function PostEditClientWrapper({ postId }: { postId: string }) {
   if (isError && isNetworkError(error)) return <PostEditOffline onRetry={handleRetry} />;
   if (isError) return <PostEditNotFound />;
 
-  // While the picker is hidden the post's categories are never read: production may not send them yet.
-  const savedCategoryId = IS_CATEGORY_EDIT_ENABLED ? (data.categories[0]?.id ?? '') : '';
-
   return (
     <>
-      <PostEditStoreSync post={data} savedCategoryId={savedCategoryId} />
+      <PostEditStoreSync post={data} />
       <div className="flex-1 flex flex-col min-h-0 w-full bg-surface-l3 relative overflow-hidden select-none">
         <PostEditHeader />
-        <PostDetailsPhaseView hasCategoryField={IS_CATEGORY_EDIT_ENABLED} />
-        <PostEditFooter postId={data.id} savedCategoryId={savedCategoryId} />
+        <PostDetailsPhaseView />
+        <PostEditFooter postId={data.id} />
       </div>
     </>
   );

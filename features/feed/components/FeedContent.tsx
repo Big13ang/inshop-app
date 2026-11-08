@@ -6,7 +6,6 @@ import { GridTile } from './GridTile';
 import { FeedSkeleton } from './FeedSkeleton';
 import { FeedEmptyState } from './FeedEmptyState';
 import { Button } from '@/components/ui/button';
-import type { PostListName } from '@/features/posts/analytics/postAnalytics';
 import { useInfiniteScrollSentinel } from '../hooks/useInfiniteScrollSentinel';
 
 export interface FeedContentProps {
@@ -17,8 +16,6 @@ export interface FeedContentProps {
   hasNextPage?: boolean;
   fetchNextPage: () => void;
   onRetry?: () => void;
-  listName?: PostListName;
-  emptyState?: React.ReactNode;
 }
 
 export function FeedContent({
@@ -29,8 +26,6 @@ export function FeedContent({
   hasNextPage,
   fetchNextPage,
   onRetry,
-  listName = 'home_feed',
-  emptyState,
 }: FeedContentProps) {
   const sentinelRef = useInfiniteScrollSentinel({
     hasNextPage,
@@ -60,34 +55,11 @@ export function FeedContent({
 
     return (
       <div className="pt-12 px-4">
-        {emptyState ?? (
-          <FeedEmptyState
-            title="موردی یافت نشد"
-            description="هیچ ویدیویی یا محصولی وجود ندارد."
-            id="feed-empty-state"
-          />
-        )}
-      </div>
-    );
-  }
-
-  function renderNextPageStatus() {
-    if (isFetchingNextPage) {
-      return <LoaderCircle className="w-5 h-5 animate-spin text-zinc-500" />;
-    }
-
-    if (!isError) {
-      return null;
-    }
-
-    return (
-      <div className="flex flex-col items-center gap-2 py-2">
-        <p className="text-xs text-zinc-500 font-medium">خطا در دریافت ادامه مطالب</p>
-        {onRetry ? (
-          <Button type="button" size="sm" onClick={onRetry} variant="outline" className="text-xs h-8">
-            تلاش مجدد
-          </Button>
-        ) : null}
+        <FeedEmptyState
+          title="موردی یافت نشد"
+          description="هیچ ویدیویی یا محصولی وجود ندارد."
+          id="feed-empty-state"
+        />
       </div>
     );
   }
@@ -96,13 +68,24 @@ export function FeedContent({
     <>
       <div className="grid grid-cols-3 gap-0.5 w-full bg-white" id="home-3x5-grid">
         {posts.map((post, index) => (
-          <GridTile key={post.id} post={post} listName={listName} index={index} />
+          <GridTile key={post.id} post={post} listName="home_feed" index={index} />
         ))}
       </div>
 
       {/* Bottom infinite scroll loader & sentinel target */}
       <div ref={sentinelRef} className="w-full py-4 flex flex-col justify-center items-center gap-2">
-        {renderNextPageStatus()}
+        {isFetchingNextPage ? (
+          <LoaderCircle className="w-5 h-5 animate-spin text-zinc-500" />
+        ) : isError ? (
+          <div className="flex flex-col items-center gap-2 py-2">
+            <p className="text-xs text-zinc-500 font-medium">خطا در دریافت ادامه مطالب</p>
+            {onRetry ? (
+              <Button type="button" size="sm" onClick={onRetry} variant="outline" className="text-xs h-8">
+                تلاش مجدد
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </>
   );

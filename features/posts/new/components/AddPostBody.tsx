@@ -18,7 +18,7 @@ export const AddPostBody = ({ isSessionLoading }: AddPostBodyProps) => {
         return <SelectMediaPhaseView />;
     }
 
-    return <PostDetailsPhaseView hasCategoryField />;
+    return <PostDetailsPhaseView />;
 };
 
 export default AddPostBody;
