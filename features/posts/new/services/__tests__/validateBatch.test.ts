@@ -25,7 +25,7 @@ describe('validateBatch', () => {
 
   it('separates valid files and rejected files in mixed batches', async () => {
     const validFile1 = createMockFile('good1.jpg', createMockJpegBuffer(1200, 1200));
-    const smallFile = createMockFile('small.png', createMockPngBuffer(500, 500)); // <1080px
+    const smallFile = createMockFile('small.png', createMockPngBuffer(500, 500)); // <800px
     const validFile2 = createMockFile('good2.jpg', createMockJpegBuffer(1500, 1500));
 
     const result = await validateBatch([validFile1, smallFile, validFile2]);

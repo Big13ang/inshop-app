@@ -26,12 +26,11 @@ export type ValidatorFn = (file: File) => Promise<FileValidationRejection | null
 
 const IMAGE_RULES = {
   maxBytes: 10 * 1024 * 1024,
-  minDimension: 1080,
+  minDimension: 800,
   // Mirrors the backend's MAX_INPUT_PIXELS (and the compression worker's limit).
   maxPixels: 40_000_000,
   mimeError: ERROR_MESSAGES.upload.imageFormatLimit,
   sizeError: ERROR_MESSAGES.upload.imageSizeLimit,
-  resolutionError: ERROR_MESSAGES.upload.resolutionTooSmall,
   pixelsError: ERROR_MESSAGES.upload.resolutionTooHigh,
   heicError: ERROR_MESSAGES.upload.heicNotSupported,
   animatedError: ERROR_MESSAGES.upload.animatedWebpNotAllowed,
@@ -65,7 +64,10 @@ function validateHeaderRules(parsed: ParsedHeader): Omit<FileValidationRejection
   }
 
   if (!isDimensionValid(parsed.width, parsed.height)) {
-    return { code: REJECTION_CODES.RESOLUTION_TOO_LOW, reason: IMAGE_RULES.resolutionError };
+    return {
+      code: REJECTION_CODES.RESOLUTION_TOO_LOW,
+      reason: ERROR_MESSAGES.upload.resolutionTooSmallWithSize(parsed.width, parsed.height),
+    };
   }
 
   if (parsed.width * parsed.height > IMAGE_RULES.maxPixels) {
