@@ -9,8 +9,6 @@ export interface SubmitPostPayload {
   uploadSessionId: string;
   description: string;
   mediaIds: string[];
-  // Direct leaf category ids (1 to 3). Omitted when the seller picked none.
-  categoryIds?: string[];
 }
 
 export interface PublishPostResponse {
@@ -31,17 +29,6 @@ export async function deleteUploadSessionPhoto({
   );
 }
 
-const BACKEND_MESSAGE_STATUSES = [400, 409];
-
-// The backend answers validation (400) and conflict (409) failures with a translated message
-// (invalid category count, category not selectable, concurrent change...). Show that one.
-// Network and server errors keep the generic message, since their text is not meant for users.
-function getPublishErrorMessage(error: Error): string {
-  const status = (error as { response?: { status?: number } }).response?.status;
-  const hasBackendMessage = status !== undefined && BACKEND_MESSAGE_STATUSES.includes(status);
-  return hasBackendMessage && error.message ? error.message : ERROR_MESSAGES.posts.submitFailed;
-}
-
 export function useSubmitPost(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
@@ -58,8 +45,8 @@ export function useSubmitPost(onSuccess?: () => void) {
       postAnalytics.submitProduct(data.postId);
       onSuccess?.();
     },
-    onError: (error) => {
-      toast.error(getPublishErrorMessage(error));
+    onError: () => {
+      toast.error(ERROR_MESSAGES.posts.submitFailed);
     },
   });
 }

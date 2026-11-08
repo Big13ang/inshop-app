@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import DetailsPhaseFooter from '../DetailsPhaseFooter';
 import { useMediaStore } from '../../services/mediaStore';
 import { text } from '../../constants';
-import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import type { MediaItem } from '../../types';
 
 function createMockItem(overrides: Partial<MediaItem> = {}): MediaItem {
@@ -181,80 +180,6 @@ describe('DetailsPhaseFooter Component (Behavior)', () => {
       });
 
       expect(mockPush).toHaveBeenCalledWith('/app/posts/pending');
-    });
-  });
-
-  describe('Publish payload', () => {
-    let publishBody: Record<string, unknown> | null = null;
-
-    beforeEach(() => {
-      publishBody = null;
-      server.use(
-        http.post('*/upload-sessions/publish', async ({ request }) => {
-          publishBody = (await request.json()) as Record<string, unknown>;
-          return HttpResponse.json({ success: true, data: { postId: 'post-1' } }, { status: 201 });
-        }),
-      );
-      useMediaStore.getState().setCaption('کفش ورزشی راحتی مخصوص دویدن روزمره');
-      useMediaStore.getState().setMediaList([createMockItem({ serverMediaId: 'media-srv-1', order: 1 })]);
-    });
-
-    it('sends the chosen category as categoryIds', async () => {
-      const user = userEvent.setup();
-      useMediaStore.getState().setCategory('cat-leaf-1');
-      renderWithProviders(<DetailsPhaseFooter />);
-
-      await user.click(screen.getByRole('button', { name: text.shareButton }));
-
-      await waitFor(() => expect(publishBody).not.toBeNull());
-      expect(publishBody?.categoryIds).toEqual(['cat-leaf-1']);
-    });
-
-    it('omits categoryIds when no category was chosen', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<DetailsPhaseFooter />);
-
-      await user.click(screen.getByRole('button', { name: text.shareButton }));
-
-      await waitFor(() => expect(publishBody).not.toBeNull());
-      expect(publishBody).not.toHaveProperty('categoryIds');
-    });
-  });
-
-  describe('Publish errors', () => {
-    beforeEach(() => {
-      useMediaStore.getState().setCaption('کفش ورزشی راحتی مخصوص دویدن روزمره');
-      useMediaStore.getState().setMediaList([createMockItem({ serverMediaId: 'media-srv-1', order: 1 })]);
-      useMediaStore.getState().setCategory('cat-leaf-1');
-    });
-
-    it('shows the backend message when the category is rejected', async () => {
-      const user = userEvent.setup();
-      server.use(
-        http.post('*/upload-sessions/publish', () =>
-          HttpResponse.json({ success: false, message: 'این دسته‌بندی قابل انتخاب نیست.' }, { status: 400 }),
-        ),
-      );
-      renderWithProviders(<DetailsPhaseFooter />);
-
-      await user.click(screen.getByRole('button', { name: text.shareButton }));
-
-      await waitFor(() => expect(toast.error).toHaveBeenCalledWith('این دسته‌بندی قابل انتخاب نیست.'));
-      expect(mockPush).not.toHaveBeenCalled();
-    });
-
-    it('keeps the generic message for server errors', async () => {
-      const user = userEvent.setup();
-      server.use(
-        http.post('*/upload-sessions/publish', () =>
-          HttpResponse.json({ success: false, message: 'Internal server error' }, { status: 500 }),
-        ),
-      );
-      renderWithProviders(<DetailsPhaseFooter />);
-
-      await user.click(screen.getByRole('button', { name: text.shareButton }));
-
-      await waitFor(() => expect(toast.error).toHaveBeenCalledWith(ERROR_MESSAGES.posts.submitFailed));
     });
   });
 
