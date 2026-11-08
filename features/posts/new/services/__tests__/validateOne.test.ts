@@ -58,7 +58,7 @@ describe('validateOne & validateImage', () => {
       const rejection = await validateOne(file);
       expect(rejection).not.toBeNull();
       expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_LOW);
-      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1079, 1200));
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(799, 1200));
     });
 
     it('rejects image with height below 800px', async () => {
@@ -68,12 +68,12 @@ describe('validateOne & validateImage', () => {
       const rejection = await validateOne(file);
       expect(rejection).not.toBeNull();
       expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_LOW);
-      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1920, 1079));
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1920, 799));
     });
 
     it('rejects rotated JPEG where EXIF orientation brings effective width below 800px', async () => {
-      // 1200w x 799h with orientation 6 -> effective 799w x 1200h (width < 800)
-      const buf = createMockJpegBuffer(1200, 799, 6);
+      // 1200w x 700h with orientation 6 -> effective 700w x 1200h (width < 800)
+      const buf = createMockJpegBuffer(1200, 700, 6);
       const file = createMockFile('rotated-too-small.jpg', buf, 'image/jpeg');
 
       const rejection = await validateOne(file);
