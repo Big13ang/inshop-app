@@ -40,6 +40,9 @@ env:
   GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
   SEMGREP_VERSION: "1.184.0"
   NJSSCAN_VERSION: "1.0.2"
+  UV_VERSION: "0.13.1"
+  UV_SHA256: "eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220"
+  PIP_INDEX_URL: https://mirror2.chabokan.net/pypi/simple/
   DEV_WEB: https://dev.inshop.social
   DEV_API: https://api.dev.inshop.social
 
@@ -50,10 +53,11 @@ jobs:
     timeout-minutes: 25
     continue-on-error: ${{ vars.SECURITY_ENFORCE != 'true' }}
     steps:
-      - name: Check out this repository
+      - name: Check out this repository with full history (the secrets gate scans every commit)
         uses: actions/checkout@v4
         with:
           path: ${{ env.REPO_NAME }}
+          fetch-depth: 0
 
       - name: Check out the infrastructure repository (scripts, rules, baselines)
         uses: actions/checkout@v4
@@ -74,9 +78,21 @@ jobs:
           curl -fsSL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum --check --strict
           tar -xzf gitleaks.tgz gitleaks && install -m 0755 gitleaks "$HOME/.local/bin/gitleaks"
-          # A virtualenv: Ubuntu 24.04 images refuse `pip install --user` (PEP 668).
-          python3 -m venv "$RUNNER_TEMP/sec-venv"
-          "$RUNNER_TEMP/sec-venv/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}" "njsscan==${NJSSCAN_VERSION}"
+          # Python tools: uv (checksum-verified) makes a Python 3.13 virtualenv and installs from the
+          # Chabokan PyPI mirror. The runner cannot reach pypi.org (the same method as check.yml).
+          curl -fsSL --retry 5 --retry-delay 5 -o uv.tgz "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz"
+          echo "${UV_SHA256}  uv.tgz" | sha256sum --check --strict
+          tar -xzf uv.tgz --strip-components=1 uv-x86_64-unknown-linux-gnu/uv
+          ./uv venv --quiet --python 3.13 "$RUNNER_TEMP/sec-venv"
+          # The mirror sometimes answers 503 for a moment: Semgrep (it carries the SAST gate) retries;
+          # njsscan only reports, so a mirror failure skips its report instead of failing the job.
+          for attempt in 1 2 3 4 5; do
+            if VIRTUAL_ENV="$RUNNER_TEMP/sec-venv" ./uv pip install --quiet --index-url "$PIP_INDEX_URL" "semgrep==${SEMGREP_VERSION}"; then break; fi
+            if [ "$attempt" = 5 ]; then echo "::error::semgrep could not be installed from the mirror"; exit 1; fi
+            sleep 20
+          done
+          VIRTUAL_ENV="$RUNNER_TEMP/sec-venv" ./uv pip install --quiet --index-url "$PIP_INDEX_URL" "njsscan==${NJSSCAN_VERSION}" \
+            || echo "::warning::njsscan not installed (mirror unavailable); its report is skipped in this run"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           echo "$RUNNER_TEMP/sec-venv/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.local/bin:$RUNNER_TEMP/sec-venv/bin:$PATH"
@@ -87,11 +103,15 @@ jobs:
           APPS_DIR: ${{ github.workspace }}
           REPOS: ${{ env.REPO_NAME }}
           OUT: ${{ runner.temp }}/security-reports
-        run: bash inshop-infrastructure/scripts/security-scan.sh repo
+        run: |
+          rc=0
+          bash inshop-infrastructure/scripts/security-scan.sh repo || rc=1
+          bash inshop-infrastructure/scripts/security-scan.sh config || rc=1
+          exit "$rc"
 
       - name: Keep the reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: security-repo-${{ github.run_id }}
           path: ${{ runner.temp }}/security-reports
@@ -145,7 +165,7 @@ jobs:
 
       - name: Keep the reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: security-image-${{ github.run_id }}
           path: ${{ runner.temp }}/security-reports
