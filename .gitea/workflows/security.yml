@@ -1,0 +1,152 @@
+# =============================================================================
+# DevSecOps pipeline for ONE app repository (backend, app or admin-panel).
+# Copy to <repo>/.gitea/workflows/security.yml and set REPO_NAME, IMAGE_NAME and BUILD_ARGS below.
+#
+# It calls the same script you run locally: inshop-infrastructure/scripts/security-scan.sh.
+# Gates (see security/baselines/TRIAGE.md): secrets, SAST, dependencies, config, container image.
+# The weekly DAST (ZAP) and smoke run lives in inshop-infrastructure only: one dev site, one run.
+#
+# Report first (ADR-070): a failing gate is reported (job marked, reports uploaded) but does not
+# fail the run until the owner sets the repository variable SECURITY_ENFORCE to "true".
+#
+# Required Gitea settings (per repository):
+#   vars.INFRA_REPO       e.g. "<owner>/inshop-infrastructure"  (read-only checkout of that repo)
+#   secrets.INFRA_TOKEN   read-only token for that checkout (never printed)
+#   vars.SECURITY_ENFORCE optional; "true" makes failing gates fail the run
+#   vars.INFRA_REF        optional; branch of inshop-infrastructure to use. Defaults to `devsecops`
+#                         until that branch is merged; then set it to `main` (or change the default).
+#
+# Known gap (plan P1.1, review H4): the `docker` label runner mounts the host Docker socket.
+# The image job needs Docker, so it runs there, on pushes only (never on pull requests), until
+# P1.1 gives it a separate runner. The repo job needs no Docker and runs on a plain runner.
+# =============================================================================
+name: security
+
+on:
+  # Pushes only. Pull requests are not run here: every runner label shares the host Docker socket
+  # (docs/ci/README.md, review H4), so code from a pull request must not reach it.
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+env:
+  REPO_NAME: inshop-app              # <- set per repository
+  IMAGE_NAME: inshop-app             # <- set per repository
+  # next.config validates these at build time; the scan image uses the dev endpoints.
+  BUILD_ARGS: "--build-arg NEXT_PUBLIC_API_URL=https://api.dev.inshop.social --build-arg NEXT_PUBLIC_CDN_URL=https://storage.inshop.social --build-arg NEXT_PUBLIC_APP_URL=https://dev.inshop.social --build-arg NEXT_PUBLIC_APP_ENV=development --build-arg APP_ENV=development"
+  TRIVY_VERSION: "0.76.2"
+  TRIVY_SHA256: "bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf"
+  GITLEAKS_VERSION: "8.30.1"
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+  SEMGREP_VERSION: "1.184.0"
+  NJSSCAN_VERSION: "1.0.2"
+  DEV_WEB: https://dev.inshop.social
+  DEV_API: https://api.dev.inshop.social
+
+jobs:
+  repo:
+    name: secrets, SAST, dependencies, config
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: ${{ vars.SECURITY_ENFORCE != 'true' }}
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.REPO_NAME }}
+
+      - name: Check out the infrastructure repository (scripts, rules, baselines)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.INFRA_REPO || 'Mohsen/inshop-infrastructure' }}
+          ref: ${{ vars.INFRA_REF || 'devsecops' }}
+          token: ${{ secrets.INFRA_TOKEN || github.token }}
+          path: inshop-infrastructure
+
+      - name: Install the pinned tools (checksum verified)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin" "$RUNNER_TEMP/sec"
+          cd "$RUNNER_TEMP/sec"
+          curl -fsSL -o trivy.tgz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  trivy.tgz" | sha256sum --check --strict
+          tar -xzf trivy.tgz trivy && install -m 0755 trivy "$HOME/.local/bin/trivy"
+          curl -fsSL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum --check --strict
+          tar -xzf gitleaks.tgz gitleaks && install -m 0755 gitleaks "$HOME/.local/bin/gitleaks"
+          # A virtualenv: Ubuntu 24.04 images refuse `pip install --user` (PEP 668).
+          python3 -m venv "$RUNNER_TEMP/sec-venv"
+          "$RUNNER_TEMP/sec-venv/bin/pip" install --quiet "semgrep==${SEMGREP_VERSION}" "njsscan==${NJSSCAN_VERSION}"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/sec-venv/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$RUNNER_TEMP/sec-venv/bin:$PATH"
+          trivy --version | head -1; gitleaks version; semgrep --version; jq --version
+
+      - name: Run the repo gates
+        env:
+          APPS_DIR: ${{ github.workspace }}
+          REPOS: ${{ env.REPO_NAME }}
+          OUT: ${{ runner.temp }}/security-reports
+        run: bash inshop-infrastructure/scripts/security-scan.sh repo
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-repo-${{ github.run_id }}
+          path: ${{ runner.temp }}/security-reports
+          retention-days: 30
+
+  image:
+    name: container image (build, Trivy gate)
+    needs: repo
+    runs-on: docker
+    timeout-minutes: 40
+    continue-on-error: ${{ vars.SECURITY_ENFORCE != 'true' }}
+    # Pushes only: pull request code never runs on the runner that holds the Docker socket (H4).
+    if: github.event_name == 'push'
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.REPO_NAME }}
+
+      - name: Check out the infrastructure repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.INFRA_REPO || 'Mohsen/inshop-infrastructure' }}
+          ref: ${{ vars.INFRA_REF || 'devsecops' }}
+          token: ${{ secrets.INFRA_TOKEN || github.token }}
+          path: inshop-infrastructure
+
+      - name: Build the image
+        working-directory: ${{ env.REPO_NAME }}
+        run: |
+          set -euo pipefail
+          # BUILD_ARGS is a space-separated list of --build-arg K=V (values contain no spaces).
+          read -r -a build_args <<< "${BUILD_ARGS}"
+          docker build "${build_args[@]}" -t "$IMAGE_NAME:ci-${GITHUB_SHA}" .
+
+      - name: Trivy gate on the built image (fixable CRITICAL blocks)
+        env:
+          IMAGES: ${{ env.IMAGE_NAME }}:ci-${{ github.sha }}
+          OUT: ${{ runner.temp }}/security-reports
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/bin"
+          # The docker runner image ships Trivy only in some builds; install the pinned one.
+          if ! command -v trivy >/dev/null; then
+            curl -fsSL -o "${RUNNER_TEMP}/trivy.tgz" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+            echo "${TRIVY_SHA256}  ${RUNNER_TEMP}/trivy.tgz" | sha256sum --check --strict
+            tar -xzf "${RUNNER_TEMP}/trivy.tgz" -C "${RUNNER_TEMP}/bin" trivy
+          fi
+          export PATH="${RUNNER_TEMP}/bin:$PATH"
+          APPS_DIR="$GITHUB_WORKSPACE" bash inshop-infrastructure/scripts/security-scan.sh container
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-image-${{ github.run_id }}
+          path: ${{ runner.temp }}/security-reports
+          retention-days: 30

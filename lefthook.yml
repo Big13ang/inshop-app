@@ -1,6 +1,22 @@
-# Lefthook Git hooks configuration
-# Runs linting and testing locally before every git push.
+# Lefthook Git hooks configuration (plan P2.6). `npm install` installs the hooks (prepare script).
+# pre-commit: fast checks on the staged files only. pre-push: lint, test, build.
+# The same scans run in CI (docs/ci/security.gitea-workflow.yml), so a skipped hook is still caught.
+# INSHOP_INFRA points at the infrastructure checkout: its Semgrep rules, registry snapshot and
+# pinned Semgrep binary (.venv, made by `make setup` there). Gitleaks must be on PATH.
 # Reference: https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    secrets:
+      run: gitleaks protect --staged --redact --no-banner
+    sast:
+      glob: "*.{ts,tsx}"
+      run: >-
+        "${INSHOP_INFRA:-../inshop-infrastructure}/.venv/bin/semgrep" scan --metrics=off --quiet --error
+        --config "${INSHOP_INFRA:-../inshop-infrastructure}/security/semgrep/registry/"
+        --config "${INSHOP_INFRA:-../inshop-infrastructure}/security/semgrep/rules/"
+        {staged_files}
 
 pre-push:
   commands:
