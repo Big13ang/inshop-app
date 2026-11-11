@@ -1,5 +1,12 @@
-import { useInfiniteQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { http, Result } from '@/lib/utils';
+import { ERROR_MESSAGES } from '@/lib/constants/errors';
 import { HTTPError } from 'ky';
 
 
@@ -103,6 +110,7 @@ export function shouldRetryFeed(failureCount: number, error: unknown): boolean {
 }
 
 // Shared by every endpoint that returns the feed's `{ data, pagination }` page (feed, category posts).
+// nosemgrep: inshop-infrastructure.security.semgrep.rules.next-server-action-report -- client-side HTTP helper, not a Next.js server action (no 'use server'); auth is enforced by the backend.
 export async function fetchPostsPage(
   path: string,
   cursor?: string | null,
@@ -144,6 +152,26 @@ export function useInfiniteFeedPosts(limit: number = 15) {
     return queryClient.resetQueries({ queryKey });
   };
 
+  /**
+   * Pull-to-refresh: requests the first page again (same limit, no cursor) and
+   * replaces every loaded page with it. The current posts stay on screen until
+   * the new page arrives; on failure they are kept and a toast is shown.
+   */
+  const refreshFeed = async () => {
+    await queryClient.cancelQueries({ queryKey });
+
+    const result = await Result.try(fetchFeedPosts(null, limit));
+    if (!result.ok) {
+      toast.error(ERROR_MESSAGES.feed.refreshFailed);
+      return;
+    }
+
+    queryClient.setQueryData<InfiniteData<FeedCursorPaginatedResult, string | null>>(queryKey, {
+      pages: [result.value],
+      pageParams: [null],
+    });
+  };
+
   const query = useInfiniteQuery({
     queryKey,
     queryFn: async ({ pageParam }) => {
@@ -176,6 +204,7 @@ export function useInfiniteFeedPosts(limit: number = 15) {
     ...query,
     posts: query.data?.posts ?? [],
     resetFeed,
+    refreshFeed,
   };
 }
 
