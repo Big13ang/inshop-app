@@ -10,11 +10,9 @@
 # fail the run until the owner sets the repository variable SECURITY_ENFORCE to "true".
 #
 # Required Gitea settings (per repository):
-#   vars.INFRA_REPO       e.g. "<owner>/inshop-infrastructure"  (read-only checkout of that repo)
-#   secrets.INFRA_TOKEN   read-only token for that checkout (never printed)
+#   secrets.INFRA_TOKEN   read-only token for the checkout of Mohsen/inshop-infrastructure
+#                         (its default branch, main). Never printed.
 #   vars.SECURITY_ENFORCE optional; "true" makes failing gates fail the run
-#   vars.INFRA_REF        optional; branch of inshop-infrastructure to use. Defaults to `devsecops`
-#                         until that branch is merged; then set it to `main` (or change the default).
 #
 # Known gap (plan P1.1, review H4): the `docker` label runner mounts the host Docker socket.
 # The image job needs Docker, so it runs there, on pushes only (never on pull requests), until
@@ -62,41 +60,13 @@ jobs:
       - name: Check out the infrastructure repository (scripts, rules, baselines)
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.INFRA_REPO || 'Mohsen/inshop-infrastructure' }}
-          ref: ${{ vars.INFRA_REF || 'devsecops' }}
+          repository: Mohsen/inshop-infrastructure
           token: ${{ secrets.INFRA_TOKEN || github.token }}
           path: inshop-infrastructure
 
-      - name: Install the pinned tools (checksum verified)
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.local/bin" "$RUNNER_TEMP/sec"
-          cd "$RUNNER_TEMP/sec"
-          curl -fsSL -o trivy.tgz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-          echo "${TRIVY_SHA256}  trivy.tgz" | sha256sum --check --strict
-          tar -xzf trivy.tgz trivy && install -m 0755 trivy "$HOME/.local/bin/trivy"
-          curl -fsSL -o gitleaks.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          echo "${GITLEAKS_SHA256}  gitleaks.tgz" | sha256sum --check --strict
-          tar -xzf gitleaks.tgz gitleaks && install -m 0755 gitleaks "$HOME/.local/bin/gitleaks"
-          # Python tools: uv (checksum-verified) makes a Python 3.13 virtualenv and installs from the
-          # Chabokan PyPI mirror. The runner cannot reach pypi.org (the same method as check.yml).
-          curl -fsSL --retry 5 --retry-delay 5 -o uv.tgz "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz"
-          echo "${UV_SHA256}  uv.tgz" | sha256sum --check --strict
-          tar -xzf uv.tgz --strip-components=1 uv-x86_64-unknown-linux-gnu/uv
-          ./uv venv --quiet --python 3.13 "$RUNNER_TEMP/sec-venv"
-          # The mirror sometimes answers 503 for a moment: Semgrep (it carries the SAST gate) retries;
-          # njsscan only reports, so a mirror failure skips its report instead of failing the job.
-          for attempt in 1 2 3 4 5; do
-            if VIRTUAL_ENV="$RUNNER_TEMP/sec-venv" ./uv pip install --quiet --index-url "$PIP_INDEX_URL" "semgrep==${SEMGREP_VERSION}"; then break; fi
-            if [ "$attempt" = 5 ]; then echo "::error::semgrep could not be installed from the mirror"; exit 1; fi
-            sleep 20
-          done
-          VIRTUAL_ENV="$RUNNER_TEMP/sec-venv" ./uv pip install --quiet --index-url "$PIP_INDEX_URL" "njsscan==${NJSSCAN_VERSION}" \
-            || echo "::warning::njsscan not installed (mirror unavailable); its report is skipped in this run"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          echo "$RUNNER_TEMP/sec-venv/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$RUNNER_TEMP/sec-venv/bin:$PATH"
-          trivy --version | head -1; gitleaks version; semgrep --version; jq --version
+      # Cached on the runner's persistent tool volume: downloads only when a pinned version changes.
+      - name: Pinned tools (cached, checksum verified on first install)
+        run: bash inshop-infrastructure/scripts/install-security-tools.sh
 
       - name: Run the repo gates
         env:
@@ -134,8 +104,7 @@ jobs:
       - name: Check out the infrastructure repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.INFRA_REPO || 'Mohsen/inshop-infrastructure' }}
-          ref: ${{ vars.INFRA_REF || 'devsecops' }}
+          repository: Mohsen/inshop-infrastructure
           token: ${{ secrets.INFRA_TOKEN || github.token }}
           path: inshop-infrastructure
 
@@ -147,21 +116,15 @@ jobs:
           read -r -a build_args <<< "${BUILD_ARGS}"
           docker build "${build_args[@]}" -t "$IMAGE_NAME:ci-${GITHUB_SHA}" .
 
+      # The pinned Trivy and its vulnerability DB come from the runner's tool cache.
+      - name: Pinned Trivy (cached)
+        run: bash inshop-infrastructure/scripts/install-security-tools.sh trivy
+
       - name: Trivy gate on the built image (fixable CRITICAL blocks)
         env:
           IMAGES: ${{ env.IMAGE_NAME }}:ci-${{ github.sha }}
           OUT: ${{ runner.temp }}/security-reports
-        run: |
-          set -euo pipefail
-          mkdir -p "${RUNNER_TEMP}/bin"
-          # The docker runner image ships Trivy only in some builds; install the pinned one.
-          if ! command -v trivy >/dev/null; then
-            curl -fsSL -o "${RUNNER_TEMP}/trivy.tgz" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-            echo "${TRIVY_SHA256}  ${RUNNER_TEMP}/trivy.tgz" | sha256sum --check --strict
-            tar -xzf "${RUNNER_TEMP}/trivy.tgz" -C "${RUNNER_TEMP}/bin" trivy
-          fi
-          export PATH="${RUNNER_TEMP}/bin:$PATH"
-          APPS_DIR="$GITHUB_WORKSPACE" bash inshop-infrastructure/scripts/security-scan.sh container
+        run: APPS_DIR="$GITHUB_WORKSPACE" bash inshop-infrastructure/scripts/security-scan.sh container
 
       - name: Keep the reports
         if: always()
