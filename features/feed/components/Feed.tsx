@@ -16,6 +16,7 @@ export function Feed() {
     hasNextPage,
     fetchNextPage,
     resetFeed,
+    refreshFeed,
   } = useInfiniteFeedPosts();
 
   const handleRetry = () => {
@@ -37,7 +38,7 @@ export function Feed() {
     isPullDownActive,
     isRefreshing,
     bind,
-  } = usePullToRefresh({ onRefresh: resetFeed });
+  } = usePullToRefresh({ onRefresh: refreshFeed });
 
   return (
     <div className="w-full h-full flex flex-col bg-white overflow-hidden relative">
