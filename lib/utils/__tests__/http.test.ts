@@ -110,14 +110,14 @@ describe('parseStandardBackendError', () => {
       success: false,
       error: {
         code: 'BAD_REQUEST',
-        message: 'Image resolution is too small. Minimum required resolution is 1080x1080, but got 220x346.',
+        message: 'Image resolution is too small. Minimum required resolution is 800x800, but got 220x346.',
       },
     };
 
     const { parseStandardBackendError } = await import('../httpConfig');
     const resultError = await parseStandardBackendError({ error: mockError } as unknown as Parameters<typeof parseStandardBackendError>[0]);
 
-    expect(resultError.message).toBe('Image resolution is too small. Minimum required resolution is 1080x1080, but got 220x346.');
+    expect(resultError.message).toBe('Image resolution is too small. Minimum required resolution is 800x800, but got 220x346.');
   });
 
   it('safely handles responses where bodyUsed is true or clone throws TypeError', async () => {

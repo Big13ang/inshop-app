@@ -4,8 +4,10 @@ import { Result } from '@/lib/utils/result';
 // backend's first compression attempt accepts what the client produces.
 export const DIMENSIONS = [1920, 1440, 1200, 1080] as const;
 export const MAX_INPUT_PIXELS = 40_000_000;
-// Backend validateResolution requires both sides >= MIN_SIDE.
-export const MIN_SIDE = 1080;
+// Resizing never shrinks the short side below this when the source has it; smaller
+// sources keep their native size (never upscaled). Uploads are accepted from 800px
+// (backend validateResolution), so this is a quality floor, not the acceptance minimum.
+export const QUALITY_FLOOR_SIDE = 1080;
 // The backend always re-encodes what it receives. Encoding here at a low quality
 // means two lossy passes, which visibly softens the photo. q95 keeps the client
 // pass close to lossless (measured within ~0.2 dB of the backend-only result),
@@ -19,8 +21,8 @@ export function getTargetSize(width: number, height: number, dimension: number):
     let scale = Math.min(1, dimension / longSide);
 
     const shortSide = Math.min(width, height);
-    if (shortSide * scale < MIN_SIDE) {
-        scale = Math.min(1, MIN_SIDE / shortSide);
+    if (shortSide * scale < QUALITY_FLOOR_SIDE) {
+        scale = Math.min(1, QUALITY_FLOOR_SIDE / shortSide);
     }
 
     return {

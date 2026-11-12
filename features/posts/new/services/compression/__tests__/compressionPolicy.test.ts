@@ -1,7 +1,7 @@
 import {
     DIMENSIONS,
     MAX_INPUT_PIXELS,
-    MIN_SIDE,
+    QUALITY_FLOOR_SIDE,
     CLIENT_WEBP_QUALITY,
     getCandidateTargets,
     compressPixels,
@@ -15,7 +15,7 @@ describe('constants', () => {
         expect(DIMENSIONS).toEqual([1920, 1440, 1200, 1080]);
         expect(CLIENT_WEBP_QUALITY).toBe(95);
         expect(MAX_INPUT_PIXELS).toBe(40_000_000);
-        expect(MIN_SIDE).toBe(1080);
+        expect(QUALITY_FLOOR_SIDE).toBe(1080);
     });
 });
 
@@ -135,16 +135,16 @@ describe('target size invariants', () => {
         expect(getTargetSize(1080, 1080, rung)).toEqual({ width: 1080, height: 1080 });
     });
 
-    it('keeps every candidate within [MIN_SIDE, source], without duplicates', () => {
-        for (let width = MIN_SIDE; width <= 8000; width += 173) {
-            for (let height = MIN_SIDE; height <= 8000; height += 191) {
+    it('keeps every candidate within [QUALITY_FLOOR_SIDE, source], without duplicates', () => {
+        for (let width = QUALITY_FLOOR_SIDE; width <= 8000; width += 173) {
+            for (let height = QUALITY_FLOOR_SIDE; height <= 8000; height += 191) {
                 if (width * height > MAX_INPUT_PIXELS) continue;
                 const targets = getCandidateTargets(width, height);
                 expect(targets.length).toBeGreaterThan(0);
                 expect(hasRepeats(targets)).toBe(false);
                 for (const target of targets) {
                     if (
-                        Math.min(target.width, target.height) < MIN_SIDE ||
+                        Math.min(target.width, target.height) < QUALITY_FLOOR_SIDE ||
                         target.width > width ||
                         target.height > height
                     ) {
