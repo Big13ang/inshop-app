@@ -42,38 +42,38 @@ describe('validateOne & validateImage', () => {
     });
   });
 
-  describe('Dimension Requirements (>= 1080x1080)', () => {
-    it('accepts image meeting exact 1080x1080 resolution', async () => {
-      const buf = createMockPngBuffer(1080, 1080);
-      const file = createMockFile('boundary-1080.png', buf, 'image/png');
+  describe('Dimension Requirements (>= 800x800)', () => {
+    it('accepts image meeting exact 800x800 resolution', async () => {
+      const buf = createMockPngBuffer(800, 800);
+      const file = createMockFile('boundary-800.png', buf, 'image/png');
 
       const rejection = await validateOne(file);
       expect(rejection).toBeNull();
     });
 
-    it('rejects image with width below 1080px', async () => {
-      const buf = createMockPngBuffer(1079, 1200);
+    it('rejects image with width below 800px', async () => {
+      const buf = createMockPngBuffer(799, 1200);
       const file = createMockFile('small-width.png', buf, 'image/png');
 
       const rejection = await validateOne(file);
       expect(rejection).not.toBeNull();
       expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_LOW);
-      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1079, 1200));
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(799, 1200));
     });
 
-    it('rejects image with height below 1080px', async () => {
-      const buf = createMockJpegBuffer(1920, 1079);
+    it('rejects image with height below 800px', async () => {
+      const buf = createMockJpegBuffer(1920, 799);
       const file = createMockFile('small-height.jpg', buf, 'image/jpeg');
 
       const rejection = await validateOne(file);
       expect(rejection).not.toBeNull();
       expect(rejection?.code).toBe(REJECTION_CODES.RESOLUTION_TOO_LOW);
-      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1920, 1079));
+      expect(rejection?.reason).toBe(ERROR_MESSAGES.upload.resolutionTooSmallWithSize(1920, 799));
     });
 
-    it('rejects rotated JPEG where EXIF orientation brings effective height below 1080px', async () => {
-      // 1200w x 800h with orientation 6 -> effective 800w x 1200h (width < 1080)
-      const buf = createMockJpegBuffer(1200, 800, 6);
+    it('rejects rotated JPEG where EXIF orientation brings effective width below 800px', async () => {
+      // 1200w x 700h with orientation 6 -> effective 700w x 1200h (width < 800)
+      const buf = createMockJpegBuffer(1200, 700, 6);
       const file = createMockFile('rotated-too-small.jpg', buf, 'image/jpeg');
 
       const rejection = await validateOne(file);

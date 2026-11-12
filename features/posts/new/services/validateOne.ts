@@ -24,9 +24,11 @@ export type Rejection = FileValidationRejection;
 
 export type ValidatorFn = (file: File) => Promise<FileValidationRejection | null>;
 
+export const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
 const IMAGE_RULES = {
-  maxBytes: 10 * 1024 * 1024,
-  minDimension: 1080,
+  maxBytes: IMAGE_MAX_BYTES,
+  minDimension: 800,
   // Mirrors the backend's MAX_INPUT_PIXELS (and the compression worker's limit).
   maxPixels: 40_000_000,
   mimeError: ERROR_MESSAGES.upload.imageFormatLimit,

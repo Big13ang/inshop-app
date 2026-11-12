@@ -448,6 +448,46 @@ describe('uploadPipeline Service Integration', () => {
       expect(toast.error).not.toHaveBeenCalled();
     });
 
+    it('starts reading every picked photo immediately instead of one after another', async () => {
+      const files = [createTestFile('a.jpg'), createTestFile('b.jpg'), createTestFile('c.jpg')];
+      const reads = files.map((f) => jest.spyOn(f, 'arrayBuffer'));
+
+      const pipeline = startUploadPipeline(files, 'session-123');
+
+      // Before anything async has settled, all three reads are already under way.
+      expect(reads.map((r) => r.mock.calls.length)).toEqual([1, 1, 1]);
+      await pipeline;
+      expect(useMediaStore.getState().mediaList.every((i) => i.status === 'uploaded')).toBe(true);
+    });
+
+    it('keeps a photo whose first read fails but a retry succeeds', async () => {
+      const file = new File(['photo-bytes'], 'flaky.jpg', { type: 'image/jpeg' });
+      const realRead = file.arrayBuffer.bind(file);
+      jest.spyOn(file, 'arrayBuffer')
+        .mockRejectedValueOnce(new DOMException('The requested file could not be read', 'NotReadableError'))
+        .mockImplementation(realRead);
+
+      await startUploadPipeline([file], 'session-123');
+
+      expect(useMediaStore.getState().mediaList[0].status).toBe('uploaded');
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+
+    it('validates the in-memory copy, never re-reading the picked file', async () => {
+      const { file, revoke } = createRevocableFile('once.jpg', 'photo-bytes');
+      let validatedBytes = '';
+      (validateOne as jest.Mock).mockImplementation(async (f: File) => {
+        revoke();
+        validatedBytes = new TextDecoder().decode(await f.arrayBuffer());
+        return null;
+      });
+
+      await startUploadPipeline([file], 'session-123');
+
+      expect(validatedBytes).toBe('photo-bytes');
+      expect(useMediaStore.getState().mediaList[0].status).toBe('uploaded');
+    });
+
     it('drops a photo that cannot be read at all, tells the seller, and uploads the rest', async () => {
       const { file: broken, revoke } = createRevocableFile('broken.jpg', 'x');
       revoke();

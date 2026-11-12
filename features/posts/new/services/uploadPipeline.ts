@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { MediaItem } from "../types";
 import { getMediaKind } from "@/lib/utils/media";
 import { useMediaStore } from "./mediaStore";
-import { validateOne } from "./validateOne";
+import { validateOne, IMAGE_MAX_BYTES } from "./validateOne";
 import { tusUpload } from "@/lib/tus-client";
 import { ERROR_MESSAGES } from "@/lib/constants/errors";
 import { Result, extractMediaId } from "@/lib/utils";
@@ -55,9 +55,31 @@ const addMediaItem = (files: File[]): MediaItem[] => {
 
 // Android can lose access to a picked file later (NotReadableError), typically while it
 // waits its turn to upload. Read the whole file into memory while access is still valid.
+// Reads fail intermittently on Android (cloud-backed or just-picked photos), so a failed
+// read is retried before the file is declared unreadable.
+const READ_ATTEMPTS = 3;
+const READ_RETRY_DELAY_MS = 200;
+
+const waitBeforeRetry = () => new Promise<void>((resolve) => setTimeout(resolve, READ_RETRY_DELAY_MS));
+
+const readBytes = async (file: File): Promise<Result<ArrayBuffer>> => {
+    let bytes = await Result.try(file.arrayBuffer());
+    for (let attempt = 1; attempt < READ_ATTEMPTS && !bytes.ok; attempt++) {
+        await waitBeforeRetry();
+        bytes = await Result.try(file.arrayBuffer());
+    }
+    return bytes;
+};
+
 const copyIntoMemory = async (file: File): Promise<Result<File>> => {
-    const bytes = await Result.try(file.arrayBuffer());
-    if (!bytes.ok) return Result.err(bytes.error);
+    // Too large to be accepted: validation rejects it by size without reading it.
+    if (file.size > IMAGE_MAX_BYTES) return Result.ok(file);
+
+    const bytes = await readBytes(file);
+    if (!bytes.ok) {
+        console.warn('[upload] could not read picked file', file.name, file.size, bytes.error);
+        return Result.err(bytes.error);
+    }
     return Result.ok(new File([bytes.value], file.name, {
         type: file.type,
         lastModified: file.lastModified,
@@ -85,18 +107,24 @@ const validateMediaItems = async (mediaItems: MediaItem[]) => {
 
     store.setIsValidating(true);
 
+    // Start reading every picked file right now, all at once: a file that waits its turn
+    // behind the others is the one Android stops letting us read.
+    const copies = mediaItems.map((item) => copyIntoMemory(item.file));
+
     for (let index = 0; index < mediaItems.length; index++) {
         const item = mediaItems[index];
-        const rejection = await validateOne(item.file);
+        const copy = await copies[index];
 
-        if (rejection) {
-            rejectMediaItem(item, rejection.reason);
+        if (!copy.ok) {
+            rejectMediaItem(item, ERROR_MESSAGES.upload.fileUnreadable);
             continue;
         }
 
-        const copy = await copyIntoMemory(item.file);
-        if (!copy.ok) {
-            rejectMediaItem(item, ERROR_MESSAGES.upload.fileUnreadable);
+        // Validate the in-memory copy, so the picked file is only ever read once.
+        const rejection = await validateOne(copy.value);
+
+        if (rejection) {
+            rejectMediaItem(item, rejection.reason);
         } else {
             validCount += 1;
 
