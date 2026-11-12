@@ -1,0 +1,135 @@
+# =============================================================================
+# DevSecOps pipeline for ONE app repository (backend, app or admin-panel).
+# Copy to <repo>/.gitea/workflows/security.yml and set REPO_NAME, IMAGE_NAME and BUILD_ARGS below.
+#
+# It calls the same script you run locally: inshop-infrastructure/scripts/security-scan.sh.
+# Gates (see security/baselines/TRIAGE.md): secrets, SAST, dependencies, config, container image.
+# The weekly DAST (ZAP) and smoke run lives in inshop-infrastructure only: one dev site, one run.
+#
+# Report first (ADR-070): a failing gate is reported (job marked, reports uploaded) but does not
+# fail the run until the owner sets the repository variable SECURITY_ENFORCE to "true".
+#
+# Required Gitea settings (per repository):
+#   secrets.INFRA_TOKEN   read-only token for the checkout of Mohsen/inshop-infrastructure
+#                         (its default branch, main). Never printed.
+#   vars.SECURITY_ENFORCE optional; "true" makes failing gates fail the run
+#
+# Known gap (plan P1.1, review H4): the `docker` label runner mounts the host Docker socket.
+# The image job needs Docker, so it runs there, on pushes only (never on pull requests), until
+# P1.1 gives it a separate runner. The repo job needs no Docker and runs on a plain runner.
+# =============================================================================
+name: security
+
+on:
+  # Pushes only. Pull requests are not run here: every runner label shares the host Docker socket
+  # (docs/ci/README.md, review H4), so code from a pull request must not reach it.
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+env:
+  REPO_NAME: inshop-app              # <- set per repository
+  IMAGE_NAME: inshop-app             # <- set per repository
+  # next.config validates these at build time; the scan image uses the dev endpoints.
+  BUILD_ARGS: "--build-arg NEXT_PUBLIC_API_URL=https://api.dev.inshop.social --build-arg NEXT_PUBLIC_CDN_URL=https://storage.inshop.social --build-arg NEXT_PUBLIC_APP_URL=https://dev.inshop.social --build-arg NEXT_PUBLIC_APP_ENV=development --build-arg APP_ENV=development"
+  TRIVY_VERSION: "0.76.2"
+  TRIVY_SHA256: "bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf"
+  GITLEAKS_VERSION: "8.30.1"
+  GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+  SEMGREP_VERSION: "1.184.0"
+  NJSSCAN_VERSION: "1.0.2"
+  UV_VERSION: "0.13.1"
+  UV_SHA256: "eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220"
+  PIP_INDEX_URL: https://mirror2.chabokan.net/pypi/simple/
+  DEV_WEB: https://dev.inshop.social
+  DEV_API: https://api.dev.inshop.social
+
+jobs:
+  repo:
+    name: secrets, SAST, dependencies, config
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    continue-on-error: ${{ vars.SECURITY_ENFORCE != 'true' }}
+    steps:
+      - name: Check out this repository with full history (the secrets gate scans every commit)
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.REPO_NAME }}
+          fetch-depth: 0
+
+      - name: Check out the infrastructure repository (scripts, rules, baselines)
+        uses: actions/checkout@v4
+        with:
+          repository: Mohsen/inshop-infrastructure
+          token: ${{ secrets.INFRA_TOKEN || github.token }}
+          path: inshop-infrastructure
+
+      # Cached on the runner's persistent tool volume: downloads only when a pinned version changes.
+      - name: Pinned tools (cached, checksum verified on first install)
+        run: bash inshop-infrastructure/scripts/install-security-tools.sh
+
+      - name: Run the repo gates
+        env:
+          APPS_DIR: ${{ github.workspace }}
+          REPOS: ${{ env.REPO_NAME }}
+          OUT: ${{ runner.temp }}/security-reports
+        run: |
+          rc=0
+          bash inshop-infrastructure/scripts/security-scan.sh repo || rc=1
+          bash inshop-infrastructure/scripts/security-scan.sh config || rc=1
+          exit "$rc"
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-repo-${{ github.run_id }}
+          path: ${{ runner.temp }}/security-reports
+          retention-days: 30
+
+  image:
+    name: container image (build, Trivy gate)
+    needs: repo
+    runs-on: docker
+    timeout-minutes: 40
+    continue-on-error: ${{ vars.SECURITY_ENFORCE != 'true' }}
+    # Pushes only: pull request code never runs on the runner that holds the Docker socket (H4).
+    if: github.event_name == 'push'
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v4
+        with:
+          path: ${{ env.REPO_NAME }}
+
+      - name: Check out the infrastructure repository
+        uses: actions/checkout@v4
+        with:
+          repository: Mohsen/inshop-infrastructure
+          token: ${{ secrets.INFRA_TOKEN || github.token }}
+          path: inshop-infrastructure
+
+      - name: Build the image
+        working-directory: ${{ env.REPO_NAME }}
+        run: |
+          set -euo pipefail
+          # BUILD_ARGS is a space-separated list of --build-arg K=V (values contain no spaces).
+          read -r -a build_args <<< "${BUILD_ARGS}"
+          docker build "${build_args[@]}" -t "$IMAGE_NAME:ci-${GITHUB_SHA}" .
+
+      # The pinned Trivy and its vulnerability DB come from the runner's tool cache.
+      - name: Pinned Trivy (cached)
+        run: bash inshop-infrastructure/scripts/install-security-tools.sh trivy
+
+      - name: Trivy gate on the built image (fixable CRITICAL blocks)
+        env:
+          IMAGES: ${{ env.IMAGE_NAME }}:ci-${{ github.sha }}
+          OUT: ${{ runner.temp }}/security-reports
+        run: APPS_DIR="$GITHUB_WORKSPACE" bash inshop-infrastructure/scripts/security-scan.sh container
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-image-${{ github.run_id }}
+          path: ${{ runner.temp }}/security-reports
+          retention-days: 30

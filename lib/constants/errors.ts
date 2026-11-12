@@ -73,5 +73,8 @@ export const ERROR_MESSAGES = {
     deleteDraftFailed: 'حذف پیش‌نویس انجام نشد. لطفا دوباره تلاش کنید.',
     imageDeleteSuccess: 'تصویر با موفقیت حذف شد',
   },
+  feed: {
+    refreshFailed: 'به‌روزرسانی فید انجام نشد. لطفا دوباره تلاش کنید.',
+  },
 } as const;
 

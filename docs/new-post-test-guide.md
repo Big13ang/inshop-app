@@ -72,16 +72,16 @@ These test cases target [`validateOne.ts`](../features/posts/new/services/valida
 
 | ID | Case Title | Layer | Input / File Spec | Expected Outcome | Edge Case / Risk |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **VAL-01** | **Valid JPEG (>= 1080x1080, < 10MB)** | Unit | Valid JPEG binary with 1200x1200px and 2MB size | Returns `null` (accepted), marks valid, moves to queued. | Standard happy path. |
-| **VAL-02** | **Valid PNG (>= 1080x1080, < 10MB)** | Unit | Valid PNG signature (`89 50 4E 47`) and dimensions | Returns `null` (accepted). | Verifies PNG header parsing. |
-| **VAL-03** | **Valid Static WebP** | Unit | Valid VP8 or static VP8X WebP (>= 1080x1080) | Returns `null` (accepted). | Standard WebP support. |
+| **VAL-01** | **Valid JPEG (>= 800x800, < 10MB)** | Unit | Valid JPEG binary with 1200x1200px and 2MB size | Returns `null` (accepted), marks valid, moves to queued. | Standard happy path. |
+| **VAL-02** | **Valid PNG (>= 800x800, < 10MB)** | Unit | Valid PNG signature (`89 50 4E 47`) and dimensions | Returns `null` (accepted). | Verifies PNG header parsing. |
+| **VAL-03** | **Valid Static WebP** | Unit | Valid VP8 or static VP8X WebP (>= 800x800) | Returns `null` (accepted). | Standard WebP support. |
 | **VAL-04** | **Animated WebP (VP8X animation bit set)** | Unit | WebP with VP8X header and bit 1 flag set | Rejected with `REJECTION_CODES.INVALID_FORMAT` and `animatedWebpNotAllowed` message. | Prevents animated stickers/GIFs uploaded as WebP. |
 | **VAL-05** | **File size exceeding 10MB limit** | Unit | Valid image file with size `10 * 1024 * 1024 + 1` bytes | Rejected immediately with `FILE_TOO_LARGE` without reading buffer. | Prevents unnecessary client-side ArrayBuffer parsing for oversized files. |
 | **VAL-06** | **Exact boundary 10MB file** | Unit | Valid image with size exactly `10 * 1024 * 1024` bytes | Accepted (boundary condition: `<= 10MB`). | Boundary testing. |
-| **VAL-07** | **Resolution below 1080px (Width)** | Unit | 1079 x 1200 px image | Rejected with `RESOLUTION_TOO_LOW` (`resolutionTooSmall`). | Enforces high quality store standards. |
-| **VAL-08** | **Resolution below 1080px (Height)** | Unit | 1920 x 1079 px image | Rejected with `RESOLUTION_TOO_LOW`. | Both dimensions must satisfy `>= 1080`. |
-| **VAL-09** | **Exact 1080x1080 boundary** | Unit | Exactly 1080 x 1080 px image | Accepted. | Boundary testing. |
-| **VAL-10** | **JPEG EXIF Orientation swap (Orientations 5–8)** | Unit | Portrait JPEG shot as 800x1200 with EXIF orientation 6 (90° rotation) | Transposed dimensions become 1200x800, fails height requirement (<1080). | EXIF rotation metadata changes effective display dimensions. |
+| **VAL-07** | **Resolution below 800px (Width)** | Unit | 799 x 1200 px image | Rejected with `RESOLUTION_TOO_LOW` (`resolutionTooSmall`). | Enforces high quality store standards. |
+| **VAL-08** | **Resolution below 800px (Height)** | Unit | 1920 x 799 px image | Rejected with `RESOLUTION_TOO_LOW`. | Both dimensions must satisfy `>= 800`. |
+| **VAL-09** | **Exact 800x800 boundary** | Unit | Exactly 800 x 800 px image | Accepted. | Boundary testing. |
+| **VAL-10** | **JPEG EXIF Orientation swap (Orientations 5–8)** | Unit | Portrait JPEG shot as 799x1200 with EXIF orientation 6 (90° rotation) | Transposed dimensions become 1200x799, fails the minimum-size requirement (<800). | EXIF rotation metadata changes effective display dimensions. |
 | **VAL-11** | **JPEG EXIF Orientation normal (Orientations 1–4)** | Unit | 1200x1200 with orientation 1 | Accepted without dimension swap. | Normal EXIF orientation. |
 | **VAL-12** | **Corrupt JPEG marker length (< 2 bytes)** | Unit | JPEG SOI followed by invalid marker length (e.g. 0 or 1) | Rejection with `INVALID_FORMAT` (`corrupt_marker`). | Prevents infinite loop / index overrun. |
 | **VAL-13** | **Malformed JPEG EXIF segment loop (> 500 markers)** | Unit | Specially crafted binary with > 500 consecutive markers | Stops parsing, returns `corrupt_marker` error. | Guard against DoS / CPU lockup. |
@@ -122,7 +122,7 @@ These test cases target [`uploadPipeline.ts`](../features/posts/new/services/upl
 | **UPL-05** | **Upload progress indicator** | Component | TUS progress callback fires `45%` | [`StatusOverlay`](../features/posts/new/components/StatusOverlay.tsx) renders circular SVG progress with text `45٪`. |
 | **UPL-06** | **Upload success & Server ID extraction** | Integration | TUS upload returns URL `https://.../files/media-xyz123` | Item marked `status: 'uploaded'`. `serverMediaId` parsed as `'media-xyz123'`. |
 | **UPL-07** | **Upload failure: Server error** | Integration | TUS upload fails with 500 error | Item marked `status: 'failed'`. [`StatusOverlay`](../features/posts/new/components/StatusOverlay.tsx) displays red badge with label `خطا` and "تلاش دوباره" (Retry) link. Toast displays `failedToUpload`. |
-| **UPL-08** | **Upload failure: Server rejected resolution** | Integration | TUS upload returns error containing `resolution` or `1080` | Toast displays specific Persian message: `resolutionTooSmall`. |
+| **UPL-08** | **Upload failure: Server rejected resolution** | Integration | TUS upload returns error containing `resolution` | Toast displays specific Persian message: `resolutionTooSmall`. |
 | **UPL-09** | **Retry failed upload** | Component | Item in `status: 'failed'` | Clicking "تلاش دوباره" does not propagate cell selection toggle. Retries upload for this item. |
 
 ---
@@ -214,7 +214,7 @@ When validating notifications, match against canonical constants defined in [`@/
 | No images selected on Next | `ERROR_MESSAGES.validation.noImages` | `حداقل یک تصویر برای محصول خود انتخاب کنید` |
 | Over 10MB file | `ERROR_MESSAGES.upload.imageSizeLimit` | `حجم تصویر نباید بیشتر از ۱۰ مگابایت باشد` |
 | Unsupported format / Corrupt | `ERROR_MESSAGES.upload.imageFormatLimit` | `فرمت تصویر معتبر نیست. فرمت‌های مجاز: JPEG, PNG, WebP` |
-| Low resolution (< 1080px) | `ERROR_MESSAGES.upload.resolutionTooSmall` | `کیفیت تصویر پایین است. حداقل ابعاد مجاز: ۱۰۸۰ در ۱۰۸۰ پیکسل` |
+| Low resolution (< 800px) | `ERROR_MESSAGES.upload.resolutionTooSmall` | `کیفیت تصویر پایین است. حداقل ابعاد مجاز: ۸۰۰ در ۸۰۰ پیکسل` |
 | HEIC format selected | `ERROR_MESSAGES.upload.heicNotSupported` | `فرمت HEIC پشتیبانی نمی‌شود. لطفاً تصویر را با فرمت JPEG یا PNG ارسال کنید` |
 | Animated WebP selected | `ERROR_MESSAGES.upload.animatedWebpNotAllowed` | `تصاویر متحرک مجاز نیستند` |
 | Exceeding remaining quota | `ERROR_MESSAGES.upload.maxImagesReached(count)` | `تنها {count} تصویر دیگر می‌توانید اضافه کنید` |
